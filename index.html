@@ -336,8 +336,6 @@ header{
 .e-ok::before{background:var(--salvia)}
 .e-pocas{color:#9A6410}
 .e-pocas::before{background:var(--durazno)}
-.e-out{color:var(--tinta-3)}
-.e-out::before{background:var(--linea);box-shadow:inset 0 0 0 1px var(--tinta-3)}
 .e-encargo{color:#9A6410}
 .e-encargo::before{background:var(--coral)}
 /* Todo lo pulsable responde al toque: en celular no hay hover */
@@ -794,10 +792,13 @@ function estaPublicado(p){
 }
 
 /* ── estado de stock ────────────────── */
+// No se distingue entre "se agotó" y "nunca lo tuvimos en inventario" — para
+// la clienta es la misma situación y la misma solución: pedirlo por encargo.
+// Ambos casos comparten el mismo texto, el mismo color y el mismo botón.
 function estadoStock(p){
-  if (p.modalidad === 'encargo') return { clase:'e-encargo', texto:'Por encargo', hay:false };
+  const esEncargo = p.modalidad === 'encargo';
   const s = Number(p.stock) || 0;
-  if (s <= 0) return { clase:'e-out',   texto:'Agotado',            hay:false };
+  if (esEncargo || s <= 0) return { clase:'e-encargo', texto:'Por encargo', hay:false };
   if (s <= CONFIG.POCAS_UNIDADES) return { clase:'e-pocas', texto:'Pocas unidades', hay:true };
   return { clase:'e-ok', texto:'Disponible', hay:true };
 }
@@ -944,11 +945,12 @@ function pintarGrilla(reanimar = false){
     const tope = Math.min(CONFIG.MAX_POR_PRODUCTO, Number(p.stock) || 0);
 
     let control;
-    if (p.modalidad === 'encargo'){
+    if (!est.hay){
+      // Mismo botón tanto si es modalidad "encargo" como si simplemente se
+      // agotó el stock — la clienta no tiene por qué distinguir el motivo,
+      // en los dos casos la solución es la misma: pedirlo por encargo.
       const descripcion = (p.marca ? p.marca + ' ' : '') + p.nombre + (p.tono ? ', tono ' + p.tono : '');
       control = `<button class="btn-avisar" type="button" data-encargo="${esc(descripcion)}">Pedir por encargo</button>`;
-    } else if (!est.hay){
-      control = `<button class="btn-avisar" type="button" data-avisar="${esc(p.id)}">Solicitar aviso de stock</button>`;
     } else if (enCarrito > 0){
       control = `<div class="paso-cant">
           <button type="button" data-menos="${esc(p.id)}" aria-label="Quitar una unidad">−</button>
@@ -964,10 +966,10 @@ function pintarGrilla(reanimar = false){
       ? `<div class="tono-picker" role="group" aria-label="Elegí el tono">
           ${grupo.variantes.map(v => {
             const activo = String(v.id) === String(p.id);
-            const sinStock = !estadoStock(v).hay && v.modalidad !== 'encargo';
+            const sinStock = !estadoStock(v).hay;
             return `<button type="button" class="tono-pill${sinStock ? ' sin-stock' : ''}"
                       aria-pressed="${activo}" data-tono-grupo="${esc(grupo.clave)}" data-tono-id="${esc(v.id)}">
-                      ${esc(v.tono || 'Único')}${sinStock ? ' · agotado' : ''}
+                      ${esc(v.tono || 'Único')}${sinStock ? ' · por encargo' : ''}
                     </button>`;
           }).join('')}
         </div>`
@@ -1402,63 +1404,7 @@ function verConfirmacion(numero, pedido){
   abrirHoja('Pedido confirmado', html);
 }
 
-/* ── avisarme cuando llegue ─────────── */
-function verAviso(id){
-  const p = PRODUCTOS.find(x => String(x.id) === String(id));
-  if (!p) return;
-  const html = `
-    <p style="margin:0 0 16px;font-size:14px;color:var(--tinta-2);line-height:1.6">
-      Dejanos tu contacto y te escribimos apenas <b style="color:var(--tinta);font-weight:600">${esc(p.nombre)}</b> vuelva a estar disponible.
-      No te vamos a escribir por nada más.
-    </p>
-    <form id="formAviso" novalidate>
-      <div class="campos">
-        <div class="campo ancho">
-          <label for="avNombre">Tu nombre</label>
-          <input type="text" id="avNombre" autocomplete="name" placeholder="Nombre y apellido">
-          <span class="error oculto" data-error="avNombre">Escribí tu nombre</span>
-        </div>
-        <div class="campo ancho">
-          <label for="avTel">WhatsApp</label>
-          <input type="tel" id="avTel" inputmode="numeric" autocomplete="tel" placeholder="8888 8888">
-          <span class="error oculto" data-error="avTel">Escribí un número de 8 dígitos</span>
-        </div>
-      </div>
-      <button class="btn-grande" type="submit" id="btnAviso">Solicitar aviso de stock</button>
-      <p class="nota-datos">Solo lo usamos para avisarte de este producto.</p>
-    </form>`;
-  abrirHoja('Solicitar aviso de stock', html);
-
-  $('#formAviso').addEventListener('submit', async (ev) => {
-    ev.preventDefault();
-    const nombre = $('#avNombre').value.trim();
-    const tel = $('#avTel').value.replace(/\D/g, '');
-    marcarError('avNombre', nombre.length < 2);
-    marcarError('avTel', tel.length !== 8);
-    if (nombre.length < 2 || tel.length !== 8) return;
-
-    const btn = $('#btnAviso');
-    btn.disabled = true;
-    btn.textContent = 'Guardando…';
-
-    if (!MODO_DEMO){
-      try {
-        await fetch(CONFIG.API, {
-          method:'POST',
-          headers:{ 'Content-Type':'text/plain;charset=utf-8' },
-          body: JSON.stringify({
-            accion:'crear_solicitud',
-            solicitud:{ productoId:p.id, producto:p.nombre, nombre, telefono:tel, tipo:'restock' }
-          })
-        });
-      } catch {}
-    }
-    cerrarHoja();
-    brindis('Listo, te avisamos cuando llegue 💛');
-  });
-}
-
-/* ── pedir algo por encargo (no está en el catálogo) ───────── */
+/* ── pedir algo por encargo (agotado, o nunca estuvo en catálogo) ───────── */
 function verEncargo(prefill){
   const html = `
     <p style="margin:0 0 16px;font-size:14px;color:var(--tinta-2);line-height:1.6">
@@ -1523,13 +1469,12 @@ function verEncargo(prefill){
    EVENTOS
    ══════════════════════════════════════════════════════════════ */
 document.addEventListener('click', (ev) => {
-  const t = ev.target.closest('[data-agregar],[data-mas],[data-menos],[data-quitar],[data-avisar],[data-encargo],[data-tono-id],[data-cat],#irCheckout,#seguirComprando,#btnCarrito,#btnVerCarrito,#btnCerrar,#btnLimpiarFiltros');
+  const t = ev.target.closest('[data-agregar],[data-mas],[data-menos],[data-quitar],[data-encargo],[data-tono-id],[data-cat],#irCheckout,#seguirComprando,#btnCarrito,#btnVerCarrito,#btnCerrar,#btnLimpiarFiltros');
   if (!t) return;
 
   if (t.dataset.agregar) return agregar(t.dataset.agregar, 1);
   if (t.dataset.mas)     return agregar(t.dataset.mas, 1);
   if (t.dataset.menos)   return agregar(t.dataset.menos, -1);
-  if (t.dataset.avisar)  return verAviso(t.dataset.avisar);
   if (t.dataset.encargo !== undefined) return verEncargo(t.dataset.encargo);
   if (t.dataset.tonoId)  return elegirTono(t.dataset.tonoGrupo, t.dataset.tonoId);
 
