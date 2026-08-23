@@ -231,6 +231,26 @@ header{
 .chip:hover{color:var(--tinta)}
 .chip[aria-pressed="true"]{color:var(--tinta);border-bottom-color:var(--tinta)}
 
+/* ── filtros de marca y precio ──────── */
+.filtros-extra{display:flex;flex-wrap:wrap;gap:8px;align-items:center;margin:14px 0 2px}
+.select-filtro{
+  flex:1 1 130px;min-width:0;appearance:none;-webkit-appearance:none;
+  border:1px solid var(--linea);border-radius:var(--radio-chico);
+  background-color:var(--hueso);padding:9px 30px 9px 13px;
+  font-size:11.5px;font-weight:500;color:var(--tinta-2);
+  background-image:url("data:image/svg+xml;charset=utf-8,%3Csvg xmlns='http://www.w3.org/2000/svg' width='12' height='8' viewBox='0 0 12 8'%3E%3Cpath d='M1 1l5 5 5-5' stroke='%23B79C89' stroke-width='1.8' fill='none' stroke-linecap='round'/%3E%3C/svg%3E");
+  background-repeat:no-repeat;background-position:right 12px center;
+  transition:border-color .16s var(--curva), color .16s var(--curva);
+}
+.select-filtro:hover{border-color:var(--tinta-3)}
+.select-filtro:focus{border-color:var(--tinta)}
+.select-filtro.activo{border-color:var(--tinta);color:var(--tinta);background-color:var(--papel);font-weight:600}
+.btn-limpiar-filtros{
+  font-family:"DM Mono",monospace;font-size:10px;letter-spacing:.08em;text-transform:uppercase;
+  color:var(--coral);white-space:nowrap;padding:9px 2px;
+}
+.btn-limpiar-filtros:hover{text-decoration:underline}
+
 .buscador{position:relative;margin-bottom:4px}
 .buscador input{
   width:100%;padding:13px 16px 13px 40px;border-radius:var(--radio-chico);
@@ -599,6 +619,12 @@ details[open] summary::after{content:"−"}
 
   <div class="filtros" id="filtros" role="group" aria-label="Filtrar por categoría"></div>
 
+  <div class="filtros-extra" id="filtrosExtra">
+    <select class="select-filtro" id="filtroMarca" aria-label="Filtrar por marca"></select>
+    <select class="select-filtro" id="filtroPrecio" aria-label="Filtrar por precio"></select>
+    <button class="btn-limpiar-filtros oculto" id="btnLimpiarFiltros" type="button">Limpiar filtros</button>
+  </div>
+
   <div id="cargando" class="grilla" aria-busy="true" aria-label="Cargando el catálogo">
     <div class="hueso"><div class="h-img"></div><div class="h-linea corta"></div><div class="h-linea media"></div><div class="h-linea corta"></div><div class="h-boton"></div></div>
     <div class="hueso"><div class="h-img"></div><div class="h-linea corta"></div><div class="h-linea media"></div><div class="h-linea corta"></div><div class="h-boton"></div></div>
@@ -709,6 +735,16 @@ let PRODUCTOS = [];
 let CARRITO   = cargarCarrito();
 let CATEGORIA = 'Todo';
 let BUSQUEDA  = '';
+let MARCA  = 'Todas';
+let PRECIO = 'todos';
+
+const RANGOS_PRECIO = [
+  { id:'todos',  label:'Cualquier precio' },
+  { id:'menos5', label:'Menos de ₡5.000',        max:5000 },
+  { id:'5a15',   label:'₡5.000 – ₡15.000',       min:5000,  max:15000 },
+  { id:'15a25',  label:'₡15.000 – ₡25.000',      min:15000, max:25000 },
+  { id:'mas25',  label:'Más de ₡25.000',         min:25000 }
+];
 // Qué tono está elegido en cada grupo de producto (clave: marca+nombre en
 // minúsculas). Se guarda acá para que sobreviva a los repintados de la
 // grilla (cada vez que cambia el carrito, la grilla entera se repinta).
@@ -813,12 +849,38 @@ function pintarFiltros(){
   $('#filtros').innerHTML = cats.map(c =>
     `<button class="chip" type="button" data-cat="${esc(c)}" aria-pressed="${c === CATEGORIA}">${esc(c)}</button>`
   ).join('');
+
+  const marcas = [...new Set(PRODUCTOS.map(p => p.marca).filter(Boolean))].sort((a, b) => a.localeCompare(b, 'es'));
+  $('#filtroMarca').innerHTML = `<option value="Todas">Todas las marcas</option>` +
+    marcas.map(m => `<option value="${esc(m)}"${m === MARCA ? ' selected' : ''}>${esc(m)}</option>`).join('');
+
+  $('#filtroPrecio').innerHTML = RANGOS_PRECIO.map(r =>
+    `<option value="${r.id}"${r.id === PRECIO ? ' selected' : ''}>${esc(r.label)}</option>`
+  ).join('');
+
+  actualizarFiltrosActivos();
+}
+
+// Refleja en pantalla si hay algún filtro puesto: resalta los selects que no
+// están en su valor por defecto y muestra/oculta el botón de "Limpiar".
+function actualizarFiltrosActivos(){
+  $('#filtroMarca').classList.toggle('activo', MARCA !== 'Todas');
+  $('#filtroPrecio').classList.toggle('activo', PRECIO !== 'todos');
+  const hayFiltro = MARCA !== 'Todas' || PRECIO !== 'todos' || CATEGORIA !== 'Todo' || BUSQUEDA.trim() !== '';
+  $('#btnLimpiarFiltros').classList.toggle('oculto', !hayFiltro);
 }
 
 function productosVisibles(){
   const q = BUSQUEDA.trim().toLowerCase();
+  const rango = RANGOS_PRECIO.find(r => r.id === PRECIO);
   return PRODUCTOS.filter(p => {
     if (CATEGORIA !== 'Todo' && p.categoria !== CATEGORIA) return false;
+    if (MARCA !== 'Todas' && (p.marca || '') !== MARCA) return false;
+    if (rango) {
+      const precio = Number(p.precioVenta) || 0;
+      if (rango.min != null && precio < rango.min) return false;
+      if (rango.max != null && precio >= rango.max) return false;
+    }
     if (!q) return true;
     return [p.nombre, p.marca, p.categoria, p.tono, p.descripcion]
       .filter(Boolean).join(' ').toLowerCase().includes(q);
@@ -1461,7 +1523,7 @@ function verEncargo(prefill){
    EVENTOS
    ══════════════════════════════════════════════════════════════ */
 document.addEventListener('click', (ev) => {
-  const t = ev.target.closest('[data-agregar],[data-mas],[data-menos],[data-quitar],[data-avisar],[data-encargo],[data-tono-id],[data-cat],#irCheckout,#seguirComprando,#btnCarrito,#btnVerCarrito,#btnCerrar');
+  const t = ev.target.closest('[data-agregar],[data-mas],[data-menos],[data-quitar],[data-avisar],[data-encargo],[data-tono-id],[data-cat],#irCheckout,#seguirComprando,#btnCarrito,#btnVerCarrito,#btnCerrar,#btnLimpiarFiltros');
   if (!t) return;
 
   if (t.dataset.agregar) return agregar(t.dataset.agregar, 1);
@@ -1479,6 +1541,17 @@ document.addEventListener('click', (ev) => {
   if (t.dataset.cat){
     CATEGORIA = t.dataset.cat;
     $$('#filtros .chip').forEach(c => c.setAttribute('aria-pressed', c.dataset.cat === CATEGORIA));
+    actualizarFiltrosActivos();
+    pintarGrilla(true);
+    return;
+  }
+  if (t.id === 'btnLimpiarFiltros'){
+    CATEGORIA = 'Todo'; MARCA = 'Todas'; PRECIO = 'todos'; BUSQUEDA = '';
+    $('#buscar').value = '';
+    $$('#filtros .chip').forEach(c => c.setAttribute('aria-pressed', c.dataset.cat === CATEGORIA));
+    $('#filtroMarca').value = MARCA;
+    $('#filtroPrecio').value = PRECIO;
+    actualizarFiltrosActivos();
     pintarGrilla(true);
     return;
   }
@@ -1494,7 +1567,22 @@ document.addEventListener('keydown', (ev) => { if (ev.key === 'Escape') cerrarHo
 let tBusca;
 $('#buscar').addEventListener('input', (ev) => {
   clearTimeout(tBusca);
-  tBusca = setTimeout(() => { BUSQUEDA = ev.target.value; pintarGrilla(true); }, 160);
+  tBusca = setTimeout(() => {
+    BUSQUEDA = ev.target.value;
+    actualizarFiltrosActivos();
+    pintarGrilla(true);
+  }, 160);
+});
+
+$('#filtroMarca').addEventListener('change', (ev) => {
+  MARCA = ev.target.value;
+  actualizarFiltrosActivos();
+  pintarGrilla(true);
+});
+$('#filtroPrecio').addEventListener('change', (ev) => {
+  PRECIO = ev.target.value;
+  actualizarFiltrosActivos();
+  pintarGrilla(true);
 });
 
 /* ── datos de ejemplo (solo si la Sheet no responde) ── */
