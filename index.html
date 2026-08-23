@@ -290,6 +290,8 @@ header{
 .e-pocas::before{background:var(--durazno)}
 .e-out{color:var(--tinta-3)}
 .e-out::before{background:var(--linea);box-shadow:inset 0 0 0 1px var(--tinta-3)}
+.e-encargo{color:#9A6410}
+.e-encargo::before{background:var(--coral)}
 /* Todo lo pulsable responde al toque: en celular no hay hover */
 .btn-agregar,.btn-avisar,.btn-grande,.btn-suave,.paso-cant button,.cerrar,.chip{
   transition:filter .16s var(--curva), transform .13s var(--curva),
@@ -717,6 +719,7 @@ function estaPublicado(p){
 
 /* ── estado de stock ────────────────── */
 function estadoStock(p){
+  if (p.modalidad === 'encargo') return { clase:'e-encargo', texto:'Por encargo', hay:false };
   const s = Number(p.stock) || 0;
   if (s <= 0) return { clase:'e-out',   texto:'Agotado',            hay:false };
   if (s <= CONFIG.POCAS_UNIDADES) return { clase:'e-pocas', texto:'Pocas unidades', hay:true };
@@ -814,7 +817,10 @@ function pintarGrilla(){
     const tope = Math.min(CONFIG.MAX_POR_PRODUCTO, Number(p.stock) || 0);
 
     let control;
-    if (!est.hay){
+    if (p.modalidad === 'encargo'){
+      const descripcion = (p.marca ? p.marca + ' ' : '') + p.nombre + (p.tono ? ', tono ' + p.tono : '');
+      control = `<button class="btn-avisar" type="button" data-encargo="${esc(descripcion)}">Pedir por encargo</button>`;
+    } else if (!est.hay){
       control = `<button class="btn-avisar" type="button" data-avisar="${esc(p.id)}">Avisarme</button>`;
     } else if (enCarrito > 0){
       control = `<div class="paso-cant">
@@ -1392,7 +1398,8 @@ const DEMO = [
   { id:5, nombre:'Gloss hidratante',     marca:'NYX',       categoria:'Labios',   tono:'Peach',   precioVenta:6900,  stock:3,  foto:'' },
   { id:6, nombre:'Rubor en crema',       marca:'Rare Beauty',categoria:'Rostro',  tono:'Joy',     precioVenta:18500, stock:5,  foto:'' },
   { id:7, nombre:'Protector solar FPS50',marca:'La Roche',  categoria:'Skincare', tono:'',        precioVenta:16900, stock:1,  foto:'' },
-  { id:8, nombre:'Máscara de pestañas',  marca:'Essence',   categoria:'Ojos',     tono:'Negro',   precioVenta:4900,  stock:0,  foto:'' }
+  { id:8, nombre:'Máscara de pestañas',  marca:'Essence',   categoria:'Ojos',     tono:'Negro',   precioVenta:4900,  stock:0,  foto:'' },
+  { id:9, nombre:'Blush stick',          marca:'Fenty Beauty', categoria:'Rostro', tono:'Gasm',   precioVenta:12000, stock:0,  foto:'', modalidad:'encargo' }
 ];
 
 /* ── arranque ───────────────────────── */
