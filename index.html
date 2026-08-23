@@ -948,7 +948,7 @@ function pintarGrilla(reanimar = false){
       const descripcion = (p.marca ? p.marca + ' ' : '') + p.nombre + (p.tono ? ', tono ' + p.tono : '');
       control = `<button class="btn-avisar" type="button" data-encargo="${esc(descripcion)}">Pedir por encargo</button>`;
     } else if (!est.hay){
-      control = `<button class="btn-avisar" type="button" data-avisar="${esc(p.id)}">Avisarme</button>`;
+      control = `<button class="btn-avisar" type="button" data-avisar="${esc(p.id)}">Avisarme cuando llegue</button>`;
     } else if (enCarrito > 0){
       control = `<div class="paso-cant">
           <button type="button" data-menos="${esc(p.id)}" aria-label="Quitar una unidad">−</button>
