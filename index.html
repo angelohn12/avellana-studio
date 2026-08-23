@@ -1,0 +1,1406 @@
+<!DOCTYPE html>
+<html lang="es-CR">
+<head>
+<meta charset="utf-8">
+<meta name="viewport" content="width=device-width, initial-scale=1, viewport-fit=cover">
+<title>Avellana Studio — Tienda</title>
+<meta name="description" content="Maquillaje, skincare y productos de belleza en Costa Rica. Elegí lo tuyo y coordinamos por WhatsApp. Envíos a todo el país y retiro en Calle Blancos.">
+<meta name="theme-color" content="#FDF8F4">
+<meta name="color-scheme" content="light">
+
+<!-- Vista previa al compartir el link (WhatsApp, Instagram, Facebook) -->
+<meta property="og:type" content="website">
+<meta property="og:site_name" content="Avellana Studio">
+<meta property="og:title" content="Avellana Studio — Belleza que florece">
+<meta property="og:description" content="Maquillaje, skincare y productos de belleza en Costa Rica. Envíos a todo el país y retiro en Calle Blancos.">
+<meta property="og:locale" content="es_CR">
+<meta property="og:image" content="portada.jpg">
+<meta property="og:image:width" content="1200">
+<meta property="og:image:height" content="630">
+<meta name="twitter:card" content="summary_large_image">
+
+<!-- Marca de avellana en flor, dibujada como SVG: no depende de ningún archivo -->
+<link rel="icon" href="data:image/svg+xml,%3Csvg xmlns='http://www.w3.org/2000/svg' viewBox='0 0 32 32'%3E%3Crect width='32' height='32' rx='8' fill='%23FDF8F4'/%3E%3Cpath d='M16 7c4.4 0 7.8 3.3 7.8 7.6 0 4.9-3.6 8.6-7.8 10.4-4.2-1.8-7.8-5.5-7.8-10.4C8.2 10.3 11.6 7 16 7z' fill='%235D300E'/%3E%3Cpath d='M16 11.5c1.9 0 3.4 1.5 3.4 3.3 0 2-1.5 3.5-3.4 4.4-1.9-.9-3.4-2.4-3.4-4.4 0-1.8 1.5-3.3 3.4-3.3z' fill='%23FDA6AB'/%3E%3Ccircle cx='16' cy='6' r='2.1' fill='%23D24558'/%3E%3C/svg%3E">
+<link rel="preconnect" href="https://fonts.googleapis.com">
+<link rel="preconnect" href="https://fonts.gstatic.com" crossorigin>
+<link rel="stylesheet" href="https://fonts.googleapis.com/css2?family=DM+Mono:wght@400;500&family=Playfair+Display:ital,wght@0,600;0,700;1,600&family=Poppins:wght@300;400;500;600;700&display=swap">
+
+<script>
+/* ══════════════════════════════════════════════════════════════
+   CONFIGURACIÓN — esto es lo único que hay que tocar
+   ══════════════════════════════════════════════════════════════ */
+const CONFIG = {
+  // Endpoint del Apps Script (el mismo del dashboard)
+  API: 'https://script.google.com/macros/s/AKfycbxQVdDsH_Qgg9MnRgb0rDyzYPkvRESEi2FGD-ENHeT9L7CMbZl_xTaVxDs0wfNe3tflMg/exec',
+
+  WHATSAPP: '50670185274',          // sin espacios ni guiones, con el 506
+  WHATSAPP_VISIBLE: '7018 5274',
+
+  RETIRO: 'San José, Goicoechea, Calle Blancos, Barrio Montelimar, avenida 43, frente a la Escuela de Natación Montelimar',
+
+  ENVIO_GAM: 3000,                  // Correos dentro del Gran Área Metropolitana
+  ENVIO_FUERA: 3500,                // Correos fuera del GAM
+
+  POCAS_UNIDADES: 3,                // muestra "Pocas unidades" con esto o menos
+  MAX_POR_PRODUCTO: 3,              // tope de unidades del mismo producto por pedido
+
+  DIAS_DEFECTO: 1,                  // plazo para reportar defecto de fábrica
+  INSTAGRAM: 'avellana.sstudio',
+
+  ENCARGO_DIAS_MIN: 20,             // rango de días hábiles que tarda un encargo
+  ENCARGO_DIAS_MAX: 25,
+  ENCARGO_ADELANTO_PCT: 50          // % que se cobra por adelantado en un encargo
+};
+
+/* Los 31 cantones del Gran Área Metropolitana. Fuente: definición oficial de la GAM.
+   👉 REVISAR con Belén los cantones de borde antes de publicar. */
+const GAM = new Set([
+  // San José
+  'San José','Escazú','Desamparados','Aserrí','Mora','Goicoechea','Santa Ana',
+  'Alajuelita','Vázquez de Coronado','Tibás','Moravia','Montes de Oca','Curridabat',
+  // Alajuela
+  'Alajuela','Atenas','Poás',
+  // Cartago
+  'Cartago','Paraíso','La Unión','Oreamuno','Alvarado','El Guarco',
+  // Heredia
+  'Heredia','Barva','Santo Domingo','Santa Bárbara','San Rafael','San Isidro',
+  'Belén','Flores','San Pablo'
+]);
+
+const CANTONES = {
+  'San José': ['San José','Escazú','Desamparados','Puriscal','Tarrazú','Aserrí','Mora','Goicoechea','Santa Ana','Alajuelita','Vázquez de Coronado','Acosta','Tibás','Moravia','Montes de Oca','Turrubares','Dota','Curridabat','Pérez Zeledón','León Cortés Castro'],
+  'Alajuela': ['Alajuela','San Ramón','Grecia','San Mateo','Atenas','Naranjo','Palmares','Poás','Orotina','San Carlos','Zarcero','Sarchí','Upala','Los Chiles','Guatuso','Río Cuarto'],
+  'Cartago': ['Cartago','Paraíso','La Unión','Jiménez','Turrialba','Alvarado','Oreamuno','El Guarco'],
+  'Heredia': ['Heredia','Barva','Santo Domingo','Santa Bárbara','San Rafael','San Isidro','Belén','Flores','San Pablo','Sarapiquí'],
+  'Guanacaste': ['Liberia','Nicoya','Santa Cruz','Bagaces','Carrillo','Cañas','Abangares','Tilarán','Nandayure','La Cruz','Hojancha'],
+  'Puntarenas': ['Puntarenas','Esparza','Buenos Aires','Montes de Oro','Osa','Quepos','Golfito','Coto Brus','Parrita','Corredores','Garabito','Monteverde','Puerto Jiménez'],
+  'Limón': ['Limón','Pococí','Siquirres','Talamanca','Matina','Guácimo']
+};
+</script>
+
+<style>
+:root{
+  /* Marca — se usan como bloques planos y saturados, nunca como lavados suaves */
+  --cafe:#5D300E;
+  --coral:#D24558;
+  --rosa:#FDA6AB;
+  --rosa-hondo:#D98B93;
+  --durazno:#FAC977;
+  --menta:#C6E9C8;
+  --salvia:#61A07D;
+
+  /* Superficies: blanco puro, como las tiendas de belleza que funcionan */
+  --crema:#FFFFFF;
+  --papel:#FFFFFF;
+  --hueso:#F7F6F4;
+
+  /* Texto: casi negro. El café queda reservado para el logotipo */
+  --tinta:#0F0F0F;
+  --tinta-2:#5B5852;
+  --tinta-3:#8E8B85;
+  --linea:#E2E0DC;
+  --linea-suave:#EDEBE7;
+
+  /* Sin sombras: la jerarquía la dan el espacio y la foto, no el relieve */
+  --sombra:none;
+  --sombra-alta:none;
+
+  /* Esquinas cuadradas */
+  --radio-grande:2px;
+  --radio:2px;
+  --radio-chico:2px;
+
+  /* Escala de profundidad */
+  --z-barra:40;
+  --z-flotante:50;
+  --z-hoja:60;
+  --z-brindis:70;
+  --z-grano:90;
+
+  --curva:cubic-bezier(.2,.7,.3,1);
+}
+
+*{box-sizing:border-box}
+html{-webkit-text-size-adjust:100%;scroll-behavior:smooth}
+body{
+  margin:0;color:var(--tinta);
+  font-family:"Poppins",system-ui,-apple-system,"Segoe UI",sans-serif;
+  font-weight:300;font-size:15px;line-height:1.6;
+  -webkit-font-smoothing:antialiased;
+  padding-bottom:96px;
+  background:var(--crema);
+  letter-spacing:-.005em;
+}
+
+/* Salto al contenido para quien navega con teclado */
+.saltar{
+  position:absolute;left:12px;top:-60px;z-index:99;
+  background:var(--cafe);color:var(--crema);padding:11px 18px;
+  border-radius:0 0 var(--radio-chico) var(--radio-chico);
+  font-size:13.5px;font-weight:500;text-decoration:none;
+  transition:top .18s var(--curva);
+}
+.saltar:focus{top:0}
+img{max-width:100%;display:block}
+button{font-family:inherit;cursor:pointer;border:0;background:none;color:inherit}
+input,select,textarea{font-family:inherit;font-size:15px;color:var(--tinta)}
+:focus-visible{outline:2px solid var(--coral);outline-offset:2px;border-radius:6px}
+.wrap{max-width:1080px;margin:0 auto;padding:0 18px}
+.oculto{display:none !important}
+
+/* ── encabezado ─────────────────────── */
+header{
+  position:sticky;top:0;z-index:var(--z-barra);background:rgba(255,255,255,.92);
+  backdrop-filter:blur(12px);-webkit-backdrop-filter:blur(12px);
+  border-bottom:1px solid var(--linea);
+}
+.barra{display:flex;align-items:center;justify-content:space-between;gap:14px;padding:15px 0}
+/* El logotipo es el único lugar donde vive la serif */
+.marca{
+  font-family:"Playfair Display",Georgia,serif;font-weight:600;font-size:19px;
+  letter-spacing:-.012em;color:var(--cafe);line-height:1;
+}
+.marca small{
+  display:block;font-family:"DM Mono",monospace;font-size:9px;font-weight:400;
+  letter-spacing:.2em;text-transform:uppercase;color:var(--tinta-3);margin-top:5px;
+}
+.btn-carrito{
+  display:flex;align-items:center;gap:8px;background:var(--tinta);color:#FFF;
+  padding:13px 16px;border-radius:var(--radio-chico);
+  font-size:11.5px;font-weight:500;letter-spacing:.07em;text-transform:uppercase;
+  white-space:nowrap;transition:background .16s var(--curva), transform .13s var(--curva);
+}
+.btn-carrito:hover{background:var(--coral)}
+.btn-carrito:active{transform:scale(.97)}
+.btn-carrito .n{
+  background:var(--coral);border-radius:var(--radio-chico);min-width:18px;height:17px;
+  display:inline-flex;align-items:center;justify-content:center;
+  font-size:10.5px;font-weight:600;font-variant-numeric:tabular-nums;padding:0 5px;
+}
+.btn-carrito:hover .n{background:rgba(255,255,255,.24)}
+
+/* ── franja de anuncio ──────────────── */
+.franja{
+  background:var(--coral);color:#FFF;text-align:center;
+  padding:9px 16px;font-size:10.5px;font-weight:500;
+  letter-spacing:.11em;text-transform:uppercase;line-height:1.5;
+}
+
+/* ── hero: callado. La foto del producto es la que habla ── */
+.hero{padding:38px 0 30px;border-bottom:1px solid var(--linea)}
+.hero-eyebrow{
+  font-family:"DM Mono",monospace;font-size:10px;letter-spacing:.22em;
+  text-transform:uppercase;color:var(--tinta-3);margin:0 0 14px;
+}
+.hero h1{
+  font-weight:500;font-size:22px;line-height:1.25;letter-spacing:-.02em;
+  margin:0 0 10px;color:var(--tinta);text-wrap:balance;max-width:18ch;
+}
+.hero h1 em{font-style:normal;color:var(--coral)}
+.hero p{margin:0;max-width:46ch;color:var(--tinta-2);font-size:14px;text-wrap:pretty}
+@media(min-width:640px){
+  .hero{padding:56px 0 40px}
+  .hero h1{font-size:26px}
+}
+
+/* ── filtros ────────────────────────── */
+.filtros{
+  display:flex;gap:0;overflow-x:auto;padding:6px 0 0;margin-top:18px;
+  border-bottom:1px solid var(--linea);
+  scrollbar-width:none;-webkit-overflow-scrolling:touch;
+}
+.filtros::-webkit-scrollbar{display:none}
+.chip{
+  flex:0 0 auto;font-size:11.5px;font-weight:500;padding:13px 0;
+  background:none;border:0;border-bottom:1.5px solid transparent;
+  color:var(--tinta-3);white-space:nowrap;
+  letter-spacing:.1em;text-transform:uppercase;margin-right:20px;
+}
+.chip:hover{color:var(--tinta)}
+.chip[aria-pressed="true"]{color:var(--tinta);border-bottom-color:var(--tinta)}
+
+.buscador{position:relative;margin-bottom:4px}
+.buscador input{
+  width:100%;padding:13px 16px 13px 40px;border-radius:var(--radio-chico);
+  border:1px solid var(--linea);background:var(--hueso);font-weight:300;
+}
+.buscador input:focus{background:var(--papel);border-color:var(--tinta)}
+.buscador input::placeholder{color:var(--tinta-3)}
+.buscador svg{position:absolute;left:15px;top:50%;transform:translateY(-50%);color:var(--tinta-3)}
+
+/* ── grilla ─────────────────────────── */
+/* Sin bordes ni sombras, el aire entre fichas es lo que las separa */
+.grilla{
+  display:grid;grid-template-columns:repeat(2,1fr);
+  column-gap:14px;row-gap:36px;padding:18px 0 48px;
+}
+@media(min-width:640px){.grilla{grid-template-columns:repeat(3,1fr);column-gap:22px;row-gap:46px}}
+@media(min-width:940px){.grilla{grid-template-columns:repeat(4,1fr);column-gap:26px}}
+
+/* Sin borde, sin sombra, sin relieve: la foto es la tarjeta */
+.prod{
+  background:none;display:flex;flex-direction:column;
+  animation:asomar .5s var(--curva) both;
+  animation-delay:min(calc(var(--i,0) * 40ms), 380ms);
+}
+@keyframes asomar{from{opacity:0;transform:translateY(10px)}to{opacity:1;transform:none}}
+@media(hover:hover){
+  .prod:hover .prod-img img{transform:scale(1.04)}
+  .prod:hover .prod-nombre{color:var(--coral)}
+}
+.prod-img{
+  aspect-ratio:4/5;background:var(--hueso);position:relative;overflow:hidden;
+  border-radius:var(--radio);
+}
+.prod-img img{width:100%;height:100%;object-fit:cover;transition:transform .5s var(--curva)}
+
+/* Sin foto no es un error: es una ficha de marca */
+/* Sin foto: bloque plano de marca, no un degradado decorativo */
+.sin-foto{
+  width:100%;height:100%;display:flex;flex-direction:column;
+  align-items:center;justify-content:center;gap:9px;background:#F4EDE8;
+  font-family:"DM Mono",monospace;font-size:10px;font-weight:400;
+  color:var(--tinta-3);letter-spacing:.16em;text-transform:uppercase;
+  text-align:center;padding:12px;
+}
+.sin-foto svg{opacity:.32;flex:0 0 auto;color:var(--cafe)}
+.prod.agotado .prod-img{opacity:.42}
+.prod-cuerpo{padding:12px 0 0;display:flex;flex-direction:column;flex:1;gap:1px}
+.prod-marca{
+  font-family:"DM Mono",monospace;font-size:9.5px;letter-spacing:.14em;
+  text-transform:uppercase;color:var(--tinta-3);
+}
+.prod-nombre{
+  font-size:13px;font-weight:500;line-height:1.35;color:var(--tinta);
+  margin:3px 0 2px;transition:color .16s var(--curva);
+}
+.prod-tono{font-size:11.5px;color:var(--tinta-3);margin-bottom:4px}
+.prod-precio{font-size:13.5px;font-weight:500;color:var(--tinta);font-variant-numeric:tabular-nums;margin-top:auto}
+
+/* Etiqueta de stock: micro-rótulo en mono, no una píldora pastel */
+.etiqueta{
+  display:inline-flex;align-items:center;gap:5px;width:fit-content;
+  font-family:"DM Mono",monospace;font-size:9.5px;font-weight:400;
+  letter-spacing:.11em;text-transform:uppercase;margin:7px 0 10px;
+}
+.etiqueta::before{content:"";width:5px;height:5px;border-radius:50%;flex:0 0 auto}
+.e-ok{color:var(--tinta-3)}
+.e-ok::before{background:var(--salvia)}
+.e-pocas{color:#9A6410}
+.e-pocas::before{background:var(--durazno)}
+.e-out{color:var(--tinta-3)}
+.e-out::before{background:var(--linea);box-shadow:inset 0 0 0 1px var(--tinta-3)}
+/* Todo lo pulsable responde al toque: en celular no hay hover */
+.btn-agregar,.btn-avisar,.btn-grande,.btn-suave,.paso-cant button,.cerrar,.chip{
+  transition:filter .16s var(--curva), transform .13s var(--curva),
+             background .16s var(--curva), color .16s var(--curva),
+             border-color .16s var(--curva), box-shadow .16s var(--curva);
+}
+.btn-agregar:active,.btn-avisar:active,.btn-grande:active,
+.btn-suave:active,.cerrar:active{transform:scale(.97)}
+.paso-cant button:active:not(:disabled){transform:scale(.9)}
+.chip:active{transform:scale(.95)}
+
+/* padding calculado para llegar a los 44px de área táctil mínima */
+.btn-agregar,.btn-avisar{
+  width:100%;padding:14px 0;border-radius:var(--radio-chico);
+  font-size:10.5px;font-weight:500;letter-spacing:.11em;text-transform:uppercase;
+}
+.btn-agregar{background:var(--tinta);color:#FFF}
+.btn-agregar:hover{background:var(--coral)}
+.btn-agregar:disabled{background:var(--linea-suave);color:var(--tinta-3);cursor:not-allowed}
+.btn-avisar{background:none;border:1px solid var(--linea);color:var(--tinta-2)}
+.btn-avisar:hover{border-color:var(--tinta);color:var(--tinta)}
+.paso-cant{
+  display:flex;align-items:center;justify-content:space-between;
+  border:1px solid var(--tinta);border-radius:var(--radio-chico);padding:3px;
+}
+.paso-cant button{
+  width:38px;height:38px;border-radius:var(--radio-chico);background:none;
+  font-size:15px;font-weight:500;color:var(--tinta);line-height:1;
+}
+.paso-cant button:hover:not(:disabled){background:var(--hueso)}
+.paso-cant button:disabled{opacity:.28;cursor:not-allowed}
+.paso-cant span{font-size:13px;font-weight:600;font-variant-numeric:tabular-nums}
+
+.vacio{
+  grid-column:1/-1;text-align:center;padding:56px 20px;color:var(--tinta-2);
+}
+.vacio strong{display:block;font-size:16px;color:var(--tinta);margin-bottom:8px;font-weight:500;letter-spacing:-.015em}
+
+/* ── barra inferior ─────────────────── */
+.barra-abajo{
+  position:fixed;left:0;right:0;bottom:0;z-index:var(--z-flotante);
+  padding:0;background:var(--papel);border-top:1px solid var(--linea);
+}
+.barra-abajo .interior{
+  max-width:1080px;margin:0 auto;
+  background:var(--coral);color:#FFF;border-radius:0;
+  padding:17px 20px calc(17px + env(safe-area-inset-bottom));
+  display:flex;align-items:center;justify-content:space-between;
+  gap:14px;width:100%;font-size:11.5px;font-weight:500;
+  letter-spacing:.11em;text-transform:uppercase;
+  transition:background .16s var(--curva);
+}
+.barra-abajo .interior:hover{background:#BE3B4D}
+.barra-abajo .interior span:last-child{font-variant-numeric:tabular-nums;letter-spacing:.04em}
+
+/* ── panel / hoja ───────────────────── */
+.velo{
+  position:fixed;inset:0;z-index:var(--z-hoja);background:rgba(15,15,15,.44);
+  display:flex;align-items:flex-end;justify-content:center;
+}
+@media(min-width:720px){.velo{align-items:center}}
+.hoja{
+  background:var(--papel);width:100%;max-width:520px;max-height:92vh;
+  border-radius:0;overflow-y:auto;-webkit-overflow-scrolling:touch;
+}
+@media(min-width:720px){.hoja{max-height:88vh}}
+.hoja-barra{
+  position:sticky;top:0;background:var(--papel);z-index:2;
+  display:flex;align-items:center;justify-content:space-between;
+  padding:20px 22px 16px;border-bottom:1px solid var(--linea);
+}
+.hoja-barra h2{
+  font-weight:500;font-size:11.5px;letter-spacing:.13em;text-transform:uppercase;
+  margin:0;color:var(--tinta);
+}
+.cerrar{
+  width:30px;height:30px;border-radius:var(--radio-chico);background:none;
+  display:flex;align-items:center;justify-content:center;color:var(--tinta-2);font-size:16px;
+}
+.cerrar:hover{background:var(--hueso);color:var(--tinta)}
+.hoja-cuerpo{padding:20px 22px 28px}
+
+/* ── carrito ────────────────────────── */
+.linea-carrito{
+  display:grid;grid-template-columns:56px 1fr auto;gap:12px;align-items:center;
+  padding:12px 0;border-bottom:1px solid var(--linea-suave);
+}
+.linea-carrito .mini{width:56px;height:56px;border-radius:10px;overflow:hidden;background:var(--linea-suave)}
+.linea-carrito .mini img{width:100%;height:100%;object-fit:cover}
+.linea-carrito .mini .sin-foto{font-size:11px}
+.lc-nombre{font-size:13px;font-weight:500;color:var(--tinta);line-height:1.35}
+.lc-precio{font-size:12.5px;color:var(--tinta-2);font-variant-numeric:tabular-nums;margin-top:2px}
+.lc-quitar{font-size:11.5px;color:var(--coral);text-decoration:underline;margin-top:3px}
+.lc-total{font-size:14px;font-weight:600;font-variant-numeric:tabular-nums;text-align:right;white-space:nowrap}
+
+/* ── formulario ─────────────────────── */
+.grupo{margin-bottom:18px}
+.grupo > legend, .rotulo{
+  font-size:10.5px;font-weight:500;color:var(--tinta-3);margin:0 0 11px;padding:0;display:block;
+  letter-spacing:.14em;text-transform:uppercase;
+}
+fieldset{border:0;padding:0;margin:0 0 18px}
+.opcion{
+  display:flex;align-items:flex-start;gap:12px;background:none;
+  border:1px solid var(--linea);border-radius:var(--radio-chico);
+  padding:14px 15px;margin-bottom:8px;cursor:pointer;
+  transition:border-color .16s var(--curva);
+}
+.opcion:hover{border-color:var(--tinta-3)}
+.opcion:has(input:checked){border-color:var(--tinta);box-shadow:inset 0 0 0 1px var(--tinta)}
+.opcion input{margin:2px 0 0;accent-color:var(--coral);width:16px;height:16px;flex:0 0 auto}
+.opcion .txt{flex:1;min-width:0}
+.opcion .t1{font-size:13.5px;font-weight:500;color:var(--tinta);line-height:1.35}
+.opcion .t2{font-size:11.5px;color:var(--tinta-3);line-height:1.45;margin-top:3px}
+.opcion .pr{font-size:13px;font-weight:500;color:var(--tinta);white-space:nowrap;font-variant-numeric:tabular-nums}
+
+.campos{display:grid;grid-template-columns:1fr 1fr;gap:11px}
+.campo{display:flex;flex-direction:column;gap:5px}
+.campo.ancho{grid-column:1/-1}
+.campo label{
+  font-family:"DM Mono",monospace;font-size:10px;letter-spacing:.09em;
+  text-transform:uppercase;color:var(--tinta-2);
+}
+.campo label .op{color:var(--tinta-3);text-transform:none;letter-spacing:0;font-family:"Poppins",sans-serif;font-size:10.5px}
+.campo input,.campo select,.campo textarea{
+  width:100%;padding:12px 13px;border-radius:var(--radio-chico);border:1px solid var(--linea);
+  background:var(--papel);font-weight:300;transition:border-color .16s var(--curva);
+}
+.campo input:focus,.campo select:focus,.campo textarea:focus{border-color:var(--tinta)}
+.campo textarea{resize:vertical;min-height:66px;line-height:1.5}
+.campo select{appearance:none;background-image:url("data:image/svg+xml;charset=utf-8,%3Csvg xmlns='http://www.w3.org/2000/svg' width='12' height='8' viewBox='0 0 12 8'%3E%3Cpath d='M1 1l5 5 5-5' stroke='%23B79C89' stroke-width='1.8' fill='none' stroke-linecap='round'/%3E%3C/svg%3E");background-repeat:no-repeat;background-position:right 14px center;padding-right:34px}
+.campo .error{font-size:11.5px;color:var(--coral);font-weight:500}
+.campo input[aria-invalid="true"],.campo select[aria-invalid="true"],.campo textarea[aria-invalid="true"]{border-color:var(--coral)}
+
+.resumen{border-top:1px dashed var(--linea);margin-top:18px;padding-top:14px}
+.r-fila{display:flex;justify-content:space-between;font-size:13.5px;color:var(--tinta-2);margin-bottom:6px;font-variant-numeric:tabular-nums;gap:12px}
+.r-fila.grande{font-size:16px;font-weight:500;color:var(--tinta);margin-top:12px;padding-top:13px;border-top:1px solid var(--linea);letter-spacing:-.01em}
+
+.aviso{
+  background:var(--hueso);border-left:2px solid var(--coral);
+  border-radius:0 var(--radio-chico) var(--radio-chico) 0;
+  padding:13px 15px;margin:18px 0 0;font-size:12.5px;line-height:1.6;color:var(--tinta-2);
+}
+.aviso b{font-weight:600;color:var(--tinta)}
+.nota-datos{font-size:11px;color:var(--tinta-3);line-height:1.5;margin:14px 0 0;text-align:center}
+
+.btn-grande{
+  width:100%;padding:17px 0;border-radius:var(--radio-chico);background:var(--tinta);color:#FFF;
+  font-size:11.5px;font-weight:500;letter-spacing:.13em;text-transform:uppercase;margin-top:18px;
+}
+.btn-grande:hover{background:var(--coral)}
+.btn-grande:disabled{opacity:.4;cursor:not-allowed}
+.btn-suave{
+  width:100%;padding:15px 0;border-radius:var(--radio-chico);background:none;
+  border:1px solid var(--linea);color:var(--tinta-2);
+  font-size:11.5px;font-weight:500;letter-spacing:.13em;text-transform:uppercase;margin-top:9px;
+}
+.btn-suave:hover{border-color:var(--tinta);color:var(--tinta)}
+
+/* ── confirmación ───────────────────── */
+.listo{text-align:center;padding:14px 0 4px}
+.marca-ok{
+  width:56px;height:56px;border-radius:50%;background:var(--hueso);
+  display:flex;align-items:center;justify-content:center;margin:0 auto 18px;
+}
+.listo h3{font-size:20px;font-weight:500;letter-spacing:-.02em;margin:0 0 6px;color:var(--tinta)}
+.listo .num{font-family:"DM Mono",monospace;font-size:11px;letter-spacing:.1em;color:var(--tinta-3);margin-bottom:26px}
+.pasos{text-align:left;display:flex;flex-direction:column;gap:14px;margin-bottom:6px}
+.paso{display:flex;gap:12px;align-items:flex-start}
+.paso i{
+  flex:0 0 21px;height:21px;border-radius:50%;background:var(--tinta);color:#FFF;
+  font-family:"DM Mono",monospace;font-size:10px;font-weight:400;font-style:normal;
+  display:flex;align-items:center;justify-content:center;margin-top:2px;
+}
+.paso p{margin:0;font-size:13px;line-height:1.55;color:var(--tinta-2)}
+.paso p b{color:var(--tinta);font-weight:600}
+
+/* ── pie / políticas ────────────────── */
+footer{border-top:1px solid var(--linea);margin-top:44px;padding:38px 0 20px}
+footer h2{
+  font-size:10.5px;font-weight:500;letter-spacing:.16em;text-transform:uppercase;
+  color:var(--tinta-3);margin:0 0 18px;
+}
+details{border-bottom:1px solid var(--linea-suave)}
+summary{
+  list-style:none;cursor:pointer;padding:15px 2px;display:flex;
+  align-items:center;justify-content:space-between;gap:12px;
+  font-size:13px;font-weight:400;color:var(--tinta);
+  transition:color .16s var(--curva);
+}
+summary:hover{color:var(--coral)}
+summary::-webkit-details-marker{display:none}
+summary::after{content:"+";font-size:15px;color:var(--tinta-3);font-weight:400;line-height:1}
+details[open] summary::after{content:"−"}
+.detalle{padding:0 2px 20px;font-size:13px;line-height:1.7;color:var(--tinta-2);max-width:62ch}
+.detalle p{margin:0 0 11px}
+.detalle p:last-child{margin-bottom:0}
+.detalle b{color:var(--tinta);font-weight:600}
+.detalle ol{margin:0;padding-left:19px}
+.detalle ol li{margin-bottom:7px}
+
+.pie-final{
+  text-align:center;padding:34px 0 12px;margin-top:26px;border-top:1px solid var(--linea);
+}
+.pie-final .nom{font-family:"Playfair Display",serif;font-size:16px;font-weight:600;color:var(--cafe);margin-bottom:10px}
+.pie-final .dat{font-family:"DM Mono",monospace;font-size:10.5px;color:var(--tinta-3);line-height:2.1;letter-spacing:.08em}
+.pie-final a{color:var(--tinta-2);text-decoration:none;border-bottom:1px solid var(--linea)}
+.pie-final a:hover{color:var(--coral);border-bottom-color:var(--coral)}
+
+/* ── varios ─────────────────────────── */
+/* Esqueleto: mismo esqueleto que la grilla real, no un spinner genérico */
+.hueso{background:none}
+.hueso .h-img{aspect-ratio:4/5;border-radius:var(--radio);margin-bottom:13px}
+.hueso .h-linea{height:8px;border-radius:2px;margin:0 0 7px}
+.hueso .h-linea.corta{width:44%}
+.hueso .h-linea.media{width:72%}
+.hueso .h-boton{height:37px;border-radius:var(--radio-chico);margin:13px 0 0}
+.h-img,.h-linea,.h-boton{
+  background:linear-gradient(100deg,#F0EEEA 30%,#F9F8F6 46%,#F0EEEA 62%);
+  background-size:340% 100%;animation:brillo 1.5s ease-in-out infinite;
+}
+@keyframes brillo{from{background-position:150% 0}to{background-position:-50% 0}}
+
+.banda-demo{
+  background:var(--durazno);color:#5C400C;text-align:center;
+  padding:9px 16px;font-size:11px;font-weight:500;line-height:1.5;letter-spacing:.02em;
+}
+.brindis{
+  position:fixed;left:50%;bottom:96px;transform:translateX(-50%) translateY(8px);
+  background:var(--tinta);color:#FFF;padding:12px 20px;border-radius:var(--radio-chico);
+  font-size:11.5px;font-weight:500;letter-spacing:.06em;z-index:var(--z-brindis);
+  opacity:0;transition:opacity .22s var(--curva),transform .22s var(--curva);
+  pointer-events:none;white-space:nowrap;
+  max-width:calc(100vw - 36px);overflow:hidden;text-overflow:ellipsis;
+}
+.brindis.ver{opacity:1;transform:translateX(-50%) translateY(0)}
+
+@media (prefers-reduced-motion:reduce){*{animation:none !important;transition:none !important}}
+</style>
+</head>
+<body>
+
+<a class="saltar" href="#grilla">Saltar al catálogo</a>
+
+<div id="bandaDemo" class="banda-demo oculto"></div>
+
+<div class="franja">Envíos a todo el país · Retiro gratis en Calle Blancos</div>
+
+<header>
+  <div class="wrap barra">
+    <div class="marca">Avellana Studio<small>Costa Rica</small></div>
+    <button class="btn-carrito" id="btnCarrito" type="button">
+      Carrito <span class="n" id="numCarrito">0</span>
+    </button>
+  </div>
+</header>
+
+<main class="wrap">
+  <section class="hero">
+    <p class="hero-eyebrow">Belleza que florece · Costa Rica</p>
+    <h1>Maquillaje y skincare, <em>traído para vos</em></h1>
+    <p>Elegí lo tuyo, confirmá el pedido y coordinamos por WhatsApp. Sin cuentas, sin pagar en línea.</p>
+  </section>
+
+  <div class="buscador">
+    <svg width="15" height="15" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2.2" stroke-linecap="round" aria-hidden="true"><circle cx="11" cy="11" r="7"/><path d="m20 20-3.6-3.6"/></svg>
+    <input type="search" id="buscar" placeholder="Buscar un producto o marca…" aria-label="Buscar productos">
+  </div>
+
+  <div class="filtros" id="filtros" role="group" aria-label="Filtrar por categoría"></div>
+
+  <div id="cargando" class="grilla" aria-busy="true" aria-label="Cargando el catálogo">
+    <div class="hueso"><div class="h-img"></div><div class="h-linea corta"></div><div class="h-linea media"></div><div class="h-linea corta"></div><div class="h-boton"></div></div>
+    <div class="hueso"><div class="h-img"></div><div class="h-linea corta"></div><div class="h-linea media"></div><div class="h-linea corta"></div><div class="h-boton"></div></div>
+    <div class="hueso"><div class="h-img"></div><div class="h-linea corta"></div><div class="h-linea media"></div><div class="h-linea corta"></div><div class="h-boton"></div></div>
+    <div class="hueso"><div class="h-img"></div><div class="h-linea corta"></div><div class="h-linea media"></div><div class="h-linea corta"></div><div class="h-boton"></div></div>
+  </div>
+
+  <div class="grilla oculto" id="grilla" tabindex="-1"></div>
+</main>
+
+<footer>
+  <div class="wrap">
+    <h2>Información</h2>
+
+    <details>
+      <summary>Cómo comprar</summary>
+      <div class="detalle">
+        <ol>
+          <li>Elegí tus productos y agregalos al carrito.</li>
+          <li>Confirmá el pedido con tu nombre y WhatsApp. <b>Todavía no pagás nada.</b></li>
+          <li>Te escribimos por WhatsApp cuando el pedido esté armado, con el monto final.</li>
+          <li>Pagás por SINPE Móvil y nos mandás el comprobante.</li>
+          <li>Coordinamos la entrega o el envío.</li>
+        </ol>
+      </div>
+    </details>
+
+    <details>
+      <summary>Formas de pago</summary>
+      <div class="detalle">
+        <p>Recibimos <b>SINPE Móvil</b> únicamente.</p>
+        <p>El número para el SINPE te lo pasamos por WhatsApp cuando confirmemos tu pedido. <b>Nunca lo pedimos ni lo mostramos en esta página</b>, y tampoco te vamos a pedir datos de tarjeta ni de cuenta bancaria por acá.</p>
+      </div>
+    </details>
+
+    <details>
+      <summary>Envíos y entregas</summary>
+      <div class="detalle">
+        <p><b>Retiro en nuestro punto — gratis.</b> <span id="pieRetiro"></span> Coordinamos día y hora por WhatsApp.</p>
+        <p><b>Correos de Costa Rica.</b> ₡3.000 dentro del Gran Área Metropolitana y ₡3.500 fuera del GAM. Entrega estimada de 2 a 3 días hábiles. Te pasamos el número de guía apenas lo despachamos.</p>
+        <p><b>Mensajería exprés.</b> El costo varía según tu ubicación, así que lo cotizamos y te lo confirmamos por WhatsApp junto con el total.</p>
+        <p>El envío se despacha una vez confirmado el pago.</p>
+      </div>
+    </details>
+
+    <details>
+      <summary>Pedidos por encargo</summary>
+      <div class="detalle">
+        <p>Algunos productos los traemos por encargo desde Estados Unidos. Si lo que buscás no aparece en el catálogo o está agotado, pedilo por encargo y te decimos si podemos conseguirlo, cuánto costaría y en cuánto tiempo llega.</p>
+        <p>Los encargos tardan de <span id="pieEncargoDias"></span> días hábiles en llegar y piden un adelanto del <span id="pieEncargoPct"></span>%. Todo se confirma por WhatsApp antes de que pagués nada.</p>
+        <button class="btn-suave" type="button" style="margin-top:4px" data-encargo="">Pedir algo por encargo</button>
+      </div>
+    </details>
+
+    <details>
+      <summary>Cambios y devoluciones</summary>
+      <div class="detalle">
+        <p><b>No hacemos cambios ni devoluciones</b> de productos ya comprados y entregados. Por el tipo de producto que manejamos, una vez que el pedido sale de nuestras manos no podemos recibirlo de vuelta.</p>
+        <p>La única excepción es un <b>defecto de fábrica</b>. Si el producto viene fallado, escribinos por WhatsApp con fotos <b>dentro del día siguiente a haberlo recibido</b> y lo valoramos para cambio.</p>
+      </div>
+    </details>
+
+    <details>
+      <summary>Tus datos</summary>
+      <div class="detalle">
+        <p><b>No guardamos nada hasta que confirmés tu pedido.</b> Mientras ves productos y armás tu carrito no se registra nada en ningún lado — el carrito vive solo en tu teléfono.</p>
+        <p>Al confirmar pedimos únicamente tu nombre, tu WhatsApp y —solo si elegís envío— tu dirección. El correo electrónico es opcional. <b>Usamos estos datos únicamente para coordinar y entregar tu pedido.</b></p>
+        <p>No hay cuentas ni contraseñas. No usamos cookies de rastreo ni publicidad. No compartimos tu información con nadie, y no te vamos a escribir para venderte nada que no hayás pedido.</p>
+      </div>
+    </details>
+
+    <div class="pie-final">
+      <div class="nom">Avellana Studio</div>
+      <div class="dat">
+        <a href="https://instagram.com/avellana.sstudio" target="_blank" rel="noopener">@avellana.sstudio</a><br>
+        <span id="pieWhats"></span><br>
+        Calle Blancos, San José
+      </div>
+    </div>
+  </div>
+</footer>
+
+<div class="barra-abajo oculto" id="barraAbajo">
+  <button class="interior" id="btnVerCarrito" type="button">
+    <span id="barraTexto">Ver carrito</span>
+    <span id="barraTotal">₡0</span>
+  </button>
+</div>
+
+<div class="velo oculto" id="velo" role="dialog" aria-modal="true" aria-labelledby="hojaTitulo">
+  <div class="hoja">
+    <div class="hoja-barra">
+      <h2 id="hojaTitulo">Tu carrito</h2>
+      <button class="cerrar" id="btnCerrar" type="button" aria-label="Cerrar">✕</button>
+    </div>
+    <div class="hoja-cuerpo" id="hojaCuerpo"></div>
+  </div>
+</div>
+
+<div class="brindis" id="brindis" role="status" aria-live="polite"></div>
+
+<script>
+/* ══════════════════════════════════════════════════════════════
+   ESTADO
+   ══════════════════════════════════════════════════════════════ */
+const LLAVE_CARRITO = 'avellana_carrito_v1';
+let PRODUCTOS = [];
+let CARRITO   = cargarCarrito();
+let CATEGORIA = 'Todo';
+let BUSQUEDA  = '';
+let MODO_DEMO = false;
+let ENVIANDO  = false;
+
+const $  = (s) => document.querySelector(s);
+const $$ = (s) => Array.from(document.querySelectorAll(s));
+
+/* ── utilidades ─────────────────────── */
+// Formato tico: punto para los miles (₡14.500). No usamos toLocaleString
+// porque el navegador mete un espacio fino en vez del punto.
+const colones = (n) =>
+  '₡' + String(Math.round(Number(n) || 0)).replace(/\B(?=(\d{3})+(?!\d))/g, '.');
+
+function esc(t){
+  return String(t == null ? '' : t)
+    .replace(/&/g,'&amp;').replace(/</g,'&lt;').replace(/>/g,'&gt;')
+    .replace(/"/g,'&quot;').replace(/'/g,'&#39;');
+}
+
+function cargarCarrito(){
+  try { return JSON.parse(localStorage.getItem(LLAVE_CARRITO)) || {}; }
+  catch { return {}; }
+}
+function guardarCarrito(){
+  try { localStorage.setItem(LLAVE_CARRITO, JSON.stringify(CARRITO)); } catch {}
+}
+
+let brindisTimer;
+function brindis(msg){
+  const b = $('#brindis');
+  b.textContent = msg;
+  b.classList.add('ver');
+  clearTimeout(brindisTimer);
+  brindisTimer = setTimeout(() => b.classList.remove('ver'), 2300);
+}
+
+/* ── visibilidad ────────────────────── */
+// Debe coincidir con estaPublicado() del dashboard. Sin valor = visible,
+// para que los productos viejos no desaparezcan al estrenar la columna.
+function estaPublicado(p){
+  const v = String(p.publicado ?? '').trim().toLowerCase();
+  if (v === '') return true;
+  return !['no','false','0','oculto'].includes(v);
+}
+
+/* ── estado de stock ────────────────── */
+function estadoStock(p){
+  const s = Number(p.stock) || 0;
+  if (s <= 0) return { clase:'e-out',   texto:'Agotado',            hay:false };
+  if (s <= CONFIG.POCAS_UNIDADES) return { clase:'e-pocas', texto:'Pocas unidades', hay:true };
+  return { clase:'e-ok', texto:'Disponible', hay:true };
+}
+
+/* ══════════════════════════════════════════════════════════════
+   CARGA DEL CATÁLOGO
+   ══════════════════════════════════════════════════════════════ */
+async function cargarCatalogo(){
+  try {
+    const r = await fetch(CONFIG.API + '?accion=catalogo', { method:'GET' });
+    const d = await r.json();
+    if (!d || !d.ok || !Array.isArray(d.productos)) throw new Error('sin datos');
+    // El backend ya filtra por "publicado", pero se vuelve a filtrar aquí:
+    // si alguien apaga un producto, no aparece ni por accidente.
+    PRODUCTOS = d.productos.filter(estaPublicado);
+    if (!PRODUCTOS.length) throw new Error('catálogo vacío');
+  } catch (e) {
+    MODO_DEMO = true;
+    PRODUCTOS = DEMO.slice();
+    const banda = $('#bandaDemo');
+    banda.textContent = 'Vista de prueba — el catálogo todavía no está conectado a la Sheet. Los productos que ves son de ejemplo.';
+    banda.classList.remove('oculto');
+  }
+  limpiarCarritoFantasma();
+  pintarFiltros();
+  $('#cargando').classList.add('oculto');
+  $('#grilla').classList.remove('oculto');
+  pintarGrilla();
+  actualizarBarra();
+}
+
+// Quita del carrito productos que ya no existen o quedaron sin stock
+function limpiarCarritoFantasma(){
+  let cambio = false;
+  Object.keys(CARRITO).forEach(id => {
+    const p = PRODUCTOS.find(x => String(x.id) === String(id));
+    if (!p || (Number(p.stock) || 0) <= 0){ delete CARRITO[id]; cambio = true; return; }
+    const tope = Math.min(CONFIG.MAX_POR_PRODUCTO, Number(p.stock) || 0);
+    if (CARRITO[id] > tope){ CARRITO[id] = tope; cambio = true; }
+  });
+  if (cambio) guardarCarrito();
+}
+
+/* ══════════════════════════════════════════════════════════════
+   CATÁLOGO
+   ══════════════════════════════════════════════════════════════ */
+function pintarFiltros(){
+  const cats = ['Todo', ...new Set(PRODUCTOS.map(p => p.categoria).filter(Boolean))];
+  $('#filtros').innerHTML = cats.map(c =>
+    `<button class="chip" type="button" data-cat="${esc(c)}" aria-pressed="${c === CATEGORIA}">${esc(c)}</button>`
+  ).join('');
+}
+
+function productosVisibles(){
+  const q = BUSQUEDA.trim().toLowerCase();
+  return PRODUCTOS.filter(p => {
+    if (CATEGORIA !== 'Todo' && p.categoria !== CATEGORIA) return false;
+    if (!q) return true;
+    return [p.nombre, p.marca, p.categoria, p.tono, p.descripcion]
+      .filter(Boolean).join(' ').toLowerCase().includes(q);
+  });
+}
+
+// Ramita de avellana para los productos que todavía no tienen foto
+const MARCA_SIN_FOTO = `<svg width="26" height="26" viewBox="0 0 24 24" fill="none" aria-hidden="true">
+  <path d="M12 21c-4-2.2-7-5.6-7-9.6A7 7 0 0 1 19 11.4c0 4-3 7.4-7 9.6Z" fill="currentColor" opacity=".45"/>
+  <circle cx="12" cy="3.6" r="2" fill="currentColor" opacity=".7"/></svg>`;
+
+function tarjetaFoto(p){
+  if (p.foto){
+    const alt = [p.marca, p.nombre, p.tono && ('tono ' + p.tono)].filter(Boolean).join(' — ');
+    return `<img src="${esc(p.foto)}" alt="${esc(alt)}" loading="lazy" decoding="async">`;
+  }
+  return `<div class="sin-foto" role="img" aria-label="${esc(p.nombre)} — foto pendiente">
+    ${MARCA_SIN_FOTO}<span>${esc(p.marca || 'Avellana')}</span></div>`;
+}
+
+function pintarGrilla(){
+  const lista = productosVisibles();
+  const g = $('#grilla');
+
+  if (!lista.length){
+    g.innerHTML = `<div class="vacio"><strong>No encontramos nada</strong>
+      Probá con otra palabra, o pedilo por encargo y te decimos si podemos conseguirlo.
+      <button class="btn-suave" type="button" style="margin-top:14px" data-encargo="${esc(BUSQUEDA.trim())}">Pedirlo por encargo</button>
+    </div>`;
+    return;
+  }
+
+  g.innerHTML = lista.map((p, i) => {
+    const est  = estadoStock(p);
+    const enCarrito = CARRITO[p.id] || 0;
+    const tope = Math.min(CONFIG.MAX_POR_PRODUCTO, Number(p.stock) || 0);
+
+    let control;
+    if (!est.hay){
+      control = `<button class="btn-avisar" type="button" data-avisar="${esc(p.id)}">Avisarme</button>`;
+    } else if (enCarrito > 0){
+      control = `<div class="paso-cant">
+          <button type="button" data-menos="${esc(p.id)}" aria-label="Quitar una unidad">−</button>
+          <span>${enCarrito}</span>
+          <button type="button" data-mas="${esc(p.id)}" aria-label="Agregar una unidad" ${enCarrito >= tope ? 'disabled' : ''}>+</button>
+        </div>`;
+    } else {
+      control = `<button class="btn-agregar" type="button" data-agregar="${esc(p.id)}">Agregar</button>`;
+    }
+
+    return `<article class="prod ${est.hay ? '' : 'agotado'}" style="--i:${i}">
+      <div class="prod-img">${tarjetaFoto(p)}</div>
+      <div class="prod-cuerpo">
+        ${p.marca ? `<div class="prod-marca">${esc(p.marca)}</div>` : ''}
+        <div class="prod-nombre">${esc(p.nombre)}</div>
+        ${p.tono ? `<div class="prod-tono">Tono ${esc(p.tono)}</div>` : ''}
+        <div class="prod-precio">${colones(p.precioVenta)}</div>
+        <span class="etiqueta ${est.clase}">${est.texto}</span>
+        ${control}
+      </div>
+    </article>`;
+  }).join('');
+}
+
+/* ── carrito: operaciones ───────────── */
+function agregar(id, n = 1){
+  const p = PRODUCTOS.find(x => String(x.id) === String(id));
+  if (!p) return;
+  const tope = Math.min(CONFIG.MAX_POR_PRODUCTO, Number(p.stock) || 0);
+  const actual = CARRITO[id] || 0;
+  const nuevo = Math.max(0, Math.min(tope, actual + n));
+
+  if (n > 0 && nuevo === actual){
+    brindis(actual >= CONFIG.MAX_POR_PRODUCTO
+      ? `Máximo ${CONFIG.MAX_POR_PRODUCTO} por pedido`
+      : 'No queda más de este producto');
+    return;
+  }
+
+  if (nuevo === 0) delete CARRITO[id]; else CARRITO[id] = nuevo;
+  guardarCarrito();
+  pintarGrilla();
+  actualizarBarra();
+  if (n > 0 && actual === 0) brindis('Agregado al carrito');
+}
+
+function totalUnidades(){
+  return Object.values(CARRITO).reduce((a, b) => a + b, 0);
+}
+function subtotal(){
+  return Object.entries(CARRITO).reduce((a, [id, n]) => {
+    const p = PRODUCTOS.find(x => String(x.id) === String(id));
+    return a + (p ? (Number(p.precioVenta) || 0) * n : 0);
+  }, 0);
+}
+function lineasCarrito(){
+  return Object.entries(CARRITO).map(([id, n]) => {
+    const p = PRODUCTOS.find(x => String(x.id) === String(id));
+    return p ? { p, n } : null;
+  }).filter(Boolean);
+}
+
+function actualizarBarra(){
+  const u = totalUnidades();
+  $('#numCarrito').textContent = u;
+  const barra = $('#barraAbajo');
+  if (!u){ barra.classList.add('oculto'); return; }
+  barra.classList.remove('oculto');
+  $('#barraTexto').textContent  = `Ver carrito · ${u} ${u === 1 ? 'producto' : 'productos'}`;
+  $('#barraTotal').textContent  = colones(subtotal());
+}
+
+/* ══════════════════════════════════════════════════════════════
+   HOJA (carrito → checkout → confirmación)
+   ══════════════════════════════════════════════════════════════ */
+function abrirHoja(titulo, html){
+  $('#hojaTitulo').textContent = titulo;
+  $('#hojaCuerpo').innerHTML = html;
+  $('#velo').classList.remove('oculto');
+  document.body.style.overflow = 'hidden';
+  $('.hoja').scrollTop = 0;
+}
+function cerrarHoja(){
+  $('#velo').classList.add('oculto');
+  document.body.style.overflow = '';
+}
+
+function verCarrito(){
+  const lineas = lineasCarrito();
+  if (!lineas.length){
+    abrirHoja('Tu carrito', `<div class="vacio"><strong>Tu carrito está vacío</strong>Agregá productos del catálogo para hacer tu pedido.</div>`);
+    return;
+  }
+  const html = `
+    ${lineas.map(({p, n}) => `
+      <div class="linea-carrito">
+        <div class="mini">${tarjetaFoto(p)}</div>
+        <div>
+          <div class="lc-nombre">${esc(p.nombre)}</div>
+          <div class="lc-precio">${n} × ${colones(p.precioVenta)}</div>
+          <button class="lc-quitar" type="button" data-quitar="${esc(p.id)}">Quitar</button>
+        </div>
+        <div class="lc-total">${colones((Number(p.precioVenta) || 0) * n)}</div>
+      </div>`).join('')}
+    <div class="resumen">
+      <div class="r-fila"><span>Productos</span><span>${colones(subtotal())}</span></div>
+      <div class="r-fila"><span>Envío</span><span>Se calcula en el siguiente paso</span></div>
+    </div>
+    <button class="btn-grande" type="button" id="irCheckout">Continuar</button>
+    <button class="btn-suave" type="button" id="seguirComprando">Seguir viendo productos</button>`;
+  abrirHoja('Tu carrito', html);
+}
+
+function verCheckout(){
+  const provincias = Object.keys(CANTONES);
+  const html = `
+    <form id="formPedido" novalidate>
+      <fieldset>
+        <legend class="rotulo">¿Cómo lo querés recibir?</legend>
+
+        <label class="opcion">
+          <input type="radio" name="entrega" value="retiro" checked>
+          <span class="txt">
+            <span class="t1">Retiro en nuestro punto</span>
+            <span class="t2">${esc(CONFIG.RETIRO)}</span>
+          </span>
+          <span class="pr">Gratis</span>
+        </label>
+
+        <label class="opcion">
+          <input type="radio" name="entrega" value="correos">
+          <span class="txt">
+            <span class="t1">Correos de Costa Rica</span>
+            <span class="t2">Entrega de 2 a 3 días hábiles, con número de guía</span>
+          </span>
+          <span class="pr" id="prCorreos">${colones(CONFIG.ENVIO_GAM)}</span>
+        </label>
+
+        <label class="opcion">
+          <input type="radio" name="entrega" value="expres">
+          <span class="txt">
+            <span class="t1">Mensajería exprés</span>
+            <span class="t2">El costo depende de tu ubicación — te lo cotizamos por WhatsApp</span>
+          </span>
+          <span class="pr">A confirmar</span>
+        </label>
+      </fieldset>
+
+      <div id="bloqueDireccion" class="grupo oculto">
+        <span class="rotulo">¿A dónde lo enviamos?</span>
+        <div class="campos">
+          <div class="campo">
+            <label for="provincia">Provincia</label>
+            <select id="provincia" name="provincia">
+              <option value="">Elegí…</option>
+              ${provincias.map(p => `<option value="${esc(p)}">${esc(p)}</option>`).join('')}
+            </select>
+            <span class="error oculto" data-error="provincia">Elegí tu provincia</span>
+          </div>
+          <div class="campo">
+            <label for="canton">Cantón</label>
+            <select id="canton" name="canton" disabled>
+              <option value="">Elegí la provincia primero</option>
+            </select>
+            <span class="error oculto" data-error="canton">Elegí tu cantón</span>
+          </div>
+          <div class="campo ancho">
+            <label for="distrito">Distrito</label>
+            <input type="text" id="distrito" name="distrito" autocomplete="address-level3" placeholder="Ej. San Rafael Arriba">
+            <span class="error oculto" data-error="distrito">Escribí tu distrito</span>
+          </div>
+          <div class="campo ancho">
+            <label for="direccion">Dirección exacta y señas</label>
+            <textarea id="direccion" name="direccion" autocomplete="street-address" placeholder="Las señas que necesita quien entrega para llegar"></textarea>
+            <span class="error oculto" data-error="direccion">Escribí tu dirección y señas</span>
+          </div>
+        </div>
+      </div>
+
+      <div class="grupo">
+        <span class="rotulo">¿Cómo te contactamos?</span>
+        <div class="campos">
+          <div class="campo ancho">
+            <label for="nombre">Tu nombre</label>
+            <input type="text" id="nombre" name="nombre" autocomplete="name" placeholder="Nombre y apellido">
+            <span class="error oculto" data-error="nombre">Escribí tu nombre</span>
+          </div>
+          <div class="campo ancho">
+            <label for="telefono">WhatsApp</label>
+            <input type="tel" id="telefono" name="telefono" inputmode="numeric" autocomplete="tel" placeholder="8888 8888">
+            <span class="error oculto" data-error="telefono">Escribí un número de 8 dígitos</span>
+          </div>
+          <div class="campo ancho">
+            <label for="correo">Correo <span class="op">— opcional</span></label>
+            <input type="email" id="correo" name="correo" autocomplete="email" placeholder="Solo si querés copia por correo">
+            <span class="error oculto" data-error="correo">Revisá el correo, parece incompleto</span>
+          </div>
+        </div>
+      </div>
+
+      <div class="resumen">
+        <div class="r-fila"><span>Productos (${totalUnidades()})</span><span>${colones(subtotal())}</span></div>
+        <div class="r-fila"><span id="etiquetaEnvio">Envío</span><span id="montoEnvio">Gratis</span></div>
+        <div class="r-fila grande"><span>Total</span><span id="montoTotal">${colones(subtotal())}</span></div>
+      </div>
+
+      <div class="aviso">
+        <b>Acá no se paga nada.</b> Armamos tu pedido, te escribimos por WhatsApp
+        desde el ${esc(CONFIG.WHATSAPP_VISIBLE)} para confirmar el total, y ahí coordinamos el SINPE Móvil.
+      </div>
+
+      <button class="btn-grande" type="submit" id="btnConfirmar">Confirmar pedido</button>
+      <p class="nota-datos">Usamos estos datos únicamente para coordinar y entregar tu pedido.</p>
+    </form>`;
+  abrirHoja('Tu pedido', html);
+  prepararFormulario();
+}
+
+/* ── lógica del formulario ──────────── */
+function envioActual(){
+  const modo = document.querySelector('input[name="entrega"]:checked')?.value || 'retiro';
+  if (modo === 'retiro') return { modo, monto:0, etiqueta:'Envío', texto:'Gratis' };
+  if (modo === 'expres') return { modo, monto:0, etiqueta:'Mensajería exprés', texto:'A confirmar' };
+  const canton = $('#canton')?.value || '';
+  if (!canton) return { modo, monto:CONFIG.ENVIO_GAM, etiqueta:'Envío por Correos', texto:'Elegí tu cantón' , indefinido:true };
+  const dentro = GAM.has(canton);
+  return {
+    modo, monto: dentro ? CONFIG.ENVIO_GAM : CONFIG.ENVIO_FUERA,
+    etiqueta: dentro ? 'Envío · dentro del GAM' : 'Envío · fuera del GAM',
+    texto: colones(dentro ? CONFIG.ENVIO_GAM : CONFIG.ENVIO_FUERA),
+    dentroGAM: dentro
+  };
+}
+
+function refrescarTotales(){
+  const e = envioActual();
+  $('#etiquetaEnvio').textContent = e.etiqueta;
+  $('#montoEnvio').textContent    = e.texto;
+  $('#montoTotal').textContent    = colones(subtotal() + (e.indefinido ? 0 : e.monto));
+  const pide = e.modo === 'correos' || e.modo === 'expres';
+  $('#bloqueDireccion').classList.toggle('oculto', !pide);
+}
+
+function prepararFormulario(){
+  $$('input[name="entrega"]').forEach(r => r.addEventListener('change', refrescarTotales));
+
+  $('#provincia').addEventListener('change', (ev) => {
+    const lista = CANTONES[ev.target.value] || [];
+    const sel = $('#canton');
+    sel.disabled = !lista.length;
+    sel.innerHTML = lista.length
+      ? `<option value="">Elegí…</option>` + lista.map(c => `<option value="${esc(c)}">${esc(c)}</option>`).join('')
+      : `<option value="">Elegí la provincia primero</option>`;
+    refrescarTotales();
+  });
+
+  $('#canton').addEventListener('change', refrescarTotales);
+  $('#formPedido').addEventListener('submit', enviarPedido);
+  refrescarTotales();
+}
+
+function marcarError(id, hay, mensaje){
+  const campo = $('#' + id);
+  const err = document.querySelector(`[data-error="${id}"]`);
+  if (!campo || !err) return;
+  campo.setAttribute('aria-invalid', hay ? 'true' : 'false');
+  err.classList.toggle('oculto', !hay);
+  if (hay && mensaje) err.textContent = mensaje;
+}
+
+function validar(){
+  const e = envioActual();
+  const fallos = [];
+
+  const nombre = $('#nombre').value.trim();
+  marcarError('nombre', nombre.length < 2);
+  if (nombre.length < 2) fallos.push('nombre');
+
+  const tel = $('#telefono').value.replace(/\D/g, '');
+  const telOk = tel.length === 8;
+  marcarError('telefono', !telOk);
+  if (!telOk) fallos.push('telefono');
+
+  const correo = $('#correo').value.trim();
+  const correoOk = !correo || /^[^\s@]+@[^\s@]+\.[^\s@]{2,}$/.test(correo);
+  marcarError('correo', !correoOk);
+  if (!correoOk) fallos.push('correo');
+
+  if (e.modo === 'correos' || e.modo === 'expres'){
+    const prov = $('#provincia').value;
+    const cant = $('#canton').value;
+    const dist = $('#distrito').value.trim();
+    const dir  = $('#direccion').value.trim();
+    marcarError('provincia', !prov);  if (!prov) fallos.push('provincia');
+    marcarError('canton',    !cant);  if (!cant) fallos.push('canton');
+    marcarError('distrito',  !dist);  if (!dist) fallos.push('distrito');
+    marcarError('direccion', dir.length < 8, 'Escribí las señas con un poco más de detalle');
+    if (dir.length < 8) fallos.push('direccion');
+  }
+
+  if (fallos.length){
+    const primero = $('#' + fallos[0]);
+    primero?.scrollIntoView({ behavior:'smooth', block:'center' });
+    primero?.focus({ preventScroll:true });
+  }
+  return !fallos.length;
+}
+
+function armarPedido(){
+  const e = envioActual();
+  const items = lineasCarrito().map(({p, n}) => ({
+    id: p.id, nombre: p.nombre, marca: p.marca || '', tono: p.tono || '',
+    cantidad: n, precioUnitario: Number(p.precioVenta) || 0,
+    subtotal: (Number(p.precioVenta) || 0) * n
+  }));
+  const envio = e.indefinido ? 0 : e.monto;
+
+  return {
+    entrega: e.modo,
+    entregaTexto: e.modo === 'retiro' ? 'Retiro en el punto'
+                : e.modo === 'expres' ? 'Mensajería exprés (a cotizar)'
+                : (e.dentroGAM ? 'Correos · dentro del GAM' : 'Correos · fuera del GAM'),
+    nombre:    $('#nombre').value.trim(),
+    telefono:  $('#telefono').value.replace(/\D/g, ''),
+    correo:    $('#correo').value.trim(),
+    provincia: $('#provincia')?.value || '',
+    canton:    $('#canton')?.value || '',
+    distrito:  $('#distrito')?.value.trim() || '',
+    direccion: $('#direccion')?.value.trim() || '',
+    items,
+    subtotal: subtotal(),
+    envio,
+    total: subtotal() + envio
+  };
+}
+
+async function enviarPedido(ev){
+  ev.preventDefault();
+  if (ENVIANDO) return;
+  if (!validar()) return;
+
+  const btn = $('#btnConfirmar');
+  ENVIANDO = true;
+  btn.disabled = true;
+  btn.textContent = 'Enviando tu pedido…';
+
+  const pedido = armarPedido();
+  let numero = null;
+
+  if (!MODO_DEMO){
+    try {
+      const r = await fetch(CONFIG.API, {
+        method:'POST',
+        headers:{ 'Content-Type':'text/plain;charset=utf-8' },
+        body: JSON.stringify({ accion:'crear_pedido', pedido })
+      });
+      const d = await r.json();
+      if (!d || !d.ok) throw new Error(d && d.error ? d.error : 'no se pudo guardar');
+      numero = d.numero || null;
+    } catch (err) {
+      ENVIANDO = false;
+      btn.disabled = false;
+      btn.textContent = 'Confirmar pedido';
+      brindis('No se pudo enviar. Probá de nuevo o escribinos por WhatsApp.');
+      return;
+    }
+  }
+
+  if (!numero) numero = 'AV-' + String(Date.now()).slice(-4);
+
+  CARRITO = {};
+  guardarCarrito();
+  pintarGrilla();
+  actualizarBarra();
+  ENVIANDO = false;
+  verConfirmacion(numero, pedido);
+}
+
+function verConfirmacion(numero, pedido){
+  const fecha = new Date().toLocaleDateString('es-CR', { day:'numeric', month:'long', year:'numeric' });
+  const texto = encodeURIComponent(`¡Hola! Acabo de hacer el pedido ${numero} en la tienda 💛`);
+  const html = `
+    <div class="listo">
+      <div class="marca-ok">
+        <svg width="30" height="30" viewBox="0 0 24 24" fill="none" stroke="#3F7A57" stroke-width="2.4" stroke-linecap="round" stroke-linejoin="round" aria-hidden="true"><polyline points="4 12.5 9.5 18 20 6.5"/></svg>
+      </div>
+      <h3>Pedido recibido</h3>
+      <div class="num">${esc(numero)} · ${esc(fecha)}</div>
+
+      <div class="pasos">
+        <div class="paso"><i>1</i><p><b>Lo armamos.</b> Revisamos que todo esté en stock.</p></div>
+        <div class="paso"><i>2</i><p><b>Te escribimos</b> por WhatsApp desde el ${esc(CONFIG.WHATSAPP_VISIBLE)} para confirmar el total${pedido.entrega === 'expres' ? ' y cotizarte la mensajería' : ''}.</p></div>
+        <div class="paso"><i>3</i><p><b>Pagás por SINPE Móvil</b> y nos mandás el comprobante.</p></div>
+        <div class="paso"><i>4</i><p><b>${pedido.entrega === 'retiro' ? 'Coordinamos el retiro' : 'Lo enviamos'}</b>${pedido.entrega === 'correos' ? ' y te pasamos el número de guía' : ''}.</p></div>
+      </div>
+
+      <div class="resumen">
+        <div class="r-fila"><span>Productos</span><span>${colones(pedido.subtotal)}</span></div>
+        <div class="r-fila"><span>${esc(pedido.entregaTexto)}</span><span>${pedido.entrega === 'expres' ? 'A confirmar' : (pedido.envio ? colones(pedido.envio) : 'Gratis')}</span></div>
+        <div class="r-fila grande"><span>Total${pedido.entrega === 'expres' ? ' parcial' : ''}</span><span>${colones(pedido.total)}</span></div>
+      </div>
+
+      ${MODO_DEMO ? `<div class="aviso"><b>Vista de prueba.</b> Este pedido no se guardó en ningún lado — la tienda todavía no está conectada.</div>` : ''}
+
+      <a class="btn-grande" style="display:block;text-align:center;text-decoration:none"
+         href="https://wa.me/${esc(CONFIG.WHATSAPP)}?text=${texto}" target="_blank" rel="noopener">Escribirnos por WhatsApp</a>
+      <button class="btn-suave" type="button" id="seguirComprando">Volver a la tienda</button>
+    </div>`;
+  abrirHoja('Pedido confirmado', html);
+}
+
+/* ── avisarme cuando llegue ─────────── */
+function verAviso(id){
+  const p = PRODUCTOS.find(x => String(x.id) === String(id));
+  if (!p) return;
+  const html = `
+    <p style="margin:0 0 16px;font-size:14px;color:var(--tinta-2);line-height:1.6">
+      Dejanos tu contacto y te escribimos apenas <b style="color:var(--tinta);font-weight:600">${esc(p.nombre)}</b> vuelva a estar disponible.
+      No te vamos a escribir por nada más.
+    </p>
+    <form id="formAviso" novalidate>
+      <div class="campos">
+        <div class="campo ancho">
+          <label for="avNombre">Tu nombre</label>
+          <input type="text" id="avNombre" autocomplete="name" placeholder="Nombre y apellido">
+          <span class="error oculto" data-error="avNombre">Escribí tu nombre</span>
+        </div>
+        <div class="campo ancho">
+          <label for="avTel">WhatsApp</label>
+          <input type="tel" id="avTel" inputmode="numeric" autocomplete="tel" placeholder="8888 8888">
+          <span class="error oculto" data-error="avTel">Escribí un número de 8 dígitos</span>
+        </div>
+      </div>
+      <button class="btn-grande" type="submit" id="btnAviso">Avisarme cuando llegue</button>
+      <p class="nota-datos">Solo lo usamos para avisarte de este producto.</p>
+    </form>`;
+  abrirHoja('Avisame cuando llegue', html);
+
+  $('#formAviso').addEventListener('submit', async (ev) => {
+    ev.preventDefault();
+    const nombre = $('#avNombre').value.trim();
+    const tel = $('#avTel').value.replace(/\D/g, '');
+    marcarError('avNombre', nombre.length < 2);
+    marcarError('avTel', tel.length !== 8);
+    if (nombre.length < 2 || tel.length !== 8) return;
+
+    const btn = $('#btnAviso');
+    btn.disabled = true;
+    btn.textContent = 'Guardando…';
+
+    if (!MODO_DEMO){
+      try {
+        await fetch(CONFIG.API, {
+          method:'POST',
+          headers:{ 'Content-Type':'text/plain;charset=utf-8' },
+          body: JSON.stringify({
+            accion:'crear_solicitud',
+            solicitud:{ productoId:p.id, producto:p.nombre, nombre, telefono:tel, tipo:'restock' }
+          })
+        });
+      } catch {}
+    }
+    cerrarHoja();
+    brindis('Listo, te avisamos cuando llegue 💛');
+  });
+}
+
+/* ── pedir algo por encargo (no está en el catálogo) ───────── */
+function verEncargo(prefill){
+  const html = `
+    <p style="margin:0 0 16px;font-size:14px;color:var(--tinta-2);line-height:1.6">
+      Contanos qué producto querés que te consigamos (marca, nombre, tono — mientras más detalle, mejor)
+      y te escribimos por WhatsApp para confirmar precio y tiempo de entrega antes de pedirte nada.
+    </p>
+    <form id="formEncargo" novalidate>
+      <div class="campos">
+        <div class="campo ancho">
+          <label for="enProducto">Qué querés que te traigamos</label>
+          <input type="text" id="enProducto" placeholder="Ej: Rhode Peptide Lip Tint, tono Sweetest" value="${esc(prefill || '')}">
+          <span class="error oculto" data-error="enProducto">Contanos qué producto querés</span>
+        </div>
+        <div class="campo ancho">
+          <label for="enNombre">Tu nombre</label>
+          <input type="text" id="enNombre" autocomplete="name" placeholder="Nombre y apellido">
+          <span class="error oculto" data-error="enNombre">Escribí tu nombre</span>
+        </div>
+        <div class="campo ancho">
+          <label for="enTel">WhatsApp</label>
+          <input type="tel" id="enTel" inputmode="numeric" autocomplete="tel" placeholder="8888 8888">
+          <span class="error oculto" data-error="enTel">Escribí un número de 8 dígitos</span>
+        </div>
+      </div>
+      <button class="btn-grande" type="submit" id="btnEncargo">Solicitar encargo</button>
+      <p class="nota-datos">Los encargos tardan de ${esc(String(CONFIG.ENCARGO_DIAS_MIN || 20))} a ${esc(String(CONFIG.ENCARGO_DIAS_MAX || 25))} días hábiles y piden un adelanto del ${esc(String(CONFIG.ENCARGO_ADELANTO_PCT || 50))}%. Todo se confirma por WhatsApp antes de pagar.</p>
+    </form>`;
+  abrirHoja('Pedir por encargo', html);
+
+  $('#formEncargo').addEventListener('submit', async (ev) => {
+    ev.preventDefault();
+    const producto = $('#enProducto').value.trim();
+    const nombre = $('#enNombre').value.trim();
+    const tel = $('#enTel').value.replace(/\D/g, '');
+    marcarError('enProducto', producto.length < 2);
+    marcarError('enNombre', nombre.length < 2);
+    marcarError('enTel', tel.length !== 8);
+    if (producto.length < 2 || nombre.length < 2 || tel.length !== 8) return;
+
+    const btn = $('#btnEncargo');
+    btn.disabled = true;
+    btn.textContent = 'Enviando…';
+
+    if (!MODO_DEMO){
+      try {
+        await fetch(CONFIG.API, {
+          method:'POST',
+          headers:{ 'Content-Type':'text/plain;charset=utf-8' },
+          body: JSON.stringify({
+            accion:'crear_solicitud',
+            solicitud:{ producto, nombre, telefono:tel, tipo:'encargo' }
+          })
+        });
+      } catch {}
+    }
+    cerrarHoja();
+    brindis('Listo, te contactamos por WhatsApp para confirmar 💛');
+  });
+}
+
+/* ══════════════════════════════════════════════════════════════
+   EVENTOS
+   ══════════════════════════════════════════════════════════════ */
+document.addEventListener('click', (ev) => {
+  const t = ev.target.closest('[data-agregar],[data-mas],[data-menos],[data-quitar],[data-avisar],[data-encargo],[data-cat],#irCheckout,#seguirComprando,#btnCarrito,#btnVerCarrito,#btnCerrar');
+  if (!t) return;
+
+  if (t.dataset.agregar) return agregar(t.dataset.agregar, 1);
+  if (t.dataset.mas)     return agregar(t.dataset.mas, 1);
+  if (t.dataset.menos)   return agregar(t.dataset.menos, -1);
+  if (t.dataset.avisar)  return verAviso(t.dataset.avisar);
+  if (t.dataset.encargo !== undefined) return verEncargo(t.dataset.encargo);
+
+  if (t.dataset.quitar){
+    delete CARRITO[t.dataset.quitar];
+    guardarCarrito(); pintarGrilla(); actualizarBarra(); verCarrito();
+    return;
+  }
+  if (t.dataset.cat){
+    CATEGORIA = t.dataset.cat;
+    $$('#filtros .chip').forEach(c => c.setAttribute('aria-pressed', c.dataset.cat === CATEGORIA));
+    pintarGrilla();
+    return;
+  }
+  if (t.id === 'irCheckout')       return verCheckout();
+  if (t.id === 'seguirComprando')  return cerrarHoja();
+  if (t.id === 'btnCarrito' || t.id === 'btnVerCarrito') return verCarrito();
+  if (t.id === 'btnCerrar')        return cerrarHoja();
+});
+
+$('#velo').addEventListener('click', (ev) => { if (ev.target.id === 'velo') cerrarHoja(); });
+document.addEventListener('keydown', (ev) => { if (ev.key === 'Escape') cerrarHoja(); });
+
+let tBusca;
+$('#buscar').addEventListener('input', (ev) => {
+  clearTimeout(tBusca);
+  tBusca = setTimeout(() => { BUSQUEDA = ev.target.value; pintarGrilla(); }, 160);
+});
+
+/* ── datos de ejemplo (solo si la Sheet no responde) ── */
+const DEMO = [
+  { id:1, nombre:'Labial líquido mate', marca:'Rhode',      categoria:'Labios',   tono:'Toast',   precioVenta:14500, stock:2,  foto:'' },
+  { id:2, nombre:'Base cobertura media', marca:'Sephora',   categoria:'Rostro',   tono:'220N',    precioVenta:22000, stock:7,  foto:'' },
+  { id:3, nombre:'Gel limpiador facial', marca:'CeraVe',    categoria:'Skincare', tono:'',        precioVenta:9800,  stock:12, foto:'' },
+  { id:4, nombre:'Delineador waterproof',marca:'Maybelline',categoria:'Ojos',     tono:'Negro',   precioVenta:5500,  stock:0,  foto:'' },
+  { id:5, nombre:'Gloss hidratante',     marca:'NYX',       categoria:'Labios',   tono:'Peach',   precioVenta:6900,  stock:3,  foto:'' },
+  { id:6, nombre:'Rubor en crema',       marca:'Rare Beauty',categoria:'Rostro',  tono:'Joy',     precioVenta:18500, stock:5,  foto:'' },
+  { id:7, nombre:'Protector solar FPS50',marca:'La Roche',  categoria:'Skincare', tono:'',        precioVenta:16900, stock:1,  foto:'' },
+  { id:8, nombre:'Máscara de pestañas',  marca:'Essence',   categoria:'Ojos',     tono:'Negro',   precioVenta:4900,  stock:0,  foto:'' }
+];
+
+/* ── arranque ───────────────────────── */
+$('#pieRetiro').textContent = CONFIG.RETIRO + '.';
+$('#pieWhats').textContent  = 'WhatsApp ' + CONFIG.WHATSAPP_VISIBLE;
+$('#pieEncargoDias').textContent = CONFIG.ENCARGO_DIAS_MIN + ' a ' + CONFIG.ENCARGO_DIAS_MAX;
+$('#pieEncargoPct').textContent  = CONFIG.ENCARGO_ADELANTO_PCT;
+cargarCatalogo();
+</script>
+</body>
+</html>
