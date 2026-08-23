@@ -178,6 +178,8 @@ header{
   font-size:10.5px;font-weight:600;font-variant-numeric:tabular-nums;padding:0 5px;
 }
 .btn-carrito:hover .n{background:rgba(255,255,255,.24)}
+.btn-carrito .n.pulso{animation:pulso .38s var(--curva)}
+@keyframes pulso{0%{transform:scale(1)}40%{transform:scale(1.4)}100%{transform:scale(1)}}
 
 /* ── franja de anuncio ──────────────── */
 .franja{
@@ -196,12 +198,22 @@ header{
   font-weight:500;font-size:22px;line-height:1.25;letter-spacing:-.02em;
   margin:0 0 10px;color:var(--tinta);text-wrap:balance;max-width:18ch;
 }
-.hero h1 em{font-style:normal;color:var(--coral)}
+.hero h1 em{font-style:normal;color:var(--coral);position:relative}
+.hero h1 em::after{
+  content:"";position:absolute;left:0;right:0;bottom:-1px;height:2px;
+  background:var(--coral);transform-origin:left;transform:scaleX(0);
+  animation:trazo .6s var(--curva) .55s both;
+}
 .hero p{margin:0;max-width:46ch;color:var(--tinta-2);font-size:14px;text-wrap:pretty}
 @media(min-width:640px){
   .hero{padding:56px 0 40px}
   .hero h1{font-size:26px}
 }
+/* Entrada suave del encabezado — solo al cargar la página, una vez */
+.hero-eyebrow{animation:asomar .6s var(--curva) both}
+.hero h1{animation:asomar .6s var(--curva) .08s both}
+.hero p{animation:asomar .6s var(--curva) .16s both}
+@keyframes trazo{to{transform:scaleX(1)}}
 
 /* ── filtros ────────────────────────── */
 .filtros{
@@ -240,6 +252,10 @@ header{
 /* Sin borde, sin sombra, sin relieve: la foto es la tarjeta */
 .prod{
   background:none;display:flex;flex-direction:column;
+}
+/* La entrada solo se anima al cargar o al filtrar — no en cada clic de
+   cantidad, para que la grilla no "parpadee" mientras se compra. */
+.prod.entrando{
   animation:asomar .5s var(--curva) both;
   animation-delay:min(calc(var(--i,0) * 40ms), 380ms);
 }
@@ -363,11 +379,19 @@ header{
 .velo{
   position:fixed;inset:0;z-index:var(--z-hoja);background:rgba(15,15,15,.44);
   display:flex;align-items:flex-end;justify-content:center;
+  opacity:0;transition:opacity .26s var(--curva);
 }
+.velo.abierta{opacity:1}
 @media(min-width:720px){.velo{align-items:center}}
 .hoja{
   background:var(--papel);width:100%;max-width:520px;max-height:92vh;
   border-radius:0;overflow-y:auto;-webkit-overflow-scrolling:touch;
+  transform:translateY(28px);transition:transform .32s var(--curva);
+}
+.velo.abierta .hoja{transform:translateY(0)}
+@media(min-width:720px){
+  .hoja{transform:translateY(10px) scale(.98)}
+  .velo.abierta .hoja{transform:none}
 }
 @media(min-width:720px){.hoja{max-height:88vh}}
 .hoja-barra{
@@ -765,7 +789,7 @@ async function cargarCatalogo(){
   pintarFiltros();
   $('#cargando').classList.add('oculto');
   $('#grilla').classList.remove('oculto');
-  pintarGrilla();
+  pintarGrilla(true);
   actualizarBarra();
 }
 
@@ -839,7 +863,7 @@ function tarjetaFoto(p){
     ${MARCA_SIN_FOTO}<span>${esc(p.marca || 'Avellana')}</span></div>`;
 }
 
-function pintarGrilla(){
+function pintarGrilla(reanimar = false){
   const grupos = agruparProductos(productosVisibles());
   const g = $('#grilla');
 
@@ -887,7 +911,7 @@ function pintarGrilla(){
         </div>`
       : (p.tono ? `<div class="prod-tono">Tono ${esc(p.tono)}</div>` : '');
 
-    return `<article class="prod ${est.hay ? '' : 'agotado'}" style="--i:${i}">
+    return `<article class="prod ${est.hay ? '' : 'agotado'}${reanimar ? ' entrando' : ''}" style="--i:${i}">
       <div class="prod-img">${tarjetaFoto(p)}</div>
       <div class="prod-cuerpo">
         ${p.marca ? `<div class="prod-marca">${esc(p.marca)}</div>` : ''}
@@ -926,7 +950,19 @@ function agregar(id, n = 1){
   guardarCarrito();
   pintarGrilla();
   actualizarBarra();
+  if (nuevo > actual) pulsarCarrito();
   if (n > 0 && actual === 0) brindis('Agregado al carrito');
+}
+
+// Pequeño "salto" en el contador del carrito cuando se agrega algo — el
+// mismo nodo se reusa entre repintados, así que hay que reiniciar la
+// animación a mano (quitar y volver a poner la clase).
+function pulsarCarrito(){
+  const n = $('#numCarrito');
+  if (!n) return;
+  n.classList.remove('pulso');
+  void n.offsetWidth;
+  n.classList.add('pulso');
 }
 
 function totalUnidades(){
@@ -958,16 +994,26 @@ function actualizarBarra(){
 /* ══════════════════════════════════════════════════════════════
    HOJA (carrito → checkout → confirmación)
    ══════════════════════════════════════════════════════════════ */
+let cierreTimer;
 function abrirHoja(titulo, html){
+  clearTimeout(cierreTimer);
   $('#hojaTitulo').textContent = titulo;
   $('#hojaCuerpo').innerHTML = html;
-  $('#velo').classList.remove('oculto');
+  const velo = $('#velo');
+  velo.classList.remove('oculto');
   document.body.style.overflow = 'hidden';
   $('.hoja').scrollTop = 0;
+  // Fuerza un repintado antes de agregar "abierta": así el navegador sí
+  // anima desde el estado cerrado en vez de saltar directo al abierto.
+  velo.offsetHeight;
+  requestAnimationFrame(() => velo.classList.add('abierta'));
 }
 function cerrarHoja(){
-  $('#velo').classList.add('oculto');
+  const velo = $('#velo');
+  velo.classList.remove('abierta');
   document.body.style.overflow = '';
+  clearTimeout(cierreTimer);
+  cierreTimer = setTimeout(() => velo.classList.add('oculto'), 300);
 }
 
 function verCarrito(){
@@ -1433,7 +1479,7 @@ document.addEventListener('click', (ev) => {
   if (t.dataset.cat){
     CATEGORIA = t.dataset.cat;
     $$('#filtros .chip').forEach(c => c.setAttribute('aria-pressed', c.dataset.cat === CATEGORIA));
-    pintarGrilla();
+    pintarGrilla(true);
     return;
   }
   if (t.id === 'irCheckout')       return verCheckout();
@@ -1448,7 +1494,7 @@ document.addEventListener('keydown', (ev) => { if (ev.key === 'Escape') cerrarHo
 let tBusca;
 $('#buscar').addEventListener('input', (ev) => {
   clearTimeout(tBusca);
-  tBusca = setTimeout(() => { BUSQUEDA = ev.target.value; pintarGrilla(); }, 160);
+  tBusca = setTimeout(() => { BUSQUEDA = ev.target.value; pintarGrilla(true); }, 160);
 });
 
 /* ── datos de ejemplo (solo si la Sheet no responde) ── */
