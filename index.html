@@ -672,7 +672,7 @@ details[open] summary::after{content:"−"}
       <summary>Pedidos por encargo</summary>
       <div class="detalle">
         <p>Algunos productos los traemos por encargo. Si lo que buscás no aparece en el catálogo o está agotado, pedilo por encargo y te decimos si podemos conseguirlo, cuánto costaría y en cuánto tiempo llega.</p>
-        <p>Los encargos tardan de <span id="pieEncargoDias"></span> días hábiles en llegar y piden un adelanto del <span id="pieEncargoPct"></span>%. Todo se confirma por WhatsApp antes de que pagués nada.</p>
+        <p>Los encargos tardan de <span id="pieEncargoDias"></span> días hábiles en llegar y pedimos un adelanto del <span id="pieEncargoPct"></span>%. Todo se confirma por WhatsApp antes de que pagués nada.</p>
         <button class="btn-suave" type="button" style="margin-top:4px" data-encargo="">Pedir algo por encargo</button>
       </div>
     </details>
@@ -1430,7 +1430,7 @@ function verEncargo(prefill){
         </div>
       </div>
       <button class="btn-grande" type="submit" id="btnEncargo">Solicitar encargo</button>
-      <p class="nota-datos">Los encargos tardan de ${esc(String(CONFIG.ENCARGO_DIAS_MIN || 20))} a ${esc(String(CONFIG.ENCARGO_DIAS_MAX || 25))} días hábiles y piden un adelanto del ${esc(String(CONFIG.ENCARGO_ADELANTO_PCT || 50))}%. Todo se confirma por WhatsApp antes de pagar.</p>
+      <p class="nota-datos">Los encargos tardan de ${esc(String(CONFIG.ENCARGO_DIAS_MIN || 20))} a ${esc(String(CONFIG.ENCARGO_DIAS_MAX || 25))} días hábiles y pedimos un adelanto del ${esc(String(CONFIG.ENCARGO_ADELANTO_PCT || 50))}%. Todo se confirma por WhatsApp antes de pagar.</p>
     </form>`;
   abrirHoja('Pedir por encargo', html);
 
