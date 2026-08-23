@@ -601,7 +601,7 @@ details[open] summary::after{content:"−"}
       <div class="detalle">
         <p><b>Retiro en nuestro punto — gratis.</b> <span id="pieRetiro"></span> Coordinamos día y hora por WhatsApp.</p>
         <p><b>Correos de Costa Rica.</b> ₡3.000 dentro del Gran Área Metropolitana y ₡3.500 fuera del GAM. Entrega estimada de 2 a 3 días hábiles. Te pasamos el número de guía apenas lo despachamos.</p>
-        <p><b>Mensajería exprés.</b> El costo varía según tu ubicación, así que lo cotizamos y te lo confirmamos por WhatsApp junto con el total.</p>
+        <p><b>Mensajería Uber Flash.</b> El costo varía según tu ubicación. Por WhatsApp te preguntamos si preferís pedirlo vos misma o si lo pedimos nosotros — en ese caso te pedimos la dirección ahí mismo y te confirmamos el total.</p>
         <p>El envío se despacha una vez confirmado el pago.</p>
       </div>
     </details>
@@ -609,7 +609,7 @@ details[open] summary::after{content:"−"}
     <details>
       <summary>Pedidos por encargo</summary>
       <div class="detalle">
-        <p>Algunos productos los traemos por encargo desde Estados Unidos. Si lo que buscás no aparece en el catálogo o está agotado, pedilo por encargo y te decimos si podemos conseguirlo, cuánto costaría y en cuánto tiempo llega.</p>
+        <p>Algunos productos los traemos por encargo. Si lo que buscás no aparece en el catálogo o está agotado, pedilo por encargo y te decimos si podemos conseguirlo, cuánto costaría y en cuánto tiempo llega.</p>
         <p>Los encargos tardan de <span id="pieEncargoDias"></span> días hábiles en llegar y piden un adelanto del <span id="pieEncargoPct"></span>%. Todo se confirma por WhatsApp antes de que pagués nada.</p>
         <button class="btn-suave" type="button" style="margin-top:4px" data-encargo="">Pedir algo por encargo</button>
       </div>
@@ -619,14 +619,14 @@ details[open] summary::after{content:"−"}
       <summary>Cambios y devoluciones</summary>
       <div class="detalle">
         <p><b>No hacemos cambios ni devoluciones</b> de productos ya comprados y entregados. Por el tipo de producto que manejamos, una vez que el pedido sale de nuestras manos no podemos recibirlo de vuelta.</p>
-        <p>La única excepción es un <b>defecto de fábrica</b>. Si el producto viene fallado, escribinos por WhatsApp con fotos <b>dentro del día siguiente a haberlo recibido</b> y lo valoramos para cambio.</p>
+        <p>La única excepción es un <b>defecto de fábrica</b>. Si el producto llega dañado, escribinos por WhatsApp con fotos <b>dentro del día siguiente a haberlo recibido</b> y lo valoramos para cambio.</p>
       </div>
     </details>
 
     <details>
       <summary>Tus datos</summary>
       <div class="detalle">
-        <p><b>No guardamos nada hasta que confirmés tu pedido.</b> Mientras ves productos y armás tu carrito no se registra nada en ningún lado — el carrito vive solo en tu teléfono.</p>
+        <p><b>No guardamos nada hasta que confirmés tu pedido.</b> Mientras ves productos y armás tu carrito no se registra nada en ningún lado — el carrito vive solo en tu dispositivo.</p>
         <p>Al confirmar pedimos únicamente tu nombre, tu WhatsApp y —solo si elegís envío— tu dirección. El correo electrónico es opcional. <b>Usamos estos datos únicamente para coordinar y entregar tu pedido.</b></p>
         <p>No hay cuentas ni contraseñas. No usamos cookies de rastreo ni publicidad. No compartimos tu información con nadie, y no te vamos a escribir para venderte nada que no hayás pedido.</p>
       </div>
@@ -957,7 +957,7 @@ function verCheckout(){
         <label class="opcion">
           <input type="radio" name="entrega" value="expres">
           <span class="txt">
-            <span class="t1">Mensajería exprés</span>
+            <span class="t1">Mensajería Uber Flash</span>
             <span class="t2">El costo depende de tu ubicación — te lo cotizamos por WhatsApp</span>
           </span>
           <span class="pr">A confirmar</span>
@@ -1038,7 +1038,7 @@ function verCheckout(){
 function envioActual(){
   const modo = document.querySelector('input[name="entrega"]:checked')?.value || 'retiro';
   if (modo === 'retiro') return { modo, monto:0, etiqueta:'Envío', texto:'Gratis' };
-  if (modo === 'expres') return { modo, monto:0, etiqueta:'Mensajería exprés', texto:'A confirmar' };
+  if (modo === 'expres') return { modo, monto:0, etiqueta:'Mensajería Uber Flash', texto:'A confirmar' };
   const canton = $('#canton')?.value || '';
   if (!canton) return { modo, monto:CONFIG.ENVIO_GAM, etiqueta:'Envío por Correos', texto:'Elegí tu cantón' , indefinido:true };
   const dentro = GAM.has(canton);
@@ -1136,7 +1136,7 @@ function armarPedido(){
   return {
     entrega: e.modo,
     entregaTexto: e.modo === 'retiro' ? 'Retiro en el punto'
-                : e.modo === 'expres' ? 'Mensajería exprés (a cotizar)'
+                : e.modo === 'expres' ? 'Mensajería Uber Flash (a cotizar)'
                 : (e.dentroGAM ? 'Correos · dentro del GAM' : 'Correos · fuera del GAM'),
     nombre:    $('#nombre').value.trim(),
     telefono:  $('#telefono').value.replace(/\D/g, ''),
