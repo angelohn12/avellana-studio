@@ -275,6 +275,18 @@ header{
   margin:3px 0 2px;transition:color .16s var(--curva);
 }
 .prod-tono{font-size:11.5px;color:var(--tinta-3);margin-bottom:4px}
+
+/* Selector de tono dentro de la tarjeta — solo sale cuando hay más de uno */
+.tono-picker{display:flex;flex-wrap:wrap;gap:5px;margin:4px 0 6px}
+.tono-pill{
+  font-family:"DM Mono",monospace;font-size:9.5px;font-weight:400;letter-spacing:.02em;
+  padding:5px 9px;border-radius:20px;border:1px solid var(--linea);background:var(--papel);
+  color:var(--tinta-2);white-space:nowrap;
+  transition:border-color .14s var(--curva), color .14s var(--curva);
+}
+.tono-pill:hover{border-color:var(--tinta-3)}
+.tono-pill[aria-pressed="true"]{border-color:var(--tinta);color:var(--tinta);font-weight:500}
+.tono-pill.sin-stock{color:var(--tinta-3);opacity:.55}
 .prod-precio{font-size:13.5px;font-weight:500;color:var(--tinta);font-variant-numeric:tabular-nums;margin-top:auto}
 
 /* Etiqueta de stock: micro-rótulo en mono, no una píldora pastel */
@@ -673,6 +685,10 @@ let PRODUCTOS = [];
 let CARRITO   = cargarCarrito();
 let CATEGORIA = 'Todo';
 let BUSQUEDA  = '';
+// Qué tono está elegido en cada grupo de producto (clave: marca+nombre en
+// minúsculas). Se guarda acá para que sobreviva a los repintados de la
+// grilla (cada vez que cambia el carrito, la grilla entera se repinta).
+let TONO_ELEGIDO = {};
 let MODO_DEMO = false;
 let ENVIANDO  = false;
 
@@ -785,6 +801,30 @@ function productosVisibles(){
   });
 }
 
+// Junta en un solo grupo los productos que son "lo mismo" en distintos
+// tonos (misma marca + mismo nombre) — así "Rhode Gloss" no sale 6 veces
+// en la grilla, sale una vez con un selector de tono adentro.
+function agruparProductos(lista){
+  const grupos = new Map();
+  lista.forEach(p => {
+    const clave = (p.marca || '').trim().toLowerCase() + '|' + (p.nombre || '').trim().toLowerCase();
+    if (!grupos.has(clave)) {
+      grupos.set(clave, { clave, marca: p.marca, nombre: p.nombre, categoria: p.categoria, variantes: [] });
+    }
+    grupos.get(clave).variantes.push(p);
+  });
+  return [...grupos.values()];
+}
+
+// Cuál variante mostrar por defecto: la que ya haya elegido la clienta si
+// sigue en la lista; si no, la primera con stock; si ninguna tiene, la primera.
+function varianteActiva(grupo){
+  const elegidaId = TONO_ELEGIDO[grupo.clave];
+  const elegida = elegidaId != null && grupo.variantes.find(v => String(v.id) === String(elegidaId));
+  if (elegida) return elegida;
+  return grupo.variantes.find(v => estadoStock(v).hay) || grupo.variantes[0];
+}
+
 // Ramita de avellana para los productos que todavía no tienen foto
 const MARCA_SIN_FOTO = `<svg width="26" height="26" viewBox="0 0 24 24" fill="none" aria-hidden="true">
   <path d="M12 21c-4-2.2-7-5.6-7-9.6A7 7 0 0 1 19 11.4c0 4-3 7.4-7 9.6Z" fill="currentColor" opacity=".45"/>
@@ -800,10 +840,10 @@ function tarjetaFoto(p){
 }
 
 function pintarGrilla(){
-  const lista = productosVisibles();
+  const grupos = agruparProductos(productosVisibles());
   const g = $('#grilla');
 
-  if (!lista.length){
+  if (!grupos.length){
     g.innerHTML = `<div class="vacio"><strong>No encontramos nada</strong>
       Probá con otra palabra, o pedilo por encargo y te decimos si podemos conseguirlo.
       <button class="btn-suave" type="button" style="margin-top:14px" data-encargo="${esc(BUSQUEDA.trim())}">Pedirlo por encargo</button>
@@ -811,7 +851,8 @@ function pintarGrilla(){
     return;
   }
 
-  g.innerHTML = lista.map((p, i) => {
+  g.innerHTML = grupos.map((grupo, i) => {
+    const p = varianteActiva(grupo); // la variante (tono) que se muestra ahora mismo
     const est  = estadoStock(p);
     const enCarrito = CARRITO[p.id] || 0;
     const tope = Math.min(CONFIG.MAX_POR_PRODUCTO, Number(p.stock) || 0);
@@ -832,18 +873,38 @@ function pintarGrilla(){
       control = `<button class="btn-agregar" type="button" data-agregar="${esc(p.id)}">Agregar</button>`;
     }
 
+    // Solo se muestra el selector si de verdad hay más de un tono para elegir.
+    const selector = grupo.variantes.length > 1
+      ? `<div class="tono-picker" role="group" aria-label="Elegí el tono">
+          ${grupo.variantes.map(v => {
+            const activo = String(v.id) === String(p.id);
+            const sinStock = !estadoStock(v).hay && v.modalidad !== 'encargo';
+            return `<button type="button" class="tono-pill${sinStock ? ' sin-stock' : ''}"
+                      aria-pressed="${activo}" data-tono-grupo="${esc(grupo.clave)}" data-tono-id="${esc(v.id)}">
+                      ${esc(v.tono || 'Único')}${sinStock ? ' · agotado' : ''}
+                    </button>`;
+          }).join('')}
+        </div>`
+      : (p.tono ? `<div class="prod-tono">Tono ${esc(p.tono)}</div>` : '');
+
     return `<article class="prod ${est.hay ? '' : 'agotado'}" style="--i:${i}">
       <div class="prod-img">${tarjetaFoto(p)}</div>
       <div class="prod-cuerpo">
         ${p.marca ? `<div class="prod-marca">${esc(p.marca)}</div>` : ''}
         <div class="prod-nombre">${esc(p.nombre)}</div>
-        ${p.tono ? `<div class="prod-tono">Tono ${esc(p.tono)}</div>` : ''}
+        ${selector}
         <div class="prod-precio">${colones(p.precioVenta)}</div>
         <span class="etiqueta ${est.clase}">${est.texto}</span>
         ${control}
       </div>
     </article>`;
   }).join('');
+}
+
+// Cambia qué tono está activo dentro de un grupo, sin tocar el carrito.
+function elegirTono(grupoClave, id){
+  TONO_ELEGIDO[grupoClave] = id;
+  pintarGrilla();
 }
 
 /* ── carrito: operaciones ───────────── */
@@ -1354,7 +1415,7 @@ function verEncargo(prefill){
    EVENTOS
    ══════════════════════════════════════════════════════════════ */
 document.addEventListener('click', (ev) => {
-  const t = ev.target.closest('[data-agregar],[data-mas],[data-menos],[data-quitar],[data-avisar],[data-encargo],[data-cat],#irCheckout,#seguirComprando,#btnCarrito,#btnVerCarrito,#btnCerrar');
+  const t = ev.target.closest('[data-agregar],[data-mas],[data-menos],[data-quitar],[data-avisar],[data-encargo],[data-tono-id],[data-cat],#irCheckout,#seguirComprando,#btnCarrito,#btnVerCarrito,#btnCerrar');
   if (!t) return;
 
   if (t.dataset.agregar) return agregar(t.dataset.agregar, 1);
@@ -1362,6 +1423,7 @@ document.addEventListener('click', (ev) => {
   if (t.dataset.menos)   return agregar(t.dataset.menos, -1);
   if (t.dataset.avisar)  return verAviso(t.dataset.avisar);
   if (t.dataset.encargo !== undefined) return verEncargo(t.dataset.encargo);
+  if (t.dataset.tonoId)  return elegirTono(t.dataset.tonoGrupo, t.dataset.tonoId);
 
   if (t.dataset.quitar){
     delete CARRITO[t.dataset.quitar];
