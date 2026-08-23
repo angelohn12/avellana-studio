@@ -948,7 +948,7 @@ function pintarGrilla(reanimar = false){
       const descripcion = (p.marca ? p.marca + ' ' : '') + p.nombre + (p.tono ? ', tono ' + p.tono : '');
       control = `<button class="btn-avisar" type="button" data-encargo="${esc(descripcion)}">Pedir por encargo</button>`;
     } else if (!est.hay){
-      control = `<button class="btn-avisar" type="button" data-avisar="${esc(p.id)}">Avisarme cuando llegue</button>`;
+      control = `<button class="btn-avisar" type="button" data-avisar="${esc(p.id)}">Solicitar aviso de stock</button>`;
     } else if (enCarrito > 0){
       control = `<div class="paso-cant">
           <button type="button" data-menos="${esc(p.id)}" aria-label="Quitar una unidad">−</button>
@@ -1424,10 +1424,10 @@ function verAviso(id){
           <span class="error oculto" data-error="avTel">Escribí un número de 8 dígitos</span>
         </div>
       </div>
-      <button class="btn-grande" type="submit" id="btnAviso">Avisarme cuando llegue</button>
+      <button class="btn-grande" type="submit" id="btnAviso">Solicitar aviso de stock</button>
       <p class="nota-datos">Solo lo usamos para avisarte de este producto.</p>
     </form>`;
-  abrirHoja('Avisame cuando llegue', html);
+  abrirHoja('Solicitar aviso de stock', html);
 
   $('#formAviso').addEventListener('submit', async (ev) => {
     ev.preventDefault();
