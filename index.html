@@ -318,7 +318,7 @@ header{
   aspect-ratio:4/5;background:var(--hueso);position:relative;overflow:hidden;
   border-radius:var(--radio);
 }
-.prod-img img{width:100%;height:100%;object-fit:cover;transition:transform .5s var(--curva)}
+.prod-img img{width:100%;height:100%;object-fit:contain;object-position:center;transition:transform .5s var(--curva)}
 
 /* Sin foto no es un error: es una ficha de marca */
 /* Sin foto: bloque plano de marca, no un degradado decorativo */
@@ -369,7 +369,7 @@ header{
 
 /* Ficha de detalle de un producto (misma hoja que usa el carrito) */
 .detalle-foto{aspect-ratio:4/5;max-width:220px;margin:0 auto 16px;border-radius:var(--radio);overflow:hidden;background:var(--hueso)}
-.detalle-foto img{width:100%;height:100%;object-fit:cover;display:block}
+.detalle-foto img{width:100%;height:100%;object-fit:contain;object-position:center;display:block}
 .detalle-prod .prod-precio{font-size:16px;margin-top:6px}
 .detalle-medida{
   font-family:"DM Mono",monospace;font-size:10.5px;letter-spacing:.05em;
