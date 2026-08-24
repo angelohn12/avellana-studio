@@ -971,6 +971,19 @@ function unaFotoPorProducto(lista){
   return resultado;
 }
 
+// Fisher-Yates: revuelve el orden sin repetir ninguna hasta que pasaron
+// todas — así cada carga de página arranca con un producto distinto (no
+// siempre "Rhode primero") y nunca se repite la misma foto dos veces
+// seguidas dentro del mismo recorrido.
+function revuelto(lista){
+  const arr = lista.slice();
+  for (let i = arr.length - 1; i > 0; i--){
+    const j = Math.floor(Math.random() * (i + 1));
+    [arr[i], arr[j]] = [arr[j], arr[i]];
+  }
+  return arr;
+}
+
 function pintarHeroFotos(){
   const hero = $('#hero');
   const contenedor = $('#heroFotos');
@@ -978,9 +991,9 @@ function pintarHeroFotos(){
 
   if (cicloHeroFotos){ clearInterval(cicloHeroFotos); cicloHeroFotos = null; }
 
-  let candidatas = unaFotoPorProducto(PRODUCTOS.filter(p => p.foto && esPortada(p)));
+  let candidatas = revuelto(unaFotoPorProducto(PRODUCTOS.filter(p => p.foto && esPortada(p))));
   if (!candidatas.length){
-    candidatas = unaFotoPorProducto(PRODUCTOS.filter(p => p.foto));
+    candidatas = revuelto(unaFotoPorProducto(PRODUCTOS.filter(p => p.foto)));
   }
 
   if (!candidatas.length){
