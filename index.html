@@ -1264,8 +1264,10 @@ function refrescarTotales(){
   $('#etiquetaEnvio').textContent = e.etiqueta;
   $('#montoEnvio').textContent    = e.texto;
   $('#montoTotal').textContent    = colones(subtotal() + (e.indefinido ? 0 : e.monto));
-  const pide = e.modo === 'correos' || e.modo === 'expres';
-  $('#bloqueDireccion').classList.toggle('oculto', !pide);
+  // Solo Correos necesita dirección en la página — Uber Flash se coordina
+  // aparte por WhatsApp (le preguntamos ahí si lo pide ella o lo pedimos
+  // nosotros, y en ese caso la dirección se da por ese medio).
+  $('#bloqueDireccion').classList.toggle('oculto', e.modo !== 'correos');
 }
 
 function prepararFormulario(){
@@ -1313,7 +1315,7 @@ function validar(){
   marcarError('correo', !correoOk);
   if (!correoOk) fallos.push('correo');
 
-  if (e.modo === 'correos' || e.modo === 'expres'){
+  if (e.modo === 'correos'){
     const prov = $('#provincia').value;
     const cant = $('#canton').value;
     const dist = $('#distrito').value.trim();
@@ -1350,10 +1352,10 @@ function armarPedido(){
     nombre:    $('#nombre').value.trim(),
     telefono:  $('#telefono').value.replace(/\D/g, ''),
     correo:    $('#correo').value.trim(),
-    provincia: $('#provincia')?.value || '',
-    canton:    $('#canton')?.value || '',
-    distrito:  $('#distrito')?.value.trim() || '',
-    direccion: $('#direccion')?.value.trim() || '',
+    provincia: e.modo === 'correos' ? ($('#provincia')?.value || '') : '',
+    canton:    e.modo === 'correos' ? ($('#canton')?.value || '') : '',
+    distrito:  e.modo === 'correos' ? ($('#distrito')?.value.trim() || '') : '',
+    direccion: e.modo === 'correos' ? ($('#direccion')?.value.trim() || '') : '',
     items,
     subtotal: subtotal(),
     envio,
