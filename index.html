@@ -51,12 +51,8 @@ const CONFIG = {
   ENCARGO_DIAS_MAX: 25,
   ENCARGO_ADELANTO_PCT: 50,         // % que se cobra por adelantado en un encargo
 
-  // Se muestran recién en la pantalla de "pedido confirmado" — nunca antes,
-  // nunca en una página que cualquiera pueda ver sin haber hecho un pedido.
-  SINPE: [
-    { nombre: 'Anyelo Hidalgo Brenes',   numero: '7018 5274' },
-    { nombre: 'Ana Belén Acuña Cerdas',  numero: '6161 3486' }
-  ],
+  // El SINPE mismo NO va acá — lo manda el servidor en la respuesta de
+  // crear_pedido, para que nunca quede escrito fijo en esta página pública.
   HORA_ATENCION: '8am a 7pm'
 };
 
@@ -1388,6 +1384,9 @@ async function enviarPedido(ev){
       const d = await r.json();
       if (!d || !d.ok) throw new Error(d && d.error ? d.error : 'no se pudo guardar');
       numero = d.numero || null;
+      // El SINPE lo manda el servidor recién ahora, con el pedido ya guardado
+      // — nunca vive escrito fijo en esta página.
+      pedido.sinpe = Array.isArray(d.sinpe) ? d.sinpe : [];
     } catch (err) {
       ENVIANDO = false;
       btn.disabled = false;
@@ -1398,6 +1397,11 @@ async function enviarPedido(ev){
   }
 
   if (!numero) numero = 'AV-' + String(Date.now()).slice(-4);
+  // En modo demo no hay servidor real que devuelva el SINPE — se rellena
+  // acá solo para que la vista previa se vea completa, nunca en producción.
+  if (!pedido.sinpe || !pedido.sinpe.length) {
+    pedido.sinpe = [{ nombre: 'Vista de prueba', numero: '0000 0000' }];
+  }
 
   CARRITO = {};
   guardarCarrito();
@@ -1433,7 +1437,7 @@ function verConfirmacion(numero, pedido){
 
       <div class="sinpe-caja">
         <p class="sinpe-titulo">SINPE Móvil — pagá a cualquiera de estos dos números</p>
-        ${CONFIG.SINPE.map(c => `
+        ${(pedido.sinpe || []).map(c => `
           <div class="sinpe-fila">
             <div>
               <div class="sinpe-nombre">${esc(c.nombre)}</div>
