@@ -393,7 +393,11 @@ header{
 .e-ok::before{background:var(--salvia)}
 .e-pocas{color:#9A6410}
 .e-pocas::before{background:var(--durazno)}
-.e-encargo{color:#9A6410}
+/* "Por encargo" ya no atenúa la foto (se ve a color completo, como
+   cualquier otro producto), así que este texto tiene que cargar solo la
+   señal de "esto hay que pedirlo, no está en mano ahora" — más fuerte y
+   con su propio color, no el mismo tono que "Pocas unidades". */
+.e-encargo{color:var(--coral);font-weight:600}
 .e-encargo::before{background:var(--coral)}
 /* Todo lo pulsable responde al toque: en celular no hay hover */
 .btn-agregar,.btn-avisar,.btn-grande,.btn-suave,.paso-cant button,.cerrar,.chip{
