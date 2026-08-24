@@ -49,7 +49,15 @@ const CONFIG = {
 
   ENCARGO_DIAS_MIN: 20,             // rango de días hábiles que tarda un encargo
   ENCARGO_DIAS_MAX: 25,
-  ENCARGO_ADELANTO_PCT: 50          // % que se cobra por adelantado en un encargo
+  ENCARGO_ADELANTO_PCT: 50,         // % que se cobra por adelantado en un encargo
+
+  // Se muestran recién en la pantalla de "pedido confirmado" — nunca antes,
+  // nunca en una página que cualquiera pueda ver sin haber hecho un pedido.
+  SINPE: [
+    { nombre: 'Anyelo Hidalgo Brenes',   numero: '7018 5274' },
+    { nombre: 'Ana Belén Acuña Cerdas',  numero: '6161 3486' }
+  ],
+  HORA_ATENCION: '8am a 7pm'
 };
 
 /* Los 31 cantones del Gran Área Metropolitana. Fuente: definición oficial de la GAM.
@@ -490,6 +498,34 @@ fieldset{border:0;padding:0;margin:0 0 18px}
   padding:13px 15px;margin:18px 0 0;font-size:12.5px;line-height:1.6;color:var(--tinta-2);
 }
 .aviso b{font-weight:600;color:var(--tinta)}
+
+/* ── SINPE en la pantalla de confirmación ──── */
+.sinpe-caja{
+  background:var(--hueso);border-radius:var(--radio-chico);
+  padding:16px 16px 14px;margin-top:18px;
+}
+.sinpe-titulo{
+  font-family:"DM Mono",monospace;font-size:10px;letter-spacing:.1em;text-transform:uppercase;
+  color:var(--tinta-3);margin:0 0 12px;
+}
+.sinpe-fila{
+  display:flex;align-items:center;justify-content:space-between;gap:12px;
+  padding:9px 0;border-top:1px solid var(--linea-suave);
+}
+.sinpe-fila:first-of-type{border-top:0;padding-top:0}
+.sinpe-nombre{font-size:12.5px;color:var(--tinta-2)}
+.sinpe-numero{
+  font-family:"DM Mono",monospace;font-size:16px;font-weight:500;color:var(--tinta);
+  letter-spacing:.02em;margin-top:1px;
+}
+.sinpe-copiar{
+  flex:0 0 auto;font-size:11px;font-weight:500;letter-spacing:.04em;
+  padding:9px 14px;border-radius:var(--radio-chico);border:1px solid var(--tinta);
+  color:var(--tinta);white-space:nowrap;min-width:74px;
+  transition:background .16s var(--curva), color .16s var(--curva);
+}
+.sinpe-copiar:hover{background:var(--tinta);color:#FFF}
+.sinpe-nota{font-size:11.5px;color:var(--tinta-3);line-height:1.5;margin:12px 0 0}
 .nota-datos{font-size:11px;color:var(--tinta-3);line-height:1.5;margin:14px 0 0;text-align:center}
 
 .btn-grande{
@@ -654,7 +690,7 @@ details[open] summary::after{content:"−"}
       <summary>Formas de pago</summary>
       <div class="detalle">
         <p>Recibimos <b>SINPE Móvil</b> únicamente.</p>
-        <p>El número para el SINPE te lo pasamos por WhatsApp cuando confirmemos tu pedido. <b>Nunca lo pedimos ni lo mostramos en esta página</b>, y tampoco te vamos a pedir datos de tarjeta ni de cuenta bancaria por acá.</p>
+        <p>El número para el SINPE te lo mostramos apenas confirmás tu pedido — así podés pagar de una vez, sin esperar a que te escribamos. <b>Nunca lo mostramos antes de que hagas un pedido real</b>, y tampoco te vamos a pedir datos de tarjeta ni de cuenta bancaria por acá.</p>
       </div>
     </details>
 
@@ -1383,9 +1419,9 @@ function verConfirmacion(numero, pedido){
       <div class="num">${esc(numero)} · ${esc(fecha)}</div>
 
       <div class="pasos">
-        <div class="paso"><i>1</i><p><b>Lo armamos.</b> Revisamos que todo esté en stock.</p></div>
-        <div class="paso"><i>2</i><p><b>Te escribimos</b> por WhatsApp desde el ${esc(CONFIG.WHATSAPP_VISIBLE)} para confirmar el total${pedido.entrega === 'expres' ? ' y cotizarte la mensajería' : ''}.</p></div>
-        <div class="paso"><i>3</i><p><b>Pagás por SINPE Móvil</b> y nos mandás el comprobante.</p></div>
+        <div class="paso"><i>1</i><p><b>Ya quedó guardado.</b> Revisamos que todo esté en stock.</p></div>
+        <div class="paso"><i>2</i><p><b>Pagás por SINPE Móvil</b> el monto exacto de abajo${pedido.entrega === 'expres' ? ' (el envío se cotiza aparte)' : ''} y nos mandás el comprobante por WhatsApp.</p></div>
+        <div class="paso"><i>3</i><p><b>Te confirmamos</b> en horario de ${esc(CONFIG.HORA_ATENCION)}. Si pagaste fuera de ese horario no perdés nada esperando: tu pedido ya está guardado, apenas abramos lo revisamos.</p></div>
         <div class="paso"><i>4</i><p><b>${pedido.entrega === 'retiro' ? 'Coordinamos el retiro' : 'Lo enviamos'}</b>${pedido.entrega === 'correos' ? ' y te pasamos el número de guía' : ''}.</p></div>
       </div>
 
@@ -1395,6 +1431,19 @@ function verConfirmacion(numero, pedido){
         <div class="r-fila grande"><span>Total${pedido.entrega === 'expres' ? ' parcial' : ''}</span><span>${colones(pedido.total)}</span></div>
       </div>
 
+      <div class="sinpe-caja">
+        <p class="sinpe-titulo">SINPE Móvil — pagá a cualquiera de estos dos números</p>
+        ${CONFIG.SINPE.map(c => `
+          <div class="sinpe-fila">
+            <div>
+              <div class="sinpe-nombre">${esc(c.nombre)}</div>
+              <div class="sinpe-numero">${esc(c.numero)}</div>
+            </div>
+            <button type="button" class="sinpe-copiar" data-copiar="${esc(c.numero)}">Copiar</button>
+          </div>`).join('')}
+        <p class="sinpe-nota">Después mandanos el comprobante por WhatsApp — así confirmamos más rápido.</p>
+      </div>
+
       ${MODO_DEMO ? `<div class="aviso"><b>Vista de prueba.</b> Este pedido no se guardó en ningún lado — la tienda todavía no está conectada.</div>` : ''}
 
       <a class="btn-grande" style="display:block;text-align:center;text-decoration:none"
@@ -1402,6 +1451,19 @@ function verConfirmacion(numero, pedido){
       <button class="btn-suave" type="button" id="seguirComprando">Volver a la tienda</button>
     </div>`;
   abrirHoja('Pedido confirmado', html);
+}
+
+// Copiar el número de SINPE con un toque — evita errores de tipeo al pasarlo a mano.
+async function copiarSinpe(numero, boton){
+  const textoOriginal = boton.textContent;
+  try {
+    await navigator.clipboard.writeText(numero.replace(/\s/g, ''));
+    boton.textContent = 'Copiado ✓';
+  } catch {
+    brindis('No se pudo copiar — copialo a mano: ' + numero);
+    return;
+  }
+  setTimeout(() => { boton.textContent = textoOriginal; }, 1800);
 }
 
 /* ── pedir algo por encargo (agotado, o nunca estuvo en catálogo) ───────── */
@@ -1469,12 +1531,13 @@ function verEncargo(prefill){
    EVENTOS
    ══════════════════════════════════════════════════════════════ */
 document.addEventListener('click', (ev) => {
-  const t = ev.target.closest('[data-agregar],[data-mas],[data-menos],[data-quitar],[data-encargo],[data-tono-id],[data-cat],#irCheckout,#seguirComprando,#btnCarrito,#btnVerCarrito,#btnCerrar,#btnLimpiarFiltros');
+  const t = ev.target.closest('[data-agregar],[data-mas],[data-menos],[data-quitar],[data-encargo],[data-tono-id],[data-cat],[data-copiar],#irCheckout,#seguirComprando,#btnCarrito,#btnVerCarrito,#btnCerrar,#btnLimpiarFiltros');
   if (!t) return;
 
   if (t.dataset.agregar) return agregar(t.dataset.agregar, 1);
   if (t.dataset.mas)     return agregar(t.dataset.mas, 1);
   if (t.dataset.menos)   return agregar(t.dataset.menos, -1);
+  if (t.dataset.copiar)  return copiarSinpe(t.dataset.copiar, t);
   if (t.dataset.encargo !== undefined) return verEncargo(t.dataset.encargo);
   if (t.dataset.tonoId)  return elegirTono(t.dataset.tonoGrupo, t.dataset.tonoId);
 
