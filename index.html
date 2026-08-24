@@ -330,7 +330,11 @@ header{
   text-align:center;padding:12px;
 }
 .sin-foto svg{opacity:.32;flex:0 0 auto;color:var(--cafe)}
-.prod.agotado .prod-img{opacity:.42}
+/* "Agotado" (clase que se sigue poniendo cuando !est.hay) ya NO atenúa la
+   foto: hoy esa clase también cubre "por encargo", que es un producto que
+   sí se puede pedir, solo que no está en mano. Apagar la foto ahí daba la
+   impresión de que la tienda estaba rota o las fotos no cargaban — la
+   etiqueta "POR ENCARGO" ya deja claro el estado sin necesidad de esto. */
 .prod-cuerpo{padding:12px 0 0;display:flex;flex-direction:column;flex:1;gap:1px}
 .prod-marca{
   font-family:"DM Mono",monospace;font-size:9.5px;letter-spacing:.14em;
