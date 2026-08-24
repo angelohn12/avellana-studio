@@ -209,18 +209,17 @@ header{
   text-transform:uppercase;color:var(--tinta-3);
 }
 .hero-trust span::before{content:"";width:4px;height:4px;border-radius:50%;background:var(--salvia);flex:0 0 auto}
-.hero-fotos{position:relative;aspect-ratio:6/5;display:none;max-width:420px}
+.hero-fotos{position:relative;aspect-ratio:4/5;display:none;max-width:360px}
 .hero.con-fotos .hero-fotos{display:block}
-.hero-foto{
-  position:absolute;border-radius:var(--radio);overflow:hidden;background:var(--hueso);
+.hero-foto-marco{
+  position:absolute;inset:0;border-radius:20px;background:var(--crema);
   box-shadow:0 22px 44px -22px rgba(93,48,14,.4);
 }
-.hero-foto img{width:100%;height:100%;object-fit:cover;display:block}
-.hero-foto.f1{width:64%;aspect-ratio:4/5;top:0;left:0;z-index:2}
-.hero-foto.f2{
-  width:48%;aspect-ratio:1/1;bottom:0;right:0;z-index:1;
-  border:5px solid var(--crema);
+.hero-foto-marco img{
+  position:absolute;inset:14px;width:calc(100% - 28px);height:calc(100% - 28px);
+  object-fit:cover;border-radius:12px;display:block;opacity:0;transition:opacity .6s ease;
 }
+.hero-foto-marco img.activa{opacity:1}
 .hero-eyebrow{
   font-family:"DM Mono",monospace;font-size:10px;letter-spacing:.22em;
   text-transform:uppercase;color:var(--tinta-3);margin:0 0 14px;
@@ -651,7 +650,7 @@ details[open] summary::after{content:"−"}
 
 <div id="bandaDemo" class="banda-demo oculto"></div>
 
-<div class="franja">Envíos a todo el país · Retiro gratis en Calle Blancos</div>
+<div class="franja">Envíos a todo el país · Retiro gratis en San José</div>
 
 <header>
   <div class="wrap barra">
@@ -914,26 +913,66 @@ function limpiarCarritoFantasma(){
 /* ══════════════════════════════════════════════════════════════
    CATÁLOGO
    ══════════════════════════════════════════════════════════════ */
-// Collage de dos fotos reales en el hero — nunca imágenes genéricas. Si
-// todavía no hay al menos 2 productos con foto subida, el hero se queda
-// solo en texto (una sola columna), sin dejar un espacio vacío feo.
+// Foto real del producto en el hero — nunca imágenes genéricas. Solo rota
+// entre las fotos que se marcaron a mano como "Mostrar en la portada" desde
+// el dashboard (columna "portada"), para tener control de calidad: nunca
+// aparece una foto que nadie aprobó a propósito. Si todavía no se marcó
+// ninguna, usa cualquier producto con foto como respaldo (para que el hero
+// nunca se quede vacío), y si no hay ni una foto en todo el catálogo, el
+// hero se queda solo en texto (una sola columna), sin dejar un espacio feo.
+let cicloHeroFotos = null;
+
+function esPortada(p){
+  const v = String(p.portada ?? '').trim().toLowerCase();
+  return v === 'sí' || v === 'si' || v === 'true' || v === '1';
+}
+
 function pintarHeroFotos(){
   const hero = $('#hero');
   const contenedor = $('#heroFotos');
   if (!hero || !contenedor) return;
 
-  const conFoto = PRODUCTOS.filter(p => p.foto && p.modalidad !== 'encargo').slice(0, 2);
-  if (conFoto.length < 2){
+  if (cicloHeroFotos){ clearInterval(cicloHeroFotos); cicloHeroFotos = null; }
+
+  let candidatas = PRODUCTOS.filter(p => p.foto && p.modalidad !== 'encargo' && esPortada(p));
+  if (!candidatas.length){
+    candidatas = PRODUCTOS.filter(p => p.foto && p.modalidad !== 'encargo').slice(0, 4);
+  }
+
+  if (!candidatas.length){
     hero.classList.remove('con-fotos');
     contenedor.innerHTML = '';
     return;
   }
 
   hero.classList.add('con-fotos');
-  contenedor.innerHTML = conFoto.map((p, i) => `
-    <div class="hero-foto f${i + 1}">
-      <img src="${esc(p.foto)}" alt="${esc([p.marca, p.nombre].filter(Boolean).join(' — '))}" loading="lazy" decoding="async">
-    </div>`).join('');
+  contenedor.innerHTML = `
+    <div class="hero-foto-marco">
+      <img class="hf-a activa" alt="" loading="lazy" decoding="async">
+      <img class="hf-b" alt="" loading="lazy" decoding="async">
+    </div>`;
+
+  const imgA = contenedor.querySelector('.hf-a');
+  const imgB = contenedor.querySelector('.hf-b');
+
+  // Asignación directa (no HTML), no lleva esc(): esc() es para texto que se
+  // inserta como marcado, y aquí src/alt se ponen como propiedades del DOM.
+  function pintar(p, img){
+    img.src = p.foto;
+    img.alt = [p.marca, p.nombre].filter(Boolean).join(' — ');
+  }
+  pintar(candidatas[0], imgA);
+  if (candidatas.length < 2) return; // una sola foto aprobada: no hace falta rotar
+
+  let indice = 0;
+  cicloHeroFotos = setInterval(() => {
+    indice = (indice + 1) % candidatas.length;
+    const activa = contenedor.querySelector('.activa');
+    const siguiente = activa === imgA ? imgB : imgA;
+    pintar(candidatas[indice], siguiente);
+    imgA.classList.toggle('activa', siguiente === imgA);
+    imgB.classList.toggle('activa', siguiente === imgB);
+  }, 6000);
 }
 
 function pintarFiltros(){
