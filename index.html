@@ -341,8 +341,16 @@ header{
   margin:3px 0 2px;transition:color .16s var(--curva);
 }
 .prod-tono{font-size:11.5px;color:var(--tinta-3);margin-bottom:4px}
+/* "N tonos disponibles" en la tarjeta: se ve clicable, invita a abrir la
+   ficha de detalle en vez de listar todos los tonos ahí mismo (eso
+   descuadraba la altura de las tarjetas vecinas). */
+.prod-tono-multi{
+  color:var(--coral);cursor:pointer;text-decoration:underline;text-underline-offset:2px;
+  text-decoration-color:color-mix(in srgb, var(--coral) 40%, transparent);
+}
+.prod-tono-multi:hover{text-decoration-color:var(--coral)}
 
-/* Selector de tono dentro de la tarjeta — solo sale cuando hay más de uno */
+/* Selector de tono — hoy solo vive en la ficha de detalle del producto */
 .tono-picker{display:flex;flex-wrap:wrap;gap:5px;margin:4px 0 6px}
 .tono-pill{
   font-family:"DM Mono",monospace;font-size:9.5px;font-weight:400;letter-spacing:.02em;
@@ -357,7 +365,7 @@ header{
 
 /* Tarjeta e nombre de producto también abren la ficha de detalle */
 .prod-img[data-ver],.prod-nombre[data-ver]{cursor:pointer}
-.prod-img[data-ver]:focus-visible,.prod-nombre[data-ver]:focus-visible{outline:2px solid var(--coral);outline-offset:2px}
+.prod-img[data-ver]:focus-visible,.prod-nombre[data-ver]:focus-visible,.prod-tono-multi:focus-visible{outline:2px solid var(--coral);outline-offset:2px}
 
 /* Ficha de detalle de un producto (misma hoja que usa el carrito) */
 .detalle-foto{aspect-ratio:4/5;max-width:220px;margin:0 auto 16px;border-radius:var(--radio);overflow:hidden;background:var(--hueso)}
@@ -1051,6 +1059,15 @@ function agruparProductos(lista){
   return [...grupos.values()];
 }
 
+// Misma clave de agrupación que agruparProductos(), pero para encontrar
+// desde un solo producto todas sus variantes (lo usa la ficha de detalle).
+function grupoDeProducto(p){
+  const clave = (p.marca || '').trim().toLowerCase() + '|' + (p.nombre || '').trim().toLowerCase();
+  const variantes = PRODUCTOS.filter(x =>
+    (x.marca || '').trim().toLowerCase() + '|' + (x.nombre || '').trim().toLowerCase() === clave);
+  return { clave, variantes };
+}
+
 // Cuál variante mostrar por defecto: la que ya haya elegido la clienta si
 // sigue en la lista; si no, la primera con stock; si ninguna tiene, la primera.
 function varianteActiva(grupo){
@@ -1109,18 +1126,12 @@ function pintarGrilla(reanimar = false){
       control = `<button class="btn-agregar" type="button" data-agregar="${esc(p.id)}">Agregar</button>`;
     }
 
-    // Solo se muestra el selector si de verdad hay más de un tono para elegir.
+    // En la grilla no mostramos la lista completa de tonos (con muchos
+    // colores esa lista crece y descuadra la altura de las tarjetas de al
+    // lado). Si hay más de uno, mostramos solo la cantidad — el tono se
+    // elige adentro de la ficha de detalle, que sí tiene espacio de sobra.
     const selector = grupo.variantes.length > 1
-      ? `<div class="tono-picker" role="group" aria-label="Elegí el tono">
-          ${grupo.variantes.map(v => {
-            const activo = String(v.id) === String(p.id);
-            const sinStock = !estadoStock(v).hay;
-            return `<button type="button" class="tono-pill${sinStock ? ' sin-stock' : ''}"
-                      aria-pressed="${activo}" data-tono-grupo="${esc(grupo.clave)}" data-tono-id="${esc(v.id)}">
-                      ${esc(v.tono || 'Único')}${sinStock ? ' · por encargo' : ''}
-                    </button>`;
-          }).join('')}
-        </div>`
+      ? `<div class="prod-tono prod-tono-multi" data-ver="${esc(p.id)}" role="button" tabindex="0" aria-label="Ver los ${grupo.variantes.length} tonos de ${esc(p.nombre)}">${grupo.variantes.length} tonos disponibles</div>`
       : (p.tono ? `<div class="prod-tono">Tono ${esc(p.tono)}</div>` : '');
 
     return `<article class="prod ${est.hay ? '' : 'agotado'}${reanimar ? ' entrando' : ''}" style="--i:${i}">
@@ -1138,13 +1149,21 @@ function pintarGrilla(reanimar = false){
 }
 
 // Cambia qué tono está activo dentro de un grupo, sin tocar el carrito.
+// Si la ficha de detalle de ese mismo grupo está abierta, también se
+// actualiza para mostrar el tono recién elegido.
 function elegirTono(grupoClave, id){
   TONO_ELEGIDO[grupoClave] = id;
   pintarGrilla();
+  const abierto = $('#hojaCuerpo [data-detalle-grupo]');
+  if (abierto && abierto.dataset.detalleGrupo === grupoClave){
+    const p = PRODUCTOS.find(x => String(x.id) === String(id));
+    if (p) $('#hojaCuerpo').innerHTML = htmlDetalleProducto(p);
+  }
 }
 
 /* ── ficha de un producto: qué es, medida, y controles para pedirlo ── */
 function htmlDetalleProducto(p){
+  const grupo = grupoDeProducto(p);
   const est = estadoStock(p);
   const enCarrito = CARRITO[p.id] || 0;
   const tope = Math.min(CONFIG.MAX_POR_PRODUCTO, Number(p.stock) || 0);
@@ -1163,11 +1182,28 @@ function htmlDetalleProducto(p){
     control = `<button class="btn-agregar" type="button" data-agregar="${esc(p.id)}">Agregar</button>`;
   }
 
+  // Acá sí hay espacio de sobra, así que la lista completa de tonos vive
+  // en la ficha de detalle (no en la tarjeta de la grilla).
+  const selectorTono = grupo.variantes.length > 1
+    ? `<div class="tono-picker" role="group" aria-label="Elegí el tono">
+        ${grupo.variantes.map(v => {
+          const activo = String(v.id) === String(p.id);
+          const sinStock = !estadoStock(v).hay;
+          return `<button type="button" class="tono-pill${sinStock ? ' sin-stock' : ''}"
+                    aria-pressed="${activo}" data-tono-grupo="${esc(grupo.clave)}" data-tono-id="${esc(v.id)}">
+                    ${esc(v.tono || 'Único')}${sinStock ? ' · por encargo' : ''}
+                  </button>`;
+        }).join('')}
+      </div>`
+    : '';
+
   // El nombre del producto ya va como título de la hoja (abrirHoja) — acá
-  // no se repite, solo la marca/tono como referencia rápida.
-  return `<div class="detalle-prod" data-detalle-id="${esc(p.id)}">
+  // no se repite. El tono solo se muestra como texto suelto cuando no hay
+  // selector (un solo tono); si hay varios, el selector ya lo deja claro.
+  return `<div class="detalle-prod" data-detalle-id="${esc(p.id)}" data-detalle-grupo="${esc(grupo.clave)}">
     <div class="detalle-foto">${tarjetaFoto(p)}</div>
-    ${(p.marca || p.tono) ? `<div class="prod-marca">${[p.marca, p.tono].filter(Boolean).join(' · ')}</div>` : ''}
+    ${(p.marca || (grupo.variantes.length <= 1 && p.tono)) ? `<div class="prod-marca">${[p.marca, grupo.variantes.length <= 1 ? p.tono : null].filter(Boolean).join(' · ')}</div>` : ''}
+    ${selectorTono}
     <div class="prod-precio">${colones(p.precioVenta)}</div>
     <span class="etiqueta ${est.clase}">${est.texto}</span>
     ${p.medida ? `<div class="detalle-medida">${esc(p.medida)}</div>` : ''}
