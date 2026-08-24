@@ -939,18 +939,36 @@ function limpiarCarritoFantasma(){
 /* ══════════════════════════════════════════════════════════════
    CATÁLOGO
    ══════════════════════════════════════════════════════════════ */
-// Foto real del producto en el hero — nunca imágenes genéricas. Solo rota
-// entre las fotos que se marcaron a mano como "Mostrar en la portada" desde
-// el dashboard (columna "portada"), para tener control de calidad: nunca
-// aparece una foto que nadie aprobó a propósito. Si todavía no se marcó
-// ninguna, usa cualquier producto con foto como respaldo (para que el hero
-// nunca se quede vacío), y si no hay ni una foto en todo el catálogo, el
-// hero se queda solo en texto (una sola columna), sin dejar un espacio feo.
+// Foto real del producto en el hero — nunca imágenes genéricas. Rota entre
+// TODAS las fotos del catálogo (en stock o por encargo — acá es solo
+// vitrina, no implica compra inmediata; eso ya se aclara adentro de la
+// ficha de cada producto). Si se marcaron fotos a mano como "Mostrar en la
+// portada" desde el dashboard (columna "portada"), se usan solo esas —
+// para tener control de calidad cuando se quiera curar a mano. Si no se
+// marcó ninguna, usa una foto por cada producto distinto (sin repetir el
+// mismo producto en varios tonos seguidos) como respaldo, y si no hay ni
+// una foto en todo el catálogo, el hero se queda solo en texto (una sola
+// columna), sin dejar un espacio feo.
 let cicloHeroFotos = null;
 
 function esPortada(p){
   const v = String(p.portada ?? '').trim().toLowerCase();
   return v === 'sí' || v === 'si' || v === 'true' || v === '1';
+}
+
+// Una foto por producto distinto (mismo criterio de agrupación que la
+// grilla: marca + nombre), así el hero no repite "Rhode Gloss" cinco veces
+// seguidas solo porque tiene cinco tonos fotografiados.
+function unaFotoPorProducto(lista){
+  const vistos = new Set();
+  const resultado = [];
+  lista.forEach(p => {
+    const clave = (p.marca || '').trim().toLowerCase() + '|' + (p.nombre || '').trim().toLowerCase();
+    if (vistos.has(clave)) return;
+    vistos.add(clave);
+    resultado.push(p);
+  });
+  return resultado;
 }
 
 function pintarHeroFotos(){
@@ -960,9 +978,9 @@ function pintarHeroFotos(){
 
   if (cicloHeroFotos){ clearInterval(cicloHeroFotos); cicloHeroFotos = null; }
 
-  let candidatas = PRODUCTOS.filter(p => p.foto && p.modalidad !== 'encargo' && esPortada(p));
+  let candidatas = unaFotoPorProducto(PRODUCTOS.filter(p => p.foto && esPortada(p)));
   if (!candidatas.length){
-    candidatas = PRODUCTOS.filter(p => p.foto && p.modalidad !== 'encargo').slice(0, 4);
+    candidatas = unaFotoPorProducto(PRODUCTOS.filter(p => p.foto));
   }
 
   if (!candidatas.length){
