@@ -907,10 +907,30 @@ function estadoStock(p){
 /* ══════════════════════════════════════════════════════════════
    CARGA DEL CATÁLOGO
    ══════════════════════════════════════════════════════════════ */
+// Guarda la última respuesta del catálogo en esta pestaña por 60s (igual
+// que el caché del backend). Si alguien recarga la página o vuelve atrás
+// desde la ficha de un producto dentro de ese minuto, se ve al instante,
+// sin esperar de nuevo la llamada a Apps Script.
+const CATALOGO_CACHE_KEY = 'avellanaCatalogoCache';
+const CATALOGO_CACHE_MS = 60000;
+
 async function cargarCatalogo(){
   try {
-    const r = await fetch(CONFIG.API + '?accion=catalogo', { method:'GET' });
-    const d = await r.json();
+    let d = null;
+    try {
+      const guardado = sessionStorage.getItem(CATALOGO_CACHE_KEY);
+      if (guardado) {
+        const parsed = JSON.parse(guardado);
+        if (Date.now() - parsed.t < CATALOGO_CACHE_MS) d = parsed.d;
+      }
+    } catch (e0) { /* sessionStorage no disponible (privado/incógnito estricto): sigue sin caché */ }
+
+    if (!d) {
+      const r = await fetch(CONFIG.API + '?accion=catalogo', { method:'GET' });
+      d = await r.json();
+      try { sessionStorage.setItem(CATALOGO_CACHE_KEY, JSON.stringify({ t: Date.now(), d })); } catch (e1) { /* idem */ }
+    }
+
     if (!d || !d.ok || !Array.isArray(d.productos)) throw new Error('sin datos');
     // El backend ya filtra por "publicado", pero se vuelve a filtrar aquí:
     // si alguien apaga un producto, no aparece ni por accidente.
@@ -1023,7 +1043,7 @@ function pintarHeroFotos(){
   // Asignación directa (no HTML), no lleva esc(): esc() es para texto que se
   // inserta como marcado, y aquí src/alt se ponen como propiedades del DOM.
   function pintar(p, img){
-    img.src = p.foto;
+    img.src = fotoAncho(p.foto, 800); // marco de hasta 360px, con margen para retina
     img.alt = [p.marca, p.nombre].filter(Boolean).join(' — ');
   }
   pintar(candidatas[0], imgA);
@@ -1121,10 +1141,21 @@ const MARCA_SIN_FOTO = `<svg width="26" height="26" viewBox="0 0 24 24" fill="no
   <path d="M12 21c-4-2.2-7-5.6-7-9.6A7 7 0 0 1 19 11.4c0 4-3 7.4-7 9.6Z" fill="currentColor" opacity=".45"/>
   <circle cx="12" cy="3.6" r="2" fill="currentColor" opacity=".7"/></svg>`;
 
-function tarjetaFoto(p){
+// Las fotos se suben a Drive con un ancho fijo (=w1000) para tener margen
+// de sobra, pero en la grilla se ven a lo mucho ~200px — bajar siempre la
+// versión de 1000px es puro peso desperdiciado (más lento, más datos
+// móviles gastados). Este link de Google acepta cualquier ancho al final
+// de la URL, así que acá se pide el tamaño justo para cada uso (con algo
+// de margen para pantallas retina), sin tocar nada en Drive ni en la Sheet.
+function fotoAncho(url, ancho){
+  if (!url) return url;
+  return String(url).replace(/=w\d+$/, '=w' + ancho);
+}
+
+function tarjetaFoto(p, ancho = 400){
   if (p.foto){
     const alt = [p.marca, p.nombre, p.tono && ('tono ' + p.tono)].filter(Boolean).join(' — ');
-    return `<img src="${esc(p.foto)}" alt="${esc(alt)}" loading="lazy" decoding="async">`;
+    return `<img src="${esc(fotoAncho(p.foto, ancho))}" alt="${esc(alt)}" loading="lazy" decoding="async">`;
   }
   return `<div class="sin-foto" role="img" aria-label="${esc(p.nombre)} — foto pendiente">
     ${MARCA_SIN_FOTO}<span>${esc(p.marca || 'Avellana')}</span></div>`;
@@ -1240,7 +1271,7 @@ function htmlDetalleProducto(p){
   // no se repite. El tono solo se muestra como texto suelto cuando no hay
   // selector (un solo tono); si hay varios, el selector ya lo deja claro.
   return `<div class="detalle-prod" data-detalle-id="${esc(p.id)}" data-detalle-grupo="${esc(grupo.clave)}">
-    <div class="detalle-foto">${tarjetaFoto(p)}</div>
+    <div class="detalle-foto">${tarjetaFoto(p, 500)}</div>
     ${(p.marca || (grupo.variantes.length <= 1 && p.tono)) ? `<div class="prod-marca">${[p.marca, grupo.variantes.length <= 1 ? p.tono : null].filter(Boolean).join(' · ')}</div>` : ''}
     ${selectorTono}
     <div class="prod-precio">${colones(p.precioVenta)}</div>
@@ -1362,7 +1393,7 @@ function verCarrito(){
   const html = `
     ${lineas.map(({p, n}) => `
       <div class="linea-carrito">
-        <div class="mini">${tarjetaFoto(p)}</div>
+        <div class="mini">${tarjetaFoto(p, 150)}</div>
         <div>
           <div class="lc-nombre">${esc(p.nombre)}</div>
           <div class="lc-precio">${n} × ${colones(p.precioVenta)}</div>
