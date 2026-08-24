@@ -355,6 +355,21 @@ header{
 .tono-pill.sin-stock{color:var(--tinta-3);opacity:.55}
 .prod-precio{font-size:13.5px;font-weight:500;color:var(--tinta);font-variant-numeric:tabular-nums;margin-top:auto}
 
+/* Tarjeta e nombre de producto también abren la ficha de detalle */
+.prod-img[data-ver],.prod-nombre[data-ver]{cursor:pointer}
+.prod-img[data-ver]:focus-visible,.prod-nombre[data-ver]:focus-visible{outline:2px solid var(--coral);outline-offset:2px}
+
+/* Ficha de detalle de un producto (misma hoja que usa el carrito) */
+.detalle-foto{aspect-ratio:4/5;max-width:220px;margin:0 auto 16px;border-radius:var(--radio);overflow:hidden;background:var(--hueso)}
+.detalle-foto img{width:100%;height:100%;object-fit:cover;display:block}
+.detalle-prod .prod-precio{font-size:16px;margin-top:6px}
+.detalle-medida{
+  font-family:"DM Mono",monospace;font-size:10.5px;letter-spacing:.05em;
+  color:var(--tinta-3);margin:0 0 12px;
+}
+.detalle-descripcion{font-size:13.5px;line-height:1.65;color:var(--tinta-2);margin:0 0 20px}
+.detalle-control .paso-cant{justify-content:center}
+
 /* Etiqueta de stock: micro-rótulo en mono, no una píldora pastel */
 .etiqueta{
   display:inline-flex;align-items:center;gap:5px;width:fit-content;
@@ -1106,10 +1121,10 @@ function pintarGrilla(reanimar = false){
       : (p.tono ? `<div class="prod-tono">Tono ${esc(p.tono)}</div>` : '');
 
     return `<article class="prod ${est.hay ? '' : 'agotado'}${reanimar ? ' entrando' : ''}" style="--i:${i}">
-      <div class="prod-img">${tarjetaFoto(p)}</div>
+      <div class="prod-img" data-ver="${esc(p.id)}" role="button" tabindex="0" aria-label="Ver detalle de ${esc(p.nombre)}">${tarjetaFoto(p)}</div>
       <div class="prod-cuerpo">
         ${p.marca ? `<div class="prod-marca">${esc(p.marca)}</div>` : ''}
-        <div class="prod-nombre">${esc(p.nombre)}</div>
+        <div class="prod-nombre" data-ver="${esc(p.id)}" role="button" tabindex="0">${esc(p.nombre)}</div>
         ${selector}
         <div class="prod-precio">${colones(p.precioVenta)}</div>
         <span class="etiqueta ${est.clase}">${est.texto}</span>
@@ -1123,6 +1138,55 @@ function pintarGrilla(reanimar = false){
 function elegirTono(grupoClave, id){
   TONO_ELEGIDO[grupoClave] = id;
   pintarGrilla();
+}
+
+/* ── ficha de un producto: qué es, medida, y controles para pedirlo ── */
+function htmlDetalleProducto(p){
+  const est = estadoStock(p);
+  const enCarrito = CARRITO[p.id] || 0;
+  const tope = Math.min(CONFIG.MAX_POR_PRODUCTO, Number(p.stock) || 0);
+
+  let control;
+  if (!est.hay){
+    const descripcion = (p.marca ? p.marca + ' ' : '') + p.nombre + (p.tono ? ', tono ' + p.tono : '');
+    control = `<button class="btn-avisar" type="button" data-encargo="${esc(descripcion)}">Pedir por encargo</button>`;
+  } else if (enCarrito > 0){
+    control = `<div class="paso-cant">
+        <button type="button" data-menos="${esc(p.id)}" aria-label="Quitar una unidad">−</button>
+        <span>${enCarrito}</span>
+        <button type="button" data-mas="${esc(p.id)}" aria-label="Agregar una unidad" ${enCarrito >= tope ? 'disabled' : ''}>+</button>
+      </div>`;
+  } else {
+    control = `<button class="btn-agregar" type="button" data-agregar="${esc(p.id)}">Agregar</button>`;
+  }
+
+  // El nombre del producto ya va como título de la hoja (abrirHoja) — acá
+  // no se repite, solo la marca/tono como referencia rápida.
+  return `<div class="detalle-prod" data-detalle-id="${esc(p.id)}">
+    <div class="detalle-foto">${tarjetaFoto(p)}</div>
+    ${(p.marca || p.tono) ? `<div class="prod-marca">${[p.marca, p.tono].filter(Boolean).join(' · ')}</div>` : ''}
+    <div class="prod-precio">${colones(p.precioVenta)}</div>
+    <span class="etiqueta ${est.clase}">${est.texto}</span>
+    ${p.medida ? `<div class="detalle-medida">${esc(p.medida)}</div>` : ''}
+    ${p.descripcion ? `<p class="detalle-descripcion">${esc(p.descripcion)}</p>` : ''}
+    <div class="detalle-control">${control}</div>
+  </div>`;
+}
+
+function verProducto(id){
+  const p = PRODUCTOS.find(x => String(x.id) === String(id));
+  if (!p) return;
+  abrirHoja(p.nombre, htmlDetalleProducto(p));
+}
+
+// Si la ficha de detalle de este producto está abierta cuando cambia la
+// cantidad en el carrito (desde ahí mismo o desde la grilla de atrás), se
+// vuelve a pintar para que el contador no quede desactualizado.
+function refrescarDetalleAbierto(id){
+  const abierto = $('#hojaCuerpo [data-detalle-id]');
+  if (!abierto || abierto.dataset.detalleId !== String(id)) return;
+  const p = PRODUCTOS.find(x => String(x.id) === String(id));
+  if (p) $('#hojaCuerpo').innerHTML = htmlDetalleProducto(p);
 }
 
 /* ── carrito: operaciones ───────────── */
@@ -1144,6 +1208,7 @@ function agregar(id, n = 1){
   guardarCarrito();
   pintarGrilla();
   actualizarBarra();
+  refrescarDetalleAbierto(id);
   if (nuevo > actual) pulsarCarrito();
   if (n > 0 && actual === 0) brindis('Agregado al carrito');
 }
@@ -1329,9 +1394,9 @@ function verCheckout(){
         <div class="r-fila grande"><span>Total</span><span id="montoTotal">${colones(subtotal())}</span></div>
       </div>
 
-      <div class="aviso">
+      <div class="aviso" id="avisoFormaPago">
         <b>Acá no se paga nada.</b> Armamos tu pedido, te escribimos por WhatsApp
-        desde el ${esc(CONFIG.WHATSAPP_VISIBLE)} para confirmar el total, y ahí coordinamos el SINPE Móvil.
+        desde el ${esc(CONFIG.WHATSAPP_VISIBLE)} para confirmar el total, y ahí coordinamos el pago.
       </div>
 
       <button class="btn-grande" type="submit" id="btnConfirmar">Confirmar pedido</button>
@@ -1366,6 +1431,20 @@ function refrescarTotales(){
   // aparte por WhatsApp (le preguntamos ahí si lo pide ella o lo pedimos
   // nosotros, y en ese caso la dirección se da por ese medio).
   $('#bloqueDireccion').classList.toggle('oculto', e.modo !== 'correos');
+
+  // El medio de pago depende de cómo se entrega: en retiro se puede pagar
+  // en efectivo o SINPE; en envío (Correos o Uber Flash) es solo SINPE,
+  // porque nadie de la tienda está ahí para recibir efectivo.
+  const aviso = $('#avisoFormaPago');
+  if (aviso) {
+    aviso.innerHTML = e.modo === 'retiro'
+      ? `<b>Acá no se paga nada.</b> Armamos tu pedido, te escribimos por WhatsApp
+         desde el ${esc(CONFIG.WHATSAPP_VISIBLE)} para confirmar el total, y ahí coordinás
+         el pago en <b>efectivo o SINPE Móvil</b> al retirar.`
+      : `<b>Acá no se paga nada.</b> Armamos tu pedido, te escribimos por WhatsApp
+         desde el ${esc(CONFIG.WHATSAPP_VISIBLE)} para confirmar el total, y ahí coordinamos
+         el pago por <b>SINPE Móvil</b>.`;
+  }
 }
 
 function prepararFormulario(){
@@ -1635,7 +1714,7 @@ function verEncargo(prefill){
    EVENTOS
    ══════════════════════════════════════════════════════════════ */
 document.addEventListener('click', (ev) => {
-  const t = ev.target.closest('[data-agregar],[data-mas],[data-menos],[data-quitar],[data-encargo],[data-tono-id],[data-cat],[data-copiar],#irCheckout,#seguirComprando,#btnCarrito,#btnVerCarrito,#btnCerrar,#btnLimpiarFiltros');
+  const t = ev.target.closest('[data-agregar],[data-mas],[data-menos],[data-quitar],[data-encargo],[data-tono-id],[data-cat],[data-copiar],[data-ver],#irCheckout,#seguirComprando,#btnCarrito,#btnVerCarrito,#btnCerrar,#btnLimpiarFiltros');
   if (!t) return;
 
   if (t.dataset.agregar) return agregar(t.dataset.agregar, 1);
@@ -1644,6 +1723,7 @@ document.addEventListener('click', (ev) => {
   if (t.dataset.copiar)  return copiarSinpe(t.dataset.copiar, t);
   if (t.dataset.encargo !== undefined) return verEncargo(t.dataset.encargo);
   if (t.dataset.tonoId)  return elegirTono(t.dataset.tonoGrupo, t.dataset.tonoId);
+  if (t.dataset.ver)     return verProducto(t.dataset.ver);
 
   if (t.dataset.quitar){
     delete CARRITO[t.dataset.quitar];
@@ -1674,7 +1754,15 @@ document.addEventListener('click', (ev) => {
 });
 
 $('#velo').addEventListener('click', (ev) => { if (ev.target.id === 'velo') cerrarHoja(); });
-document.addEventListener('keydown', (ev) => { if (ev.key === 'Escape') cerrarHoja(); });
+document.addEventListener('keydown', (ev) => {
+  if (ev.key === 'Escape') return cerrarHoja();
+  // .prod-img / .prod-nombre son role="button" (no <button> real, para no
+  // pelear con su CSS), así que Enter/Espacio los activa a mano.
+  if (ev.key === 'Enter' || ev.key === ' '){
+    const t = ev.target.closest('[data-ver]');
+    if (t){ ev.preventDefault(); verProducto(t.dataset.ver); }
+  }
+});
 
 let tBusca;
 $('#buscar').addEventListener('input', (ev) => {
