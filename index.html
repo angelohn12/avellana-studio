@@ -26,6 +26,12 @@
 <link rel="stylesheet" href="https://fonts.googleapis.com/css2?family=DM+Mono:wght@400;500&family=Playfair+Display:ital,wght@0,600;0,700;1,600&family=Poppins:wght@300;400;500;600;700&display=swap">
 
 <script>
+// El navegador a veces "recuerda" el scroll de la última visita y abre la
+// página donde la dejaste en vez de arriba. Lo desactivamos y forzamos
+// que siempre arranque en la parte de arriba.
+if ('scrollRestoration' in history) history.scrollRestoration = 'manual';
+window.scrollTo(0, 0);
+
 /* ══════════════════════════════════════════════════════════════
    CONFIGURACIÓN — esto es lo único que hay que tocar
    ══════════════════════════════════════════════════════════════ */
