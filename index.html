@@ -2039,7 +2039,7 @@ function pedirEncargoLibre(){
 // formulario de contacto al final para mandar todo junto.
 function verEncargos(){
   if (!ENCARGOS.length){
-    abrirHoja('Tu lista de encargos', `<div class="vacio"><strong>Todavía no agregaste nada</strong>Buscá "Pedir por encargo" en cualquier producto que no tengamos, o escribí uno vos misma.</div>
+    abrirHoja('Tu lista de encargos', `<div class="vacio"><strong>Tu lista de encargos está vacía</strong>Buscá "Pedir por encargo" en cualquier producto que no tengamos, o escribí uno vos misma.</div>
       <button class="btn-suave" type="button" style="margin-top:14px" data-encargo-libre>Pedir algo por encargo</button>`);
     return;
   }
@@ -2049,10 +2049,8 @@ function verEncargos(){
         <div class="lc-nombre">${esc(texto)}</div>
         <button class="lc-quitar" type="button" data-quitar-encargo="${i}">Quitar</button>
       </div>`).join('')}
-    <button class="btn-suave" type="button" style="margin:14px 0" data-encargo-libre>+ Agregar otro producto</button>
-    <p style="margin:14px 0 0;font-size:13px;color:var(--tinta-2)">
-      Te escribimos por WhatsApp para confirmar precio y tiempo de entrega de cada uno antes de pedirte nada.
-    </p>`;
+    <button class="btn-grande" type="button" id="irEncargos">Continuar</button>
+    <button class="btn-suave" type="button" data-encargo-libre>Seguir agregando</button>`;
   abrirHoja('Tu lista de encargos', html);
 }
 
