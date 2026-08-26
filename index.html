@@ -203,7 +203,8 @@ header{
    página de lado). Se achican un poco, y el wrap queda como respaldo para
    que nunca se produzca scroll horizontal aunque algún conteo sea largo. */
 @media(max-width:420px){
-  .acciones-header{gap:6px;flex-wrap:wrap;justify-content:flex-end}
+  .barra{flex-wrap:wrap;row-gap:10px}
+  .acciones-header{gap:6px;flex-wrap:wrap;justify-content:flex-end;width:100%}
   .acciones-header .btn-carrito{padding:10px 11px;font-size:10px;gap:5px;letter-spacing:.04em}
   .acciones-header .btn-carrito svg{width:13px;height:13px}
 }
