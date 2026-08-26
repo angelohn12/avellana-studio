@@ -2035,29 +2035,6 @@ function pedirEncargoLibre(){
   });
 }
 
-// Registrar en la Sheet que el cliente confirmó su encargo.
-// No guarda datos del cliente — solo qué se encargó y que fue confirmado.
-async function registrarConfirmacionEncargo(procedio){
-  if (MODO_DEMO || !ENCARGOS.length) return; // No enviar en demo
-  try {
-    const r = await fetch(CONFIG.API, {
-      method:'POST',
-      headers:{ 'Content-Type':'text/plain;charset=utf-8' },
-      body: JSON.stringify({
-        accion:'confirmar_encargo',
-        procedio: procedio,
-        encargos: ENCARGOS,
-        timestamp: new Date().toISOString()
-      })
-    });
-    const d = await r.json();
-    if (!d || !d.ok) console.error('Error registrando encargo:', d && d.error);
-  } catch (err) {
-    console.error('Error enviando confirmación de encargo:', err);
-    // No es crítico — el cliente ve el mensaje de confirmación de todas formas
-  }
-}
-
 // La lista completa: cada producto agregado (removible) + un solo
 // formulario de contacto al final para mandar todo junto.
 function verEncargos(){
@@ -2068,46 +2045,15 @@ function verEncargos(){
   }
   const html = `
     <p style="margin:0 0 14px;font-size:14px;color:var(--tinta-2);line-height:1.6">
-      Estos son los productos que querés pedir por encargo. ¿Querés proceder?
+      Te escribimos por WhatsApp para confirmar precio y tiempo de entrega de cada uno antes de pedirte nada.
     </p>
     ${ENCARGOS.map((texto, i) => `
       <div class="linea-encargo">
         <div class="lc-nombre">${esc(texto)}</div>
         <button class="lc-quitar" type="button" data-quitar-encargo="${i}">Quitar</button>
       </div>`).join('')}
-    <button class="btn-suave" type="button" style="margin:14px 0" data-encargo-libre>+ Agregar otro producto</button>
-    <p style="margin-top:20px;padding-top:14px;border-top:1px solid var(--linea);font-size:13px;color:var(--tinta-2)">
-      Nos escribimos por WhatsApp para confirmar precio y tiempo de entrega antes de pedir nada.
-    </p>
-    <div style="display:flex;gap:12px;margin-top:14px">
-      <button class="btn-grande" type="button" data-proceder-encargo style="flex:1;background:var(--coral);color:#FFF">Sí, procedo</button>
-      <button class="btn-grande" type="button" data-cancelar-encargo style="flex:1;background:transparent;color:var(--tinta);border:1.5px solid var(--linea)">No, cancelar</button>
-    </div>`;
+    <button class="btn-suave" type="button" style="margin:14px 0" data-encargo-libre>+ Agregar otro producto</button>`;
   abrirHoja('Tu lista de encargos', html);
-
-  // Listeners para los botones de confirmación — añadidos después de que el HTML esté en el DOM
-  const btnProceder = document.querySelector('[data-proceder-encargo]');
-  const btnCancelar = document.querySelector('[data-cancelar-encargo]');
-
-  if (btnProceder) {
-    btnProceder.addEventListener('click', (e) => {
-      e.preventDefault();
-      document.getElementById('modal').classList.add('oculto');
-      registrarConfirmacionEncargo(true).then(() => {
-        ENCARGOS = [];
-        guardarEncargos();
-        actualizarBadgeEncargos();
-        brindis('Encargo confirmado. Te escribimos por WhatsApp 📦');
-      });
-    });
-  }
-
-  if (btnCancelar) {
-    btnCancelar.addEventListener('click', (e) => {
-      e.preventDefault();
-      document.getElementById('modal').classList.add('oculto');
-    });
-  }
 }
 
 /* ══════════════════════════════════════════════════════════════
