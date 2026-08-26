@@ -1044,6 +1044,25 @@ function estadoStock(p){
 const CATALOGO_CACHE_KEY = 'avellanaCatalogoCache';
 const CATALOGO_CACHE_MS = 60000;
 
+// Un solo intento de fetch al catálogo, con límite de tiempo. Sin este
+// límite, una conexión lenta o trabada deja a la clienta viendo el
+// esqueleto de carga PARA SIEMPRE — el fetch nunca llega a fallar, así
+// que nunca cae al catálogo de ejemplo. Se corta a los 20s (de sobra
+// para lo lento que a veces responde el Sheet).
+async function intentarCargarCatalogo(){
+  const controlador = new AbortController();
+  const corte = setTimeout(() => controlador.abort(), 20000);
+  try {
+    const r = await fetch(CONFIG.API + '?accion=catalogo', { method:'GET', signal: controlador.signal });
+    return await r.json();
+  } catch (errFetch) {
+    if (controlador.signal.aborted) throw Object.assign(new Error('tiempo agotado'), { agotado: true });
+    throw errFetch;
+  } finally {
+    clearTimeout(corte);
+  }
+}
+
 async function cargarCatalogo(){
   try {
     let d = null;
@@ -1056,25 +1075,22 @@ async function cargarCatalogo(){
     } catch (e0) { /* sessionStorage no disponible (privado/incógnito estricto): sigue sin caché */ }
 
     if (!d) {
-      // Sin límite de tiempo, una conexión lenta o trabada deja a la
-      // clienta viendo el esqueleto de carga PARA SIEMPRE — el fetch nunca
-      // llega a fallar, así que nunca cae al catálogo de ejemplo. Se corta
-      // a los 20s (de sobra para lo lento que a veces responde el Sheet)
-      // y ahí sí se avisa con un mensaje claro en vez de dejarla a ciegas.
-      const controlador = new AbortController();
-      const corte = setTimeout(() => controlador.abort(), 20000);
-      let seAgotoElTiempo = false;
+      // Google Apps Script a veces falla una vez de la nada y funciona
+      // perfecto medio segundo después — se vio pasar en pruebas reales.
+      // Por eso, antes de rendirse y mostrar el catálogo de ejemplo, se
+      // reintenta una vez más.
+      let agotado = false;
       try {
-        const r = await fetch(CONFIG.API + '?accion=catalogo', { method:'GET', signal: controlador.signal });
-        d = await r.json();
-      } catch (errFetch) {
-        seAgotoElTiempo = controlador.signal.aborted;
-        throw errFetch;
-      } finally {
-        clearTimeout(corte);
+        d = await intentarCargarCatalogo();
+      } catch (primerError) {
+        agotado = !!primerError.agotado;
+        d = await intentarCargarCatalogo().catch(segundoError => {
+          agotado = agotado || !!segundoError.agotado;
+          throw segundoError;
+        });
       }
       try { sessionStorage.setItem(CATALOGO_CACHE_KEY, JSON.stringify({ t: Date.now(), d })); } catch (e1) { /* idem */ }
-      cargarCatalogo._agotado = seAgotoElTiempo;
+      cargarCatalogo._agotado = agotado;
     }
 
     if (!d || !d.ok || !Array.isArray(d.productos)) throw new Error('sin datos');
