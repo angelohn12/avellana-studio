@@ -2152,7 +2152,6 @@ async function enviarSolicitudEncargo(ev){
 }
 
 function verConfirmacionEncargo(productos){
-  const texto = encodeURIComponent(`¡Hola! Acabo de pedir por encargo en la tienda 💛`);
   const html = `
     <div class="listo">
       <div class="marca-ok">
@@ -2168,9 +2167,7 @@ function verConfirmacionEncargo(productos){
 
       ${MODO_DEMO ? `<div class="aviso"><b>Vista de prueba.</b> Este encargo no se guardó en ningún lado — la tienda todavía no está conectada.</div>` : ''}
 
-      <a class="btn-grande" style="display:block;text-align:center;text-decoration:none"
-         href="https://wa.me/${esc(CONFIG.WHATSAPP)}?text=${texto}" target="_blank" rel="noopener">Escribirnos por WhatsApp</a>
-      <button class="btn-suave" type="button" id="seguirComprando">Volver a la tienda</button>
+      <button class="btn-grande" type="button" id="seguirComprando">Volver a la tienda</button>
     </div>`;
   abrirHoja('Encargo confirmado', html);
 }
