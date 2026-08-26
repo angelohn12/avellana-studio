@@ -2080,26 +2080,34 @@ function verEncargos(){
       Nos escribimos por WhatsApp para confirmar precio y tiempo de entrega antes de pedir nada.
     </p>
     <div style="display:flex;gap:12px;margin-top:14px">
-      <button class="btn-grande" type="button" id="btnProcederEncargo" style="flex:1;background:var(--coral);color:#FFF">Sí, procedo</button>
-      <button class="btn-grande" type="button" id="btnCancelarEncargo" style="flex:1;background:transparent;color:var(--tinta);border:1.5px solid var(--linea)">No, cancelar</button>
+      <button class="btn-grande" type="button" data-proceder-encargo style="flex:1;background:var(--coral);color:#FFF">Sí, procedo</button>
+      <button class="btn-grande" type="button" data-cancelar-encargo style="flex:1;background:transparent;color:var(--tinta);border:1.5px solid var(--linea)">No, cancelar</button>
     </div>`;
   abrirHoja('Tu lista de encargos', html);
 
-  $('#btnProcederEncargo').addEventListener('click', async () => {
-    const modal = $('#modal');
-    modal.classList.add('oculto');
-    await registrarConfirmacionEncargo(true);
-    ENCARGOS = [];
-    guardarEncargos();
-    actualizarBadgeEncargos();
-    brindis('Encargo confirmado. Te escribimos por WhatsApp 📦');
-  });
+  // Listeners para los botones de confirmación — añadidos después de que el HTML esté en el DOM
+  const btnProceder = document.querySelector('[data-proceder-encargo]');
+  const btnCancelar = document.querySelector('[data-cancelar-encargo]');
 
-  $('#btnCancelarEncargo').addEventListener('click', () => {
-    const modal = $('#modal');
-    modal.classList.add('oculto');
-    // No registramos cancelación — es una decisión del cliente, sin registrar
-  });
+  if (btnProceder) {
+    btnProceder.addEventListener('click', (e) => {
+      e.preventDefault();
+      document.getElementById('modal').classList.add('oculto');
+      registrarConfirmacionEncargo(true).then(() => {
+        ENCARGOS = [];
+        guardarEncargos();
+        actualizarBadgeEncargos();
+        brindis('Encargo confirmado. Te escribimos por WhatsApp 📦');
+      });
+    });
+  }
+
+  if (btnCancelar) {
+    btnCancelar.addEventListener('click', (e) => {
+      e.preventDefault();
+      document.getElementById('modal').classList.add('oculto');
+    });
+  }
     if (nombre.length < 2 || tel.length !== 8) return;
 
     const btn = $('#btnEnviarEncargos');
