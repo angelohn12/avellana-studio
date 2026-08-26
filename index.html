@@ -474,22 +474,51 @@ header{
 }
 .vacio strong{display:block;font-size:16px;color:var(--tinta);margin-bottom:8px;font-weight:500;letter-spacing:-.015em}
 
-/* ── barra inferior ─────────────────── */
+/* ── barra inferior ───────────────────
+   Es la salida de emergencia de todo el catálogo: sin importar cuánto se
+   scrollee agregando cosas, siempre queda clavada abajo con TODO lo que
+   falta terminar (carrito de compra Y lista de encargos, cada una con su
+   propio botón — son dos flujos distintos, no se pueden fundir en uno).
+   Al aparecer o sumar algo nuevo hace un "pop" para que el ojo la note en
+   el momento justo, en vez de quedar como papel tapiz que nadie mira. */
 .barra-abajo{
   position:fixed;left:0;right:0;bottom:0;z-index:var(--z-flotante);
   padding:0;background:var(--papel);border-top:1px solid var(--linea);
+  box-shadow:0 -8px 24px rgba(30,16,8,.1);
+}
+.barra-abajo.apareciendo{animation:barraPop .32s var(--curva)}
+@keyframes barraPop{
+  0%{transform:translateY(100%)}
+  60%{transform:translateY(-4px)}
+  100%{transform:translateY(0)}
+}
+.fila-barra{
+  max-width:1080px;margin:0 auto;display:flex;gap:9px;
+  padding:13px 14px calc(13px + env(safe-area-inset-bottom));
 }
 .barra-abajo .interior{
-  max-width:1080px;margin:0 auto;
-  background:var(--coral);color:#FFF;border-radius:0;
-  padding:17px 20px calc(17px + env(safe-area-inset-bottom));
-  display:flex;align-items:center;justify-content:space-between;
-  gap:14px;width:100%;font-size:11.5px;font-weight:500;
-  letter-spacing:.11em;text-transform:uppercase;
-  transition:background .16s var(--curva);
+  flex:1;min-width:0;background:var(--coral);color:#FFF;
+  border-radius:var(--radio-chico);
+  padding:15px 16px;display:flex;align-items:center;gap:10px;
+  font-size:13px;font-weight:600;letter-spacing:.01em;
+  transition:background .16s var(--curva), transform .13s var(--curva);
 }
 .barra-abajo .interior:hover{background:#BE3B4D}
-.barra-abajo .interior span:last-child{font-variant-numeric:tabular-nums;letter-spacing:.04em}
+.barra-abajo .interior:active{transform:scale(.98)}
+.barra-abajo .interior svg{flex:0 0 auto;opacity:.95}
+.barra-abajo .interior .textos{display:flex;flex-direction:column;align-items:flex-start;gap:1px;min-width:0;flex:1}
+.barra-abajo .interior .textos span{overflow:hidden;text-overflow:ellipsis;white-space:nowrap;max-width:100%}
+.barra-abajo .interior .etiqueta{font-size:10.5px;font-weight:500;letter-spacing:.09em;text-transform:uppercase;opacity:.85}
+.barra-abajo .interior .monto{font-variant-numeric:tabular-nums;letter-spacing:.01em;font-size:14px;font-weight:700}
+.barra-abajo .interior .flecha{margin-left:auto;flex:0 0 auto;opacity:.8}
+.barra-abajo .interior.pulso-cuenta{animation:pulso .38s var(--curva)}
+/* Encargos es la acción secundaria, igual que en el header — mismo tamaño
+   pero de contorno, para que Carrito (el flujo con pago/entrega real)
+   siga leyéndose como la acción principal cuando ambas están visibles. */
+.barra-abajo .interior.interior-encargos{
+  background:var(--crema);color:var(--cafe);border:1.5px solid var(--linea);
+}
+.barra-abajo .interior.interior-encargos:hover{background:#FBF0E6;border-color:var(--coral);color:var(--coral)}
 
 /* ── panel / hoja ───────────────────── */
 .velo{
@@ -864,10 +893,24 @@ details[open] summary::after{content:"−"}
 </footer>
 
 <div class="barra-abajo oculto" id="barraAbajo">
-  <button class="interior" id="btnVerCarrito" type="button">
-    <span id="barraTexto">Ver carrito</span>
-    <span id="barraTotal">₡0</span>
-  </button>
+  <div class="fila-barra">
+    <button class="interior interior-encargos oculto" id="btnBarraEncargos" type="button">
+      <svg width="17" height="17" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2" stroke-linecap="round" stroke-linejoin="round" aria-hidden="true"><path d="M21 8v13H3V8"/><path d="M1 3h22v5H1z"/><path d="M10 12h4"/></svg>
+      <span class="textos">
+        <span class="etiqueta">Por encargo</span>
+        <span class="monto" id="barraEncargosTexto">0</span>
+      </span>
+      <svg class="flecha" width="15" height="15" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2" stroke-linecap="round" stroke-linejoin="round" aria-hidden="true"><path d="M9 18l6-6-6-6"/></svg>
+    </button>
+    <button class="interior" id="btnVerCarrito" type="button">
+      <svg width="17" height="17" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2" stroke-linecap="round" stroke-linejoin="round" aria-hidden="true"><path d="M6 2 3 6v14a2 2 0 0 0 2 2h14a2 2 0 0 0 2-2V6l-3-4Z"/><path d="M3 6h18"/><path d="M16 10a4 4 0 0 1-8 0"/></svg>
+      <span class="textos">
+        <span class="etiqueta" id="barraTexto">Ver carrito</span>
+        <span class="monto" id="barraTotal">₡0</span>
+      </span>
+      <svg class="flecha" width="15" height="15" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2" stroke-linecap="round" stroke-linejoin="round" aria-hidden="true"><path d="M9 18l6-6-6-6"/></svg>
+    </button>
+  </div>
 </div>
 
 <div class="velo oculto" id="velo" role="dialog" aria-modal="true" aria-labelledby="hojaTitulo">
@@ -1437,14 +1480,57 @@ function lineasCarrito(){
   }).filter(Boolean);
 }
 
+// Recuerda el último conteo mostrado, para saber si hay que hacer el
+// "pulso" (alguien sumó algo) o dejarlo quieto (solo se repintó la página).
+let ultimoUnidadesBarra = 0, ultimoEncargosBarra = 0;
+
+function pulsarBoton(el){
+  if (!el) return;
+  el.classList.remove('pulso-cuenta');
+  void el.offsetWidth;
+  el.classList.add('pulso-cuenta');
+}
+
+// Barra flotante de abajo: es la única acción que sigue a la vista sin
+// importar cuánto se haya scrolleado agregando productos, así que junta
+// carrito Y encargos acá — son dos flujos distintos (uno es compra con
+// envío, el otro es una solicitud), por eso son dos botones y no uno.
 function actualizarBarra(){
   const u = totalUnidades();
+  const nEnc = totalEncargos();
   $('#numCarrito').textContent = u;
+
   const barra = $('#barraAbajo');
-  if (!u){ barra.classList.add('oculto'); return; }
+  const btnEnc = $('#btnBarraEncargos');
+  const btnCar = $('#btnVerCarrito');
+  const estabaOculta = barra.classList.contains('oculto');
+
+  if (!u && !nEnc){
+    barra.classList.add('oculto');
+    ultimoUnidadesBarra = 0; ultimoEncargosBarra = 0;
+    return;
+  }
   barra.classList.remove('oculto');
-  $('#barraTexto').textContent  = `Ver carrito · ${u} ${u === 1 ? 'producto' : 'productos'}`;
-  $('#barraTotal').textContent  = colones(subtotal());
+  if (estabaOculta){
+    barra.classList.remove('apareciendo');
+    void barra.offsetWidth;
+    barra.classList.add('apareciendo');
+  }
+
+  btnEnc.classList.toggle('oculto', !nEnc);
+  if (nEnc){
+    $('#barraEncargosTexto').textContent = `${nEnc} ${nEnc === 1 ? 'producto' : 'productos'}`;
+    if (nEnc > ultimoEncargosBarra) pulsarBoton(btnEnc);
+  }
+
+  btnCar.classList.toggle('oculto', !u);
+  if (u){
+    $('#barraTexto').textContent = `Carrito · ${u} ${u === 1 ? 'producto' : 'productos'}`;
+    $('#barraTotal').textContent = colones(subtotal());
+    if (u > ultimoUnidadesBarra) pulsarBoton(btnCar);
+  }
+
+  ultimoUnidadesBarra = u; ultimoEncargosBarra = nEnc;
 }
 
 /* ══════════════════════════════════════════════════════════════
@@ -1857,9 +1943,13 @@ function totalEncargos(){ return ENCARGOS.length; }
 function actualizarBadgeEncargos(){
   const n = totalEncargos();
   const btn = $('#btnEncargos');
-  if (!btn) return;
-  $('#numEncargos').textContent = n;
-  btn.classList.toggle('oculto', n === 0);
+  if (btn){
+    $('#numEncargos').textContent = n;
+    btn.classList.toggle('oculto', n === 0);
+  }
+  // La barra flotante de abajo también depende del total de encargos —
+  // así aparece/actualiza aunque el header ya no esté a la vista.
+  actualizarBarra();
 }
 
 // texto ya viene armado (marca + nombre + tono) desde la ficha del
@@ -1983,7 +2073,7 @@ function verEncargos(){
    EVENTOS
    ══════════════════════════════════════════════════════════════ */
 document.addEventListener('click', (ev) => {
-  const t = ev.target.closest('[data-agregar],[data-mas],[data-menos],[data-quitar],[data-encargo],[data-encargo-libre],[data-quitar-encargo],[data-tono-id],[data-cat],[data-copiar],[data-ver],#irCheckout,#seguirComprando,#btnCarrito,#btnVerCarrito,#btnEncargos,#btnCerrar,#btnLimpiarFiltros');
+  const t = ev.target.closest('[data-agregar],[data-mas],[data-menos],[data-quitar],[data-encargo],[data-encargo-libre],[data-quitar-encargo],[data-tono-id],[data-cat],[data-copiar],[data-ver],#irCheckout,#seguirComprando,#btnCarrito,#btnVerCarrito,#btnEncargos,#btnBarraEncargos,#btnCerrar,#btnLimpiarFiltros');
   if (!t) return;
 
   if (t.dataset.agregar) return agregar(t.dataset.agregar, 1);
@@ -2024,7 +2114,7 @@ document.addEventListener('click', (ev) => {
   if (t.id === 'irCheckout')       return verCheckout();
   if (t.id === 'seguirComprando')  return cerrarHoja();
   if (t.id === 'btnCarrito' || t.id === 'btnVerCarrito') return verCarrito();
-  if (t.id === 'btnEncargos') return verEncargos();
+  if (t.id === 'btnEncargos' || t.id === 'btnBarraEncargos') return verEncargos();
   if (t.id === 'btnCerrar')        return cerrarHoja();
 });
 
