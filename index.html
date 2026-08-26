@@ -2035,6 +2035,29 @@ function pedirEncargoLibre(){
   });
 }
 
+// Registrar en la Sheet que el cliente confirmó su encargo.
+// No guarda datos del cliente — solo qué se encargó y que fue confirmado.
+async function registrarConfirmacionEncargo(procedio){
+  if (MODO_DEMO || !ENCARGOS.length) return; // No enviar en demo
+  try {
+    const r = await fetch(CONFIG.API, {
+      method:'POST',
+      headers:{ 'Content-Type':'text/plain;charset=utf-8' },
+      body: JSON.stringify({
+        accion:'confirmar_encargo',
+        procedio: procedio,
+        encargos: ENCARGOS,
+        timestamp: new Date().toISOString()
+      })
+    });
+    const d = await r.json();
+    if (!d || !d.ok) console.error('Error registrando encargo:', d && d.error);
+  } catch (err) {
+    console.error('Error enviando confirmación de encargo:', err);
+    // No es crítico — el cliente ve el mensaje de confirmación de todas formas
+  }
+}
+
 // La lista completa: cada producto agregado (removible) + un solo
 // formulario de contacto al final para mandar todo junto.
 function verEncargos(){
@@ -2045,7 +2068,7 @@ function verEncargos(){
   }
   const html = `
     <p style="margin:0 0 14px;font-size:14px;color:var(--tinta-2);line-height:1.6">
-      Te escribimos por WhatsApp para confirmar precio y tiempo de entrega de cada uno antes de pedirte nada.
+      Estos son los productos que querés pedir por encargo. ¿Querés proceder?
     </p>
     ${ENCARGOS.map((texto, i) => `
       <div class="linea-encargo">
@@ -2053,30 +2076,30 @@ function verEncargos(){
         <button class="lc-quitar" type="button" data-quitar-encargo="${i}">Quitar</button>
       </div>`).join('')}
     <button class="btn-suave" type="button" style="margin:14px 0" data-encargo-libre>+ Agregar otro producto</button>
-    <form id="formEncargos" novalidate>
-      <div class="campos">
-        <div class="campo ancho">
-          <label for="enNombre">Tu nombre</label>
-          <input type="text" id="enNombre" autocomplete="name" placeholder="Nombre y apellido">
-          <span class="error oculto" data-error="enNombre">Escribí tu nombre</span>
-        </div>
-        <div class="campo ancho">
-          <label for="enTel">WhatsApp</label>
-          <input type="tel" id="enTel" inputmode="numeric" autocomplete="tel" placeholder="8888 8888">
-          <span class="error oculto" data-error="enTel">Escribí un número de 8 dígitos</span>
-        </div>
-      </div>
-      <button class="btn-grande" type="submit" id="btnEnviarEncargos">Solicitar ${ENCARGOS.length === 1 ? 'este encargo' : `estos ${ENCARGOS.length} encargos`}</button>
-      <p class="nota-datos">Los encargos tardan de ${esc(String(CONFIG.ENCARGO_DIAS_MIN || 20))} a ${esc(String(CONFIG.ENCARGO_DIAS_MAX || 25))} días hábiles y pedimos un adelanto del ${esc(String(CONFIG.ENCARGO_ADELANTO_PCT || 50))}%. Todo se confirma por WhatsApp antes de pagar.</p>
-    </form>`;
+    <p style="margin-top:20px;padding-top:14px;border-top:1px solid var(--linea);font-size:13px;color:var(--tinta-2)">
+      Nos escribimos por WhatsApp para confirmar precio y tiempo de entrega antes de pedir nada.
+    </p>
+    <div style="display:flex;gap:12px;margin-top:14px">
+      <button class="btn-grande" type="button" id="btnProcederEncargo" style="flex:1;background:var(--coral);color:#FFF">Sí, procedo</button>
+      <button class="btn-grande" type="button" id="btnCancelarEncargo" style="flex:1;background:transparent;color:var(--tinta);border:1.5px solid var(--linea)">No, cancelar</button>
+    </div>`;
   abrirHoja('Tu lista de encargos', html);
 
-  $('#formEncargos').addEventListener('submit', async (ev) => {
-    ev.preventDefault();
-    const nombre = $('#enNombre').value.trim();
-    const tel = $('#enTel').value.replace(/\D/g, '');
-    marcarError('enNombre', nombre.length < 2);
-    marcarError('enTel', tel.length !== 8);
+  $('#btnProcederEncargo').addEventListener('click', async () => {
+    const modal = $('#modal');
+    modal.classList.add('oculto');
+    await registrarConfirmacionEncargo(true);
+    ENCARGOS = [];
+    guardarEncargos();
+    actualizarBadgeEncargos();
+    brindis('Encargo confirmado. Te escribimos por WhatsApp 📦');
+  });
+
+  $('#btnCancelarEncargo').addEventListener('click', () => {
+    const modal = $('#modal');
+    modal.classList.add('oculto');
+    // No registramos cancelación — es una decisión del cliente, sin registrar
+  });
     if (nombre.length < 2 || tel.length !== 8) return;
 
     const btn = $('#btnEnviarEncargos');
