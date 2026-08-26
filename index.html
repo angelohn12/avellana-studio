@@ -222,6 +222,13 @@ header{
   text-transform:uppercase;color:var(--tinta-3);
 }
 .hero-trust span::before{content:"";width:4px;height:4px;border-radius:50%;background:var(--salvia);flex:0 0 auto}
+.hero-trust a{
+  display:flex;align-items:center;gap:7px;
+  font-family:"DM Mono",monospace;font-size:9.5px;letter-spacing:.06em;
+  text-transform:uppercase;color:var(--coral);text-decoration:underline;
+  text-underline-offset:2px;text-decoration-color:color-mix(in srgb, var(--coral) 40%, transparent);
+}
+.hero-trust a:hover{text-decoration-color:var(--coral)}
 .hero-fotos{position:relative;aspect-ratio:4/5;display:none;max-width:360px}
 .hero.con-fotos .hero-fotos{display:block}
 .hero-foto-marco{
@@ -736,6 +743,7 @@ details[open] summary::after{content:"−"}
         <span>Envío a todo el país</span>
         <span>Retiro en Calle Blancos, San José</span>
         <span>Se coordina por WhatsApp</span>
+        <a href="#infoTienda">¿Cómo funciona la tienda?</a>
       </div>
     </div>
     <div class="hero-fotos" id="heroFotos"></div>
@@ -764,7 +772,7 @@ details[open] summary::after{content:"−"}
   <div class="grilla oculto" id="grilla" tabindex="-1"></div>
 </main>
 
-<footer>
+<footer id="infoTienda">
   <div class="wrap">
     <h2>Información</h2>
 
@@ -803,6 +811,12 @@ details[open] summary::after{content:"−"}
       <summary>Pedidos por encargo</summary>
       <div class="detalle">
         <p>Algunos productos los traemos por encargo. Si lo que buscás no aparece en el catálogo o está agotado, pedilo por encargo y te decimos si podemos conseguirlo, cuánto costaría y en cuánto tiempo llega.</p>
+        <ol>
+          <li>Buscá "Pedir por encargo" en cualquier producto agotado, o escribí vos el que querés — se va agregando a tu <b>lista de encargos</b> (arriba a la derecha).</li>
+          <li>Agregá todos los que quieras: no hay que mandarlos uno por uno.</li>
+          <li>Cuando termines, abrí tu lista, poné tu nombre y WhatsApp una sola vez, y mandala completa.</li>
+          <li>Te escribimos por WhatsApp para confirmar precio y tiempo de cada uno antes de pedirte nada.</li>
+        </ol>
         <p>Los encargos tardan de <span id="pieEncargoDias"></span> días hábiles en llegar y pedimos un adelanto del <span id="pieEncargoPct"></span>%. Todo se confirma por WhatsApp antes de que pagués nada.</p>
         <button class="btn-suave" type="button" style="margin-top:4px" data-encargo="">Pedir algo por encargo</button>
       </div>
