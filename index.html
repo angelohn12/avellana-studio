@@ -2044,15 +2044,15 @@ function verEncargos(){
     return;
   }
   const html = `
-    <p style="margin:0 0 14px;font-size:14px;color:var(--tinta-2);line-height:1.6">
-      Te escribimos por WhatsApp para confirmar precio y tiempo de entrega de cada uno antes de pedirte nada.
-    </p>
     ${ENCARGOS.map((texto, i) => `
       <div class="linea-encargo">
         <div class="lc-nombre">${esc(texto)}</div>
         <button class="lc-quitar" type="button" data-quitar-encargo="${i}">Quitar</button>
       </div>`).join('')}
-    <button class="btn-suave" type="button" style="margin:14px 0" data-encargo-libre>+ Agregar otro producto</button>`;
+    <button class="btn-suave" type="button" style="margin:14px 0" data-encargo-libre>+ Agregar otro producto</button>
+    <p style="margin:14px 0 0;font-size:13px;color:var(--tinta-2)">
+      Te escribimos por WhatsApp para confirmar precio y tiempo de entrega de cada uno antes de pedirte nada.
+    </p>`;
   abrirHoja('Tu lista de encargos', html);
 }
 
