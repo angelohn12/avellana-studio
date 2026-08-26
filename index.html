@@ -372,6 +372,13 @@ header{
 .tono-pill[aria-pressed="true"]{border-color:var(--tinta);color:var(--tinta);font-weight:500}
 .tono-pill.sin-stock{color:var(--tinta-3);opacity:.55}
 .prod-precio{font-size:13.5px;font-weight:500;color:var(--tinta);font-variant-numeric:tabular-nums;margin-top:4px}
+.prod-precio-antes{color:var(--tinta-3);text-decoration:line-through;font-weight:400;margin-right:6px}
+.prod-precio-ahora{color:var(--coral);font-weight:700}
+.tag-descuento{
+  display:inline-flex;align-items:center;font-family:"DM Mono",monospace;font-size:9.5px;font-weight:600;
+  letter-spacing:.06em;background:var(--coral);color:#FFF;padding:2px 6px;border-radius:3px;
+  margin-left:7px;vertical-align:middle;
+}
 
 /* Tarjeta e nombre de producto también abren la ficha de detalle */
 .prod-img[data-ver],.prod-nombre[data-ver]{cursor:pointer}
@@ -866,6 +873,24 @@ const $$ = (s) => Array.from(document.querySelectorAll(s));
 const colones = (n) =>
   '₡' + String(Math.round(Number(n) || 0)).replace(/\B(?=(\d{3})+(?!\d))/g, '.');
 
+// Precio real a cobrar: si el producto tiene descuento (porcentaje puesto
+// desde el dashboard), se le resta al precio de venta. Esto es lo único
+// que debe usarse para el carrito, el total y el pedido — nunca precioVenta
+// directo cuando hay descuento.
+const precioFinal = (p) => {
+  const precio = Number(p?.precioVenta) || 0;
+  const pct = Number(p?.descuento) || 0;
+  return pct > 0 ? Math.round(precio * (1 - pct / 100)) : precio;
+};
+
+// Markup del precio: normal, o tachado + precio final + etiqueta de % si
+// el producto tiene descuento puesto desde el dashboard.
+const precioHtml = (p) => {
+  const pct = Number(p?.descuento) || 0;
+  if (pct <= 0) return colones(p.precioVenta);
+  return `<span class="prod-precio-antes">${colones(p.precioVenta)}</span><span class="prod-precio-ahora">${colones(precioFinal(p))}</span><span class="tag-descuento">-${pct}%</span>`;
+};
+
 function esc(t){
   return String(t == null ? '' : t)
     .replace(/&/g,'&amp;').replace(/</g,'&lt;').replace(/>/g,'&gt;')
@@ -1099,7 +1124,7 @@ function productosVisibles(){
     if (CATEGORIA !== 'Todo' && p.categoria !== CATEGORIA) return false;
     if (MARCA !== 'Todas' && (p.marca || '') !== MARCA) return false;
     if (rango) {
-      const precio = Number(p.precioVenta) || 0;
+      const precio = precioFinal(p);
       if (rango.min != null && precio < rango.min) return false;
       if (rango.max != null && precio >= rango.max) return false;
     }
@@ -1216,7 +1241,7 @@ function pintarGrilla(reanimar = false){
         ${p.marca ? `<div class="prod-marca">${esc(p.marca)}</div>` : ''}
         <div class="prod-nombre" data-ver="${esc(p.id)}" role="button" tabindex="0">${esc(p.nombre)}</div>
         ${selector}
-        <div class="prod-precio">${colones(p.precioVenta)}</div>
+        <div class="prod-precio">${precioHtml(p)}</div>
         <span class="etiqueta ${est.clase}">${est.texto}</span>
         ${control}
       </div>
@@ -1280,7 +1305,7 @@ function htmlDetalleProducto(p){
     <div class="detalle-foto">${tarjetaFoto(p, 500)}</div>
     ${(p.marca || (grupo.variantes.length <= 1 && p.tono)) ? `<div class="prod-marca">${[p.marca, grupo.variantes.length <= 1 ? p.tono : null].filter(Boolean).join(' · ')}</div>` : ''}
     ${selectorTono}
-    <div class="prod-precio">${colones(p.precioVenta)}</div>
+    <div class="prod-precio">${precioHtml(p)}</div>
     <span class="etiqueta ${est.clase}">${est.texto}</span>
     ${p.medida ? `<div class="detalle-medida">${esc(p.medida)}</div>` : ''}
     ${p.descripcion ? `<p class="detalle-descripcion">${esc(p.descripcion)}</p>` : ''}
@@ -1345,7 +1370,7 @@ function totalUnidades(){
 function subtotal(){
   return Object.entries(CARRITO).reduce((a, [id, n]) => {
     const p = PRODUCTOS.find(x => String(x.id) === String(id));
-    return a + (p ? (Number(p.precioVenta) || 0) * n : 0);
+    return a + (p ? precioFinal(p) * n : 0);
   }, 0);
 }
 function lineasCarrito(){
@@ -1402,10 +1427,10 @@ function verCarrito(){
         <div class="mini">${tarjetaFoto(p, 150)}</div>
         <div>
           <div class="lc-nombre">${esc(p.nombre)}</div>
-          <div class="lc-precio">${n} × ${colones(p.precioVenta)}</div>
+          <div class="lc-precio">${n} × ${colones(precioFinal(p))}${Number(p.descuento) > 0 ? ` <span class="tag-descuento">-${Number(p.descuento)}%</span>` : ''}</div>
           <button class="lc-quitar" type="button" data-quitar="${esc(p.id)}">Quitar</button>
         </div>
-        <div class="lc-total">${colones((Number(p.precioVenta) || 0) * n)}</div>
+        <div class="lc-total">${colones(precioFinal(p) * n)}</div>
       </div>`).join('')}
     <div class="resumen">
       <div class="r-fila"><span>Productos</span><span>${colones(subtotal())}</span></div>
@@ -1631,8 +1656,8 @@ function armarPedido(){
   const e = envioActual();
   const items = lineasCarrito().map(({p, n}) => ({
     id: p.id, nombre: p.nombre, marca: p.marca || '', tono: p.tono || '',
-    cantidad: n, precioUnitario: Number(p.precioVenta) || 0,
-    subtotal: (Number(p.precioVenta) || 0) * n
+    cantidad: n, precioUnitario: precioFinal(p),
+    subtotal: precioFinal(p) * n
   }));
   const envio = e.indefinido ? 0 : e.monto;
 
