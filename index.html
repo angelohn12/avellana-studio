@@ -2108,30 +2108,6 @@ function verEncargos(){
       document.getElementById('modal').classList.add('oculto');
     });
   }
-    if (nombre.length < 2 || tel.length !== 8) return;
-
-    const btn = $('#btnEnviarEncargos');
-    btn.disabled = true;
-    btn.textContent = 'Enviando…';
-
-    if (!MODO_DEMO){
-      try {
-        await fetch(CONFIG.API, {
-          method:'POST',
-          headers:{ 'Content-Type':'text/plain;charset=utf-8' },
-          body: JSON.stringify({
-            accion:'crear_solicitud_lote',
-            solicitud:{ productos: ENCARGOS.slice(), nombre, telefono:tel }
-          })
-        });
-      } catch {}
-    }
-    ENCARGOS = [];
-    guardarEncargos();
-    actualizarBadgeEncargos();
-    cerrarHoja();
-    brindis('Listo, te contactamos por WhatsApp para confirmar 💛');
-  });
 }
 
 /* ══════════════════════════════════════════════════════════════
