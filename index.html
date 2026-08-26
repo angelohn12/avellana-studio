@@ -1099,12 +1099,12 @@ async function cargarCatalogo(){
     PRODUCTOS = d.productos.filter(estaPublicado);
     if (!PRODUCTOS.length) throw new Error('catálogo vacío');
   } catch (e) {
+    // En producción, nunca mostrar "Vista de prueba" — solo avisar que hay un problema
+    // técnico y pedir que recarguen. El catálogo de ejemplo es solo para desarrollo.
     MODO_DEMO = true;
     PRODUCTOS = DEMO.slice();
     const banda = $('#bandaDemo');
-    banda.textContent = cargarCatalogo._agotado
-      ? 'Tu conexión está lenta y no pudimos terminar de cargar el catálogo — recargá la página cuando puedas. Mientras tanto, estos son productos de ejemplo.'
-      : 'Vista de prueba — el catálogo todavía no está conectado a la Sheet. Los productos que ves son de ejemplo.';
+    banda.textContent = 'Tenemos un problema técnico cargando el catálogo. Recargá la página, por favor.';
     banda.classList.remove('oculto');
   }
   limpiarCarritoFantasma();
