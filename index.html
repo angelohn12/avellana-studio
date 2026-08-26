@@ -1056,9 +1056,25 @@ async function cargarCatalogo(){
     } catch (e0) { /* sessionStorage no disponible (privado/incógnito estricto): sigue sin caché */ }
 
     if (!d) {
-      const r = await fetch(CONFIG.API + '?accion=catalogo', { method:'GET' });
-      d = await r.json();
+      // Sin límite de tiempo, una conexión lenta o trabada deja a la
+      // clienta viendo el esqueleto de carga PARA SIEMPRE — el fetch nunca
+      // llega a fallar, así que nunca cae al catálogo de ejemplo. Se corta
+      // a los 20s (de sobra para lo lento que a veces responde el Sheet)
+      // y ahí sí se avisa con un mensaje claro en vez de dejarla a ciegas.
+      const controlador = new AbortController();
+      const corte = setTimeout(() => controlador.abort(), 20000);
+      let seAgotoElTiempo = false;
+      try {
+        const r = await fetch(CONFIG.API + '?accion=catalogo', { method:'GET', signal: controlador.signal });
+        d = await r.json();
+      } catch (errFetch) {
+        seAgotoElTiempo = controlador.signal.aborted;
+        throw errFetch;
+      } finally {
+        clearTimeout(corte);
+      }
       try { sessionStorage.setItem(CATALOGO_CACHE_KEY, JSON.stringify({ t: Date.now(), d })); } catch (e1) { /* idem */ }
+      cargarCatalogo._agotado = seAgotoElTiempo;
     }
 
     if (!d || !d.ok || !Array.isArray(d.productos)) throw new Error('sin datos');
@@ -1070,7 +1086,9 @@ async function cargarCatalogo(){
     MODO_DEMO = true;
     PRODUCTOS = DEMO.slice();
     const banda = $('#bandaDemo');
-    banda.textContent = 'Vista de prueba — el catálogo todavía no está conectado a la Sheet. Los productos que ves son de ejemplo.';
+    banda.textContent = cargarCatalogo._agotado
+      ? 'Tu conexión está lenta y no pudimos terminar de cargar el catálogo — recargá la página cuando puedas. Mientras tanto, estos son productos de ejemplo.'
+      : 'Vista de prueba — el catálogo todavía no está conectado a la Sheet. Los productos que ves son de ejemplo.';
     banda.classList.remove('oculto');
   }
   limpiarCarritoFantasma();
