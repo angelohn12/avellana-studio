@@ -2054,11 +2054,132 @@ function verEncargos(){
   abrirHoja('Tu lista de encargos', html);
 }
 
+// Mismo patrón que el checkout del carrito (verCheckout), pero sin envío
+// — los encargos no tienen precio ni stock todavía, así que no hay nada
+// que cobrar acá: solo se coordina por WhatsApp una vez que confirmemos
+// precio y tiempo de entrega.
+function verCheckoutEncargo(){
+  const html = `
+    <form id="formEncargos" novalidate>
+      <div class="grupo">
+        <span class="rotulo">¿Cómo te contactamos?</span>
+        <div class="campos">
+          <div class="campo ancho">
+            <label for="enNombre">Tu nombre</label>
+            <input type="text" id="enNombre" name="nombre" autocomplete="name" placeholder="Nombre y apellido">
+            <span class="error oculto" data-error="enNombre">Escribí tu nombre</span>
+          </div>
+          <div class="campo ancho">
+            <label for="enTelefono">WhatsApp</label>
+            <input type="tel" id="enTelefono" name="telefono" inputmode="numeric" autocomplete="tel" placeholder="8888 8888">
+            <span class="error oculto" data-error="enTelefono">Escribí un número de 8 dígitos</span>
+          </div>
+        </div>
+      </div>
+
+      <div class="resumen">
+        <div class="r-fila"><span>Productos por encargo</span><span>${ENCARGOS.length}</span></div>
+      </div>
+
+      <div class="aviso" id="avisoFormaPago">
+        <b>Acá no se paga nada.</b> Te escribimos por WhatsApp desde el ${esc(CONFIG.WHATSAPP_VISIBLE)}
+        para confirmar precio y tiempo de entrega de cada producto antes de pedirte nada.
+      </div>
+
+      <button class="btn-grande" type="submit" id="btnConfirmarEncargo">Confirmar encargo</button>
+      <p class="nota-datos">Usamos estos datos únicamente para coordinar tu encargo.</p>
+    </form>`;
+  abrirHoja('Tu encargo', html);
+  $('#formEncargos').addEventListener('submit', enviarSolicitudEncargo);
+}
+
+function validarEncargo(){
+  const fallos = [];
+  const nombre = $('#enNombre').value.trim();
+  marcarError('enNombre', nombre.length < 2);
+  if (nombre.length < 2) fallos.push('enNombre');
+
+  const tel = $('#enTelefono').value.replace(/\D/g, '');
+  const telOk = tel.length === 8;
+  marcarError('enTelefono', !telOk);
+  if (!telOk) fallos.push('enTelefono');
+
+  if (fallos.length){
+    const primero = $('#' + fallos[0]);
+    primero?.scrollIntoView({ behavior:'smooth', block:'center' });
+    primero?.focus({ preventScroll:true });
+  }
+  return !fallos.length;
+}
+
+async function enviarSolicitudEncargo(ev){
+  ev.preventDefault();
+  if (ENVIANDO) return;
+  if (!validarEncargo()) return;
+
+  const btn = $('#btnConfirmarEncargo');
+  ENVIANDO = true;
+  btn.disabled = true;
+  btn.textContent = 'Enviando…';
+
+  const nombre = $('#enNombre').value.trim();
+  const telefono = $('#enTelefono').value.replace(/\D/g, '');
+  const productos = ENCARGOS.slice();
+
+  if (!MODO_DEMO){
+    try {
+      const r = await fetch(CONFIG.API, {
+        method:'POST',
+        headers:{ 'Content-Type':'text/plain;charset=utf-8' },
+        body: JSON.stringify({ accion:'crear_solicitud_lote', solicitud:{ productos, nombre, telefono } })
+      });
+      const d = await r.json();
+      if (!d || !d.ok) throw new Error(d && d.error ? d.error : 'no se pudo guardar');
+    } catch (err) {
+      ENVIANDO = false;
+      btn.disabled = false;
+      btn.textContent = 'Confirmar encargo';
+      brindis('No se pudo enviar. Probá de nuevo o escribinos por WhatsApp.');
+      return;
+    }
+  }
+
+  ENCARGOS = [];
+  guardarEncargos();
+  actualizarBadgeEncargos();
+  ENVIANDO = false;
+  verConfirmacionEncargo(productos);
+}
+
+function verConfirmacionEncargo(productos){
+  const texto = encodeURIComponent(`¡Hola! Acabo de pedir por encargo en la tienda 💛`);
+  const html = `
+    <div class="listo">
+      <div class="marca-ok">
+        <svg width="30" height="30" viewBox="0 0 24 24" fill="none" stroke="#3F7A57" stroke-width="2.4" stroke-linecap="round" stroke-linejoin="round" aria-hidden="true"><polyline points="4 12.5 9.5 18 20 6.5"/></svg>
+      </div>
+      <h3>Encargo recibido</h3>
+
+      <div class="pasos">
+        <div class="paso"><i>1</i><p><b>Ya quedó guardado.</b> Revisamos precio y tiempo de entrega de cada producto.</p></div>
+        <div class="paso"><i>2</i><p><b>Te escribimos por WhatsApp</b> en horario de ${esc(CONFIG.HORA_ATENCION)} para confirmarte todo.</p></div>
+        <div class="paso"><i>3</i><p><b>Ahí coordinamos</b> el adelanto y el tiempo de entrega.</p></div>
+      </div>
+
+      ${MODO_DEMO ? `<div class="aviso"><b>Vista de prueba.</b> Este encargo no se guardó en ningún lado — la tienda todavía no está conectada.</div>` : ''}
+
+      <a class="btn-grande" style="display:block;text-align:center;text-decoration:none"
+         href="https://wa.me/${esc(CONFIG.WHATSAPP)}?text=${texto}" target="_blank" rel="noopener">Escribirnos por WhatsApp</a>
+      <button class="btn-suave" type="button" id="seguirComprando">Volver a la tienda</button>
+    </div>`;
+  abrirHoja('Encargo confirmado', html);
+}
+
 /* ══════════════════════════════════════════════════════════════
    EVENTOS
    ══════════════════════════════════════════════════════════════ */
 document.addEventListener('click', (ev) => {
-  const t = ev.target.closest('[data-agregar],[data-mas],[data-menos],[data-quitar],[data-encargo],[data-encargo-libre],[data-quitar-encargo],[data-tono-id],[data-cat],[data-copiar],[data-ver],#irCheckout,#seguirComprando,#btnCarrito,#btnVerCarrito,#btnEncargos,#btnBarraEncargos,#btnCerrar,#btnLimpiarFiltros');
+  const t = ev.target.closest('[data-agregar],[data-mas],[data-menos],[data-quitar],[data-encargo],[data-encargo-libre],[data-quitar-encargo],[data-tono-id],[data-cat],[data-copiar],[data-ver],#irCheckout,#irEncargos,#seguirComprando,#btnCarrito,#btnVerCarrito,#btnEncargos,#btnBarraEncargos,#btnCerrar,#btnLimpiarFiltros');
   if (!t) return;
 
   if (t.dataset.agregar) return agregar(t.dataset.agregar, 1);
@@ -2097,6 +2218,7 @@ document.addEventListener('click', (ev) => {
     return;
   }
   if (t.id === 'irCheckout')       return verCheckout();
+  if (t.id === 'irEncargos')       return verCheckoutEncargo();
   if (t.id === 'seguirComprando')  return cerrarHoja();
   if (t.id === 'btnCarrito' || t.id === 'btnVerCarrito') return verCarrito();
   if (t.id === 'btnEncargos' || t.id === 'btnBarraEncargos') return verEncargos();
