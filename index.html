@@ -198,6 +198,15 @@ header{
 .btn-encargos .n{background:var(--cafe);color:#FFF}
 .btn-encargos:hover .n{background:var(--coral)}
 @keyframes pulso{0%{transform:scale(1)}40%{transform:scale(1.4)}100%{transform:scale(1)}}
+/* En celulares angostos, Carrito + Encargos juntos no caben con el
+   padding/tamaño normal (empujaban el logo a 2 líneas y desbordaban la
+   página de lado). Se achican un poco, y el wrap queda como respaldo para
+   que nunca se produzca scroll horizontal aunque algún conteo sea largo. */
+@media(max-width:420px){
+  .acciones-header{gap:6px;flex-wrap:wrap;justify-content:flex-end}
+  .acciones-header .btn-carrito{padding:10px 11px;font-size:10px;gap:5px;letter-spacing:.04em}
+  .acciones-header .btn-carrito svg{width:13px;height:13px}
+}
 
 /* ── franja de anuncio ──────────────── */
 .franja{
