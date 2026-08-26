@@ -174,6 +174,7 @@ header{
   display:block;font-family:"DM Mono",monospace;font-size:9px;font-weight:400;
   letter-spacing:.2em;text-transform:uppercase;color:var(--tinta-3);margin-top:5px;
 }
+.acciones-header{display:flex;align-items:center;gap:8px}
 .btn-carrito{
   display:flex;align-items:center;gap:8px;background:var(--cafe);color:#FFF;
   padding:12px 16px;border-radius:var(--radio-chico);
@@ -190,6 +191,12 @@ header{
 }
 .btn-carrito:hover .n{background:rgba(255,255,255,.24)}
 .btn-carrito .n.pulso{animation:pulso .38s var(--curva)}
+/* Encargos es la acción secundaria — mismo tamaño, pero de contorno para
+   no competir con el Carrito, que es la acción principal de la tienda. */
+.btn-encargos{background:transparent;color:var(--cafe);border:1.5px solid var(--linea)}
+.btn-encargos:hover{background:transparent;color:var(--coral);border-color:var(--coral)}
+.btn-encargos .n{background:var(--cafe);color:#FFF}
+.btn-encargos:hover .n{background:var(--coral)}
 @keyframes pulso{0%{transform:scale(1)}40%{transform:scale(1.4)}100%{transform:scale(1)}}
 
 /* ── franja de anuncio ──────────────── */
@@ -512,6 +519,13 @@ header{
 .linea-carrito .mini .sin-foto{font-size:11px}
 .lc-nombre{font-size:13px;font-weight:500;color:var(--tinta);line-height:1.35}
 .lc-precio{font-size:12.5px;color:var(--tinta-2);font-variant-numeric:tabular-nums;margin-top:2px}
+/* Fila del carrito de encargo: sin foto ni precio, solo el texto libre
+   que la clienta escribió y un botón para quitarlo. */
+.linea-encargo{
+  display:flex;align-items:center;justify-content:space-between;gap:12px;
+  padding:12px 0;border-bottom:1px solid var(--linea-suave);
+}
+.linea-encargo .lc-nombre{flex:1}
 .lc-quitar{font-size:11.5px;color:var(--coral);text-decoration:underline;margin-top:3px}
 .lc-total{font-size:14px;font-weight:600;font-variant-numeric:tabular-nums;text-align:right;white-space:nowrap}
 
@@ -699,10 +713,16 @@ details[open] summary::after{content:"−"}
 <header>
   <div class="wrap barra">
     <div class="marca">Avellana Studio<small>Costa Rica</small></div>
-    <button class="btn-carrito" id="btnCarrito" type="button">
-      <svg width="15" height="15" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2" stroke-linecap="round" stroke-linejoin="round" aria-hidden="true"><path d="M6 2 3 6v14a2 2 0 0 0 2 2h14a2 2 0 0 0 2-2V6l-3-4Z"/><path d="M3 6h18"/><path d="M16 10a4 4 0 0 1-8 0"/></svg>
-      Carrito <span class="n" id="numCarrito">0</span>
-    </button>
+    <div class="acciones-header">
+      <button class="btn-carrito btn-encargos oculto" id="btnEncargos" type="button">
+        <svg width="15" height="15" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2" stroke-linecap="round" stroke-linejoin="round" aria-hidden="true"><path d="M21 8v13H3V8"/><path d="M1 3h22v5H1z"/><path d="M10 12h4"/></svg>
+        Encargos <span class="n" id="numEncargos">0</span>
+      </button>
+      <button class="btn-carrito" id="btnCarrito" type="button">
+        <svg width="15" height="15" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2" stroke-linecap="round" stroke-linejoin="round" aria-hidden="true"><path d="M6 2 3 6v14a2 2 0 0 0 2 2h14a2 2 0 0 0 2-2V6l-3-4Z"/><path d="M3 6h18"/><path d="M16 10a4 4 0 0 1-8 0"/></svg>
+        Carrito <span class="n" id="numCarrito">0</span>
+      </button>
+    </div>
   </div>
 </header>
 
@@ -843,8 +863,10 @@ details[open] summary::after{content:"−"}
    ESTADO
    ══════════════════════════════════════════════════════════════ */
 const LLAVE_CARRITO = 'avellana_carrito_v1';
+const LLAVE_ENCARGOS = 'avellana_encargos_v1';
 let PRODUCTOS = [];
 let CARRITO   = cargarCarrito();
+let ENCARGOS  = cargarEncargos(); // lista de texto libre — "carrito" de productos por encargo
 let CATEGORIA = 'Todo';
 let BUSQUEDA  = '';
 let MARCA  = 'Todas';
@@ -903,6 +925,16 @@ function cargarCarrito(){
 }
 function guardarCarrito(){
   try { localStorage.setItem(LLAVE_CARRITO, JSON.stringify(CARRITO)); } catch {}
+}
+
+function cargarEncargos(){
+  try {
+    const v = JSON.parse(localStorage.getItem(LLAVE_ENCARGOS));
+    return Array.isArray(v) ? v : [];
+  } catch { return []; }
+}
+function guardarEncargos(){
+  try { localStorage.setItem(LLAVE_ENCARGOS, JSON.stringify(ENCARGOS)); } catch {}
 }
 
 let brindisTimer;
@@ -981,6 +1013,7 @@ async function cargarCatalogo(){
   $('#grilla').classList.remove('oculto');
   pintarGrilla(true);
   actualizarBarra();
+  actualizarBadgeEncargos();
 }
 
 // Quita del carrito productos que ya no existen o quedaron sin stock
@@ -1789,20 +1822,91 @@ async function copiarSinpe(numero, boton){
   setTimeout(() => { boton.textContent = textoOriginal; }, 1800);
 }
 
-/* ── pedir algo por encargo (agotado, o nunca estuvo en catálogo) ───────── */
-function verEncargo(prefill){
+/* ── carrito de encargo (agotado, o nunca estuvo en catálogo) ────────────
+   A diferencia del carrito normal, acá no hay precio ni stock que
+   controlar: es una lista de texto libre. Se puede ir agregando varios
+   productos desde distintas partes de la tienda y mandarlos todos juntos
+   en un solo formulario al final, en vez de repetir nombre y WhatsApp
+   cada vez. */
+function totalEncargos(){ return ENCARGOS.length; }
+
+function actualizarBadgeEncargos(){
+  const n = totalEncargos();
+  const btn = $('#btnEncargos');
+  if (!btn) return;
+  $('#numEncargos').textContent = n;
+  btn.classList.toggle('oculto', n === 0);
+}
+
+// texto ya viene armado (marca + nombre + tono) desde la ficha del
+// producto o la tarjeta — se agrega directo, sin abrir ningún formulario.
+function agregarEncargo(texto){
+  texto = String(texto || '').trim();
+  if (texto.length < 2) return;
+  const yaEsta = ENCARGOS.some(t => t.toLowerCase() === texto.toLowerCase());
+  if (yaEsta){ brindis('Ese ya está en tu lista de encargos'); return; }
+  ENCARGOS.push(texto);
+  guardarEncargos();
+  actualizarBadgeEncargos();
+  brindis('Agregado a tu lista de encargos 📦');
+}
+
+function quitarEncargo(i){
+  ENCARGOS.splice(i, 1);
+  guardarEncargos();
+  actualizarBadgeEncargos();
+  verEncargos();
+}
+
+// El botón genérico "Pedir algo por encargo" (sin producto ya elegido) —
+// pide el texto y lo agrega a la misma lista.
+function pedirEncargoLibre(){
   const html = `
     <p style="margin:0 0 16px;font-size:14px;color:var(--tinta-2);line-height:1.6">
-      Contanos qué producto querés que te consigamos (marca, nombre, tono — mientras más detalle, mejor)
-      y te escribimos por WhatsApp para confirmar precio y tiempo de entrega antes de pedirte nada.
+      Contanos qué producto querés que te consigamos (marca, nombre, tono — mientras más detalle, mejor).
+      Lo agregamos a tu lista y cuando termines de buscar, mandás todo junto.
     </p>
-    <form id="formEncargo" novalidate>
+    <form id="formEncargoLibre" novalidate>
       <div class="campos">
         <div class="campo ancho">
           <label for="enProducto">Qué querés que te traigamos</label>
-          <input type="text" id="enProducto" placeholder="Ej: Rhode Peptide Lip Tint, tono Sweetest" value="${esc(prefill || '')}">
+          <input type="text" id="enProducto" placeholder="Ej: Rhode Peptide Lip Tint, tono Sweetest">
           <span class="error oculto" data-error="enProducto">Contanos qué producto querés</span>
         </div>
+      </div>
+      <button class="btn-grande" type="submit">Agregar a mi lista de encargos</button>
+    </form>`;
+  abrirHoja('Pedir por encargo', html);
+  $('#formEncargoLibre').addEventListener('submit', (ev) => {
+    ev.preventDefault();
+    const producto = $('#enProducto').value.trim();
+    marcarError('enProducto', producto.length < 2);
+    if (producto.length < 2) return;
+    agregarEncargo(producto);
+    verEncargos();
+  });
+}
+
+// La lista completa: cada producto agregado (removible) + un solo
+// formulario de contacto al final para mandar todo junto.
+function verEncargos(){
+  if (!ENCARGOS.length){
+    abrirHoja('Tu lista de encargos', `<div class="vacio"><strong>Todavía no agregaste nada</strong>Buscá "Pedir por encargo" en cualquier producto que no tengamos, o escribí uno vos misma.</div>
+      <button class="btn-suave" type="button" style="margin-top:14px" data-encargo-libre>Pedir algo por encargo</button>`);
+    return;
+  }
+  const html = `
+    <p style="margin:0 0 14px;font-size:14px;color:var(--tinta-2);line-height:1.6">
+      Te escribimos por WhatsApp para confirmar precio y tiempo de entrega de cada uno antes de pedirte nada.
+    </p>
+    ${ENCARGOS.map((texto, i) => `
+      <div class="linea-encargo">
+        <div class="lc-nombre">${esc(texto)}</div>
+        <button class="lc-quitar" type="button" data-quitar-encargo="${i}">Quitar</button>
+      </div>`).join('')}
+    <button class="btn-suave" type="button" style="margin:14px 0" data-encargo-libre>+ Agregar otro producto</button>
+    <form id="formEncargos" novalidate>
+      <div class="campos">
         <div class="campo ancho">
           <label for="enNombre">Tu nombre</label>
           <input type="text" id="enNombre" autocomplete="name" placeholder="Nombre y apellido">
@@ -1814,22 +1918,20 @@ function verEncargo(prefill){
           <span class="error oculto" data-error="enTel">Escribí un número de 8 dígitos</span>
         </div>
       </div>
-      <button class="btn-grande" type="submit" id="btnEncargo">Solicitar encargo</button>
+      <button class="btn-grande" type="submit" id="btnEnviarEncargos">Solicitar ${ENCARGOS.length === 1 ? 'este encargo' : `estos ${ENCARGOS.length} encargos`}</button>
       <p class="nota-datos">Los encargos tardan de ${esc(String(CONFIG.ENCARGO_DIAS_MIN || 20))} a ${esc(String(CONFIG.ENCARGO_DIAS_MAX || 25))} días hábiles y pedimos un adelanto del ${esc(String(CONFIG.ENCARGO_ADELANTO_PCT || 50))}%. Todo se confirma por WhatsApp antes de pagar.</p>
     </form>`;
-  abrirHoja('Pedir por encargo', html);
+  abrirHoja('Tu lista de encargos', html);
 
-  $('#formEncargo').addEventListener('submit', async (ev) => {
+  $('#formEncargos').addEventListener('submit', async (ev) => {
     ev.preventDefault();
-    const producto = $('#enProducto').value.trim();
     const nombre = $('#enNombre').value.trim();
     const tel = $('#enTel').value.replace(/\D/g, '');
-    marcarError('enProducto', producto.length < 2);
     marcarError('enNombre', nombre.length < 2);
     marcarError('enTel', tel.length !== 8);
-    if (producto.length < 2 || nombre.length < 2 || tel.length !== 8) return;
+    if (nombre.length < 2 || tel.length !== 8) return;
 
-    const btn = $('#btnEncargo');
+    const btn = $('#btnEnviarEncargos');
     btn.disabled = true;
     btn.textContent = 'Enviando…';
 
@@ -1839,12 +1941,15 @@ function verEncargo(prefill){
           method:'POST',
           headers:{ 'Content-Type':'text/plain;charset=utf-8' },
           body: JSON.stringify({
-            accion:'crear_solicitud',
-            solicitud:{ producto, nombre, telefono:tel, tipo:'encargo' }
+            accion:'crear_solicitud_lote',
+            solicitud:{ productos: ENCARGOS.slice(), nombre, telefono:tel }
           })
         });
       } catch {}
     }
+    ENCARGOS = [];
+    guardarEncargos();
+    actualizarBadgeEncargos();
     cerrarHoja();
     brindis('Listo, te contactamos por WhatsApp para confirmar 💛');
   });
@@ -1854,14 +1959,19 @@ function verEncargo(prefill){
    EVENTOS
    ══════════════════════════════════════════════════════════════ */
 document.addEventListener('click', (ev) => {
-  const t = ev.target.closest('[data-agregar],[data-mas],[data-menos],[data-quitar],[data-encargo],[data-tono-id],[data-cat],[data-copiar],[data-ver],#irCheckout,#seguirComprando,#btnCarrito,#btnVerCarrito,#btnCerrar,#btnLimpiarFiltros');
+  const t = ev.target.closest('[data-agregar],[data-mas],[data-menos],[data-quitar],[data-encargo],[data-encargo-libre],[data-quitar-encargo],[data-tono-id],[data-cat],[data-copiar],[data-ver],#irCheckout,#seguirComprando,#btnCarrito,#btnVerCarrito,#btnEncargos,#btnCerrar,#btnLimpiarFiltros');
   if (!t) return;
 
   if (t.dataset.agregar) return agregar(t.dataset.agregar, 1);
   if (t.dataset.mas)     return agregar(t.dataset.mas, 1);
   if (t.dataset.menos)   return agregar(t.dataset.menos, -1);
   if (t.dataset.copiar)  return copiarSinpe(t.dataset.copiar, t);
-  if (t.dataset.encargo !== undefined) return verEncargo(t.dataset.encargo);
+  // Con producto ya identificado (viene de una ficha/tarjeta) se agrega
+  // directo a la lista; el botón genérico (sin texto) abre el formulario
+  // para escribirlo a mano.
+  if (t.dataset.encargo !== undefined) return t.dataset.encargo ? agregarEncargo(t.dataset.encargo) : pedirEncargoLibre();
+  if (t.dataset.encargoLibre !== undefined) return pedirEncargoLibre();
+  if (t.dataset.quitarEncargo !== undefined) return quitarEncargo(Number(t.dataset.quitarEncargo));
   if (t.dataset.tonoId)  return elegirTono(t.dataset.tonoGrupo, t.dataset.tonoId);
   if (t.dataset.ver)     return verProducto(t.dataset.ver);
 
@@ -1890,6 +2000,7 @@ document.addEventListener('click', (ev) => {
   if (t.id === 'irCheckout')       return verCheckout();
   if (t.id === 'seguirComprando')  return cerrarHoja();
   if (t.id === 'btnCarrito' || t.id === 'btnVerCarrito') return verCarrito();
+  if (t.id === 'btnEncargos') return verEncargos();
   if (t.id === 'btnCerrar')        return cerrarHoja();
 });
 
