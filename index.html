@@ -1537,7 +1537,7 @@ function verCheckout(){
           <div class="campo">
             <label for="canton">Cantón</label>
             <select id="canton" name="canton" disabled>
-              <option value="">Elegí la provincia primero</option>
+              <option value="">Provincia primero</option>
             </select>
             <span class="error oculto" data-error="canton">Elegí tu cantón</span>
           </div>
@@ -1643,7 +1643,7 @@ function prepararFormulario(){
     sel.disabled = !lista.length;
     sel.innerHTML = lista.length
       ? `<option value="">Elegí…</option>` + lista.map(c => `<option value="${esc(c)}">${esc(c)}</option>`).join('')
-      : `<option value="">Elegí la provincia primero</option>`;
+      : `<option value="">Provincia primero</option>`;
     refrescarTotales();
   });
 
