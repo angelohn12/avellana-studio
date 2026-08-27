@@ -1042,7 +1042,10 @@ function estadoStock(p){
 // desde la ficha de un producto dentro de ese minuto, se ve al instante,
 // sin esperar de nuevo la llamada a Apps Script.
 const CATALOGO_CACHE_KEY = 'avellanaCatalogoCache';
-const CATALOGO_CACHE_MS = 60000;
+// 15 min en vez de 1 — el catálogo no cambia tan seguido, y así la tienda
+// no depende de que el backend (Apps Script, a veces lento) responda rápido
+// en cada visita dentro de esa ventana.
+const CATALOGO_CACHE_MS = 15 * 60 * 1000;
 
 // Un solo intento de fetch al catálogo, con límite de tiempo. Sin este
 // límite, una conexión lenta o trabada deja a la clienta viendo el
