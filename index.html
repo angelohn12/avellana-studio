@@ -1042,10 +1042,10 @@ function estadoStock(p){
 // desde la ficha de un producto dentro de ese minuto, se ve al instante,
 // sin esperar de nuevo la llamada a Apps Script.
 const CATALOGO_CACHE_KEY = 'avellanaCatalogoCache';
-// 15 min en vez de 1 — el catálogo no cambia tan seguido, y así la tienda
+// 5 min en vez de 1 — el catálogo no cambia tan seguido, y así la tienda
 // no depende de que el backend (Apps Script, a veces lento) responda rápido
 // en cada visita dentro de esa ventana.
-const CATALOGO_CACHE_MS = 15 * 60 * 1000;
+const CATALOGO_CACHE_MS = 5 * 60 * 1000;
 
 // Un solo intento de fetch al catálogo, con límite de tiempo. Sin este
 // límite, una conexión lenta o trabada deja a la clienta viendo el
@@ -1329,11 +1329,20 @@ function tarjetaFoto(p, ancho = 400){
     ${MARCA_SIN_FOTO}<span>${esc(p.marca || 'Avellana')}</span></div>`;
 }
 
+// Con ~160 tarjetas distintas en catálogo, pintarlas todas de una vez es
+// trabajo de más (peor en celulares): se arma el DOM de golpe aunque la
+// clienta solo vea las primeras. Se pinta de a tandas y "Ver más" agranda
+// la tanda — reanimar=true (viene de un filtro/búsqueda nuevo) la reinicia.
+let limiteGrilla = 24;
+const TANDA_GRILLA = 24;
+
 function pintarGrilla(reanimar = false){
-  const grupos = agruparProductos(productosVisibles());
+  if (reanimar) limiteGrilla = TANDA_GRILLA;
+  const todos = agruparProductos(productosVisibles());
+  const grupos = todos.slice(0, limiteGrilla);
   const g = $('#grilla');
 
-  if (!grupos.length){
+  if (!todos.length){
     g.innerHTML = `<div class="vacio"><strong>No encontramos nada</strong>
       Probá con otra palabra, o pedilo por encargo y te decimos si podemos conseguirlo.
       <button class="btn-suave" type="button" style="margin-top:14px" data-encargo="${esc(BUSQUEDA.trim())}">Pedirlo por encargo</button>
@@ -1383,7 +1392,11 @@ function pintarGrilla(reanimar = false){
         ${control}
       </div>
     </article>`;
-  }).join('');
+  }).join('') + (todos.length > grupos.length
+    ? `<button class="btn-suave" type="button" id="verMasProductos" style="grid-column:1/-1;margin:8px 0">
+         Ver más productos (${todos.length - grupos.length} más)
+       </button>`
+    : '');
 }
 
 // Cambia qué tono está activo dentro de un grupo, sin tocar el carrito.
@@ -2179,9 +2192,14 @@ function verConfirmacionEncargo(productos){
    EVENTOS
    ══════════════════════════════════════════════════════════════ */
 document.addEventListener('click', (ev) => {
-  const t = ev.target.closest('[data-agregar],[data-mas],[data-menos],[data-quitar],[data-encargo],[data-encargo-libre],[data-quitar-encargo],[data-tono-id],[data-cat],[data-copiar],[data-ver],#irCheckout,#irEncargos,#seguirComprando,#btnCarrito,#btnVerCarrito,#btnEncargos,#btnBarraEncargos,#btnCerrar,#btnLimpiarFiltros');
+  const t = ev.target.closest('[data-agregar],[data-mas],[data-menos],[data-quitar],[data-encargo],[data-encargo-libre],[data-quitar-encargo],[data-tono-id],[data-cat],[data-copiar],[data-ver],#irCheckout,#irEncargos,#seguirComprando,#btnCarrito,#btnVerCarrito,#btnEncargos,#btnBarraEncargos,#btnCerrar,#btnLimpiarFiltros,#verMasProductos');
   if (!t) return;
 
+  if (t.id === 'verMasProductos'){
+    limiteGrilla += TANDA_GRILLA;
+    pintarGrilla(false);
+    return;
+  }
   if (t.dataset.agregar) return agregar(t.dataset.agregar, 1);
   if (t.dataset.mas)     return agregar(t.dataset.mas, 1);
   if (t.dataset.menos)   return agregar(t.dataset.menos, -1);
