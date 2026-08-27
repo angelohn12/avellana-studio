@@ -19,8 +19,29 @@
 <meta property="og:image:height" content="630">
 <meta name="twitter:card" content="summary_large_image">
 
-<!-- Marca de avellana en flor, dibujada como SVG: no depende de ningún archivo -->
-<link rel="icon" href="data:image/svg+xml,%3Csvg xmlns='http://www.w3.org/2000/svg' viewBox='0 0 32 32'%3E%3Crect width='32' height='32' rx='8' fill='%23FDF8F4'/%3E%3Cpath d='M16 7c4.4 0 7.8 3.3 7.8 7.6 0 4.9-3.6 8.6-7.8 10.4-4.2-1.8-7.8-5.5-7.8-10.4C8.2 10.3 11.6 7 16 7z' fill='%235D300E'/%3E%3Cpath d='M16 11.5c1.9 0 3.4 1.5 3.4 3.3 0 2-1.5 3.5-3.4 4.4-1.9-.9-3.4-2.4-3.4-4.4 0-1.8 1.5-3.3 3.4-3.3z' fill='%23FDA6AB'/%3E%3Ccircle cx='16' cy='6' r='2.1' fill='%23D24558'/%3E%3C/svg%3E">
+<!-- Antes era un SVG embebido (data:) — se ve bien en el navegador, pero Google
+     no puede rastrear un ícono así para mostrarlo en los resultados de
+     búsqueda (necesita un archivo real con su propia URL). Por eso ahora son
+     archivos PNG de verdad, generados a partir del mismo dibujo. -->
+<link rel="icon" href="/favicon.png" type="image/png" sizes="32x32">
+<link rel="apple-touch-icon" href="/apple-touch-icon.png">
+
+<!-- Le dice a Google (y a quien comparta el link) que el sitio se llama
+     "Avellana Studio" — sin esto, un dominio nuevo en pages.dev a veces
+     se muestra en los resultados con el nombre de la plataforma que lo
+     hospeda en vez del nombre real del negocio. -->
+<script type="application/ld+json">
+{
+  "@context": "https://schema.org",
+  "@type": "Organization",
+  "name": "Avellana Studio",
+  "url": "https://avellana-studio.pages.dev/",
+  "logo": "https://avellana-studio.pages.dev/icon-512.png",
+  "image": "https://avellana-studio.pages.dev/icon-512.png",
+  "description": "Maquillaje, skincare y productos de belleza en Costa Rica. Envíos a todo el país y retiro en Calle Blancos.",
+  "areaServed": "CR"
+}
+</script>
 <link rel="preconnect" href="https://fonts.googleapis.com">
 <link rel="preconnect" href="https://fonts.gstatic.com" crossorigin>
 <link rel="stylesheet" href="https://fonts.googleapis.com/css2?family=DM+Mono:wght@400;500&family=Playfair+Display:ital,wght@0,600;0,700;1,600&family=Poppins:wght@300;400;500;600;700&display=swap">
