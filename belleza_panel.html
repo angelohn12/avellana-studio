@@ -1,0 +1,3153 @@
+<!DOCTYPE html>
+<html lang="es">
+<head>
+<meta charset="UTF-8" />
+<meta name="viewport" content="width=device-width, initial-scale=1.0, viewport-fit=cover" />
+<title>Avellana Studio</title>
+<link rel="manifest" href="manifest.webmanifest" />
+<link rel="apple-touch-icon" href="apple-touch-icon.png" />
+<link rel="icon" href="favicon.ico" />
+<meta name="theme-color" content="#D24558" />
+<meta name="apple-mobile-web-app-capable" content="yes" />
+<meta name="apple-mobile-web-app-status-bar-style" content="black-translucent" />
+<meta name="apple-mobile-web-app-title" content="Avellana" />
+<style>
+  :root{
+    --brown:#5D300E;
+    --brown-soft:#8a5a3a;
+    --coral:#D24558;
+    --coral-dark:#A5323F;
+    --pink:#FDA6AB;
+    --peach:#FAC977;
+    --mint:#C6E9C8;
+    --sage:#61A07D;
+    --bg:#FFF9F3;
+    --surface:#FFFFFF;
+    --border:#F0DDD0;
+  }
+  *{box-sizing:border-box;}
+  body{
+    margin:0;
+    font-family:-apple-system,Segoe UI,Roboto,Helvetica,Arial,sans-serif;
+    background:var(--bg);
+    color:var(--brown);
+  }
+  input, select, button, textarea{
+    font-family:inherit;
+    font-size:14px;
+  }
+  input, select, textarea{
+    padding:8px 10px;
+    border:1px solid var(--border);
+    border-radius:8px;
+    background:#fff;
+    color:var(--brown);
+    width:100%;
+  }
+  label{
+    font-size:12px;
+    color:var(--brown-soft);
+    display:block;
+    margin-bottom:4px;
+  }
+  button{
+    cursor:pointer;
+    border:none;
+    border-radius:8px;
+    padding:9px 16px;
+    background:var(--coral);
+    color:#fff;
+    font-weight:600;
+    transition:transform .08s;
+  }
+  button:hover{background:var(--coral-dark);}
+  button:active{transform:scale(0.96);}
+  button:disabled{opacity:0.6;cursor:default;transform:none;}
+  button.secundario{
+    background:#fff;
+    color:var(--coral);
+    border:1px solid var(--coral);
+  }
+  button.secundario:hover{background:#fff4f4;}
+
+  /* ---------- Aviso de pedidos pendientes ---------- */
+  .avisoPedidos{
+    display:flex;align-items:center;gap:11px;cursor:pointer;
+    background:var(--coral);color:#fff;padding:13px 18px;
+    font-size:14.5px;font-weight:600;
+  }
+  .avisoPedidos:hover{background:var(--coral-dark);}
+  .avisoPedidos .avisoIr{margin-left:auto;font-weight:500;opacity:.9;white-space:nowrap;}
+  .pulso{
+    width:9px;height:9px;border-radius:50%;background:#fff;flex:0 0 auto;
+    animation:latir 1.6s ease-in-out infinite;
+  }
+  @keyframes latir{0%,100%{opacity:1;transform:scale(1)}50%{opacity:.35;transform:scale(.7)}}
+  .chivo{
+    display:inline-flex;align-items:center;justify-content:center;
+    min-width:18px;height:18px;padding:0 5px;margin-left:6px;
+    background:var(--coral);color:#fff;border-radius:20px;
+    font-size:11px;font-weight:700;font-variant-numeric:tabular-nums;
+  }
+  .tab.activo .chivo{background:#fff;color:var(--coral);}
+
+  /* ---------- Fichas de pedido ---------- */
+  .pedido{
+    border:1px solid var(--border);border-radius:12px;padding:15px 16px;margin-bottom:12px;
+    background:#fff;
+  }
+  .pedido.nuevo{border-color:var(--coral);border-width:2px;padding:14px 15px;}
+  .pedido.revisar{background:#FFF7F8;}
+  .pedidoTop{display:flex;align-items:baseline;gap:10px;flex-wrap:wrap;margin-bottom:4px;}
+  .pedidoNum{font-family:ui-monospace,Menlo,Consolas,monospace;font-size:13px;color:var(--brown-soft);}
+  .pedidoTotal{margin-left:auto;font-size:19px;font-weight:700;color:var(--brown);font-variant-numeric:tabular-nums;}
+  .pedidoNombre{font-size:16px;font-weight:700;color:var(--brown);}
+  .pedidoMeta{font-size:13px;color:var(--brown-soft);line-height:1.6;margin-bottom:10px;}
+  .pedidoItems{
+    background:var(--bg);border-radius:9px;padding:10px 12px;margin-bottom:12px;font-size:13.5px;
+  }
+  .pedidoItems div{display:flex;justify-content:space-between;gap:12px;padding:3px 0;font-variant-numeric:tabular-nums;}
+  .pedidoAlerta{
+    background:#FBE3E6;color:#8E2B36;border-radius:8px;padding:9px 11px;
+    font-size:12.5px;font-weight:600;margin-bottom:11px;
+  }
+  .pedidoAcciones{display:flex;gap:8px;flex-wrap:wrap;align-items:center;}
+  .pedidoAcciones .wa{
+    background:#1FA855;color:#fff;text-decoration:none;padding:9px 15px;
+    border-radius:8px;font-size:13.5px;font-weight:600;display:inline-block;
+  }
+  .pedidoAcciones .wa:hover{background:#178643;}
+  .btnPaso{padding:9px 15px;border-radius:8px;font-size:13.5px;font-weight:600;}
+  .btnCancelar{
+    background:#fff;color:var(--brown-soft);border:1px solid var(--border);
+    padding:9px 13px;border-radius:8px;font-size:13px;margin-left:auto;
+  }
+  .btnCancelar:hover{background:#fff4f4;color:var(--coral-dark);border-color:var(--coral);}
+  .selEstado{
+    padding:8px 11px;border-radius:8px;border:1px solid var(--border);
+    font-size:13.5px;background:#fff;color:var(--brown);
+  }
+
+  /* ---------- Tienda: qué ve el público ---------- */
+  .ayudaTienda{
+    font-size:13.5px;line-height:1.6;color:var(--brown-soft);
+    margin:0 0 18px;max-width:70ch;
+  }
+  .resumenTienda{
+    display:grid;grid-template-columns:repeat(auto-fit,minmax(120px,1fr));
+    gap:10px;margin-bottom:20px;
+  }
+  .cajaT{
+    background:var(--bg);border:1px solid var(--border);border-radius:12px;padding:12px 14px;
+  }
+  .cajaT .n{font-size:24px;font-weight:700;color:var(--brown);line-height:1.1;font-variant-numeric:tabular-nums;}
+  .cajaT .t{font-size:11px;text-transform:uppercase;letter-spacing:.08em;color:var(--brown-soft);margin-top:3px;}
+  .cajaT.alerta{border-color:var(--coral);}
+  .cajaT.alerta .n{color:var(--coral);}
+
+  .cajaBusqueda{
+    position:relative;flex:1 1 240px;min-width:200px;max-width:360px;
+  }
+  .cajaBusqueda .iconoBusqueda{
+    position:absolute;left:10px;top:50%;transform:translateY(-50%);
+    font-size:14px;opacity:.55;pointer-events:none;
+  }
+  .cajaBusqueda input{padding-left:32px;}
+  #inventarioFiltroMarca,#inventarioOrden{flex:0 1 200px;min-width:150px;width:auto;}
+
+  .filtrosTienda{display:flex;gap:7px;flex-wrap:wrap;}
+  .chipT{
+    background:#fff;color:var(--brown-soft);border:1px solid var(--border);
+    padding:7px 14px;border-radius:20px;font-size:13px;font-weight:500;
+  }
+  .chipT:hover{background:var(--bg);color:var(--brown);}
+  .chipT.activo{background:var(--brown);border-color:var(--brown);color:#fff;}
+  .chipT.activo:hover{background:var(--brown);}
+  .btnSuaveT{
+    background:#fff;color:var(--brown);border:1px solid var(--border);
+    padding:7px 14px;border-radius:20px;font-size:13px;font-weight:500;
+  }
+  .btnSuaveT:hover{background:var(--bg);border-color:var(--brown-soft);color:var(--brown);}
+  .btnEnlace{
+    background:var(--brown);color:#fff;text-decoration:none;
+    padding:9px 16px;border-radius:8px;font-size:14px;font-weight:600;display:inline-block;
+  }
+  .btnEnlace:hover{background:#43220A;}
+
+  .rejillaT{display:grid;grid-template-columns:repeat(auto-fill,minmax(230px,1fr));gap:12px;}
+  .fichaT{
+    background:#fff;border:1px solid var(--border);border-radius:12px;
+    padding:13px 14px;display:flex;gap:12px;align-items:flex-start;
+    transition:border-color .15s, opacity .15s;
+  }
+  .miniFoto{
+    flex:0 0 auto;width:48px;height:48px;border-radius:8px;overflow:hidden;
+    background:#F3ECE4;display:flex;align-items:center;justify-content:center;
+    cursor:pointer;position:relative;border:1px solid var(--border);
+  }
+  .miniFoto:hover{border-color:var(--brown-soft);}
+  .miniFoto img{width:100%;height:100%;object-fit:cover;display:block;}
+  .miniFoto .miniIcono{font-size:17px;opacity:.5;}
+  .miniFoto.subiendo{opacity:.55;cursor:wait;pointer-events:none;}
+  .miniFoto.subiendo .miniIcono{font-size:10px;opacity:.85;}
+  .fichaT.apagada{opacity:.62;background:#FBF7F3;}
+  .fichaT .infoT{flex:1;min-width:0;}
+  .fichaT .nomT{
+    font-size:14px;font-weight:600;color:var(--brown);line-height:1.3;
+    overflow-wrap:anywhere;
+  }
+  .fichaT .metaT{font-size:12px;color:var(--brown-soft);margin-top:3px;}
+  .fichaT .avisosT{display:flex;flex-wrap:wrap;gap:5px;margin-top:7px;}
+  .pastilla{
+    font-size:10.5px;font-weight:600;padding:2px 8px;border-radius:20px;
+    letter-spacing:.02em;white-space:nowrap;
+  }
+  .pastilla.verde{background:#DFF0E4;color:#3F7A57;}
+  .pastilla.ambar{background:#FDEBCF;color:#96631A;}
+  .pastilla.gris{background:#EFE7E0;color:#8A7566;}
+  .pastilla.roja{background:#FBE3E6;color:#A5323F;}
+
+  /* Interruptor de visibilidad */
+  .palanca{
+    flex:0 0 auto;width:46px;height:27px;border-radius:20px;background:#DCD3CB;
+    border:0;padding:0;position:relative;cursor:pointer;
+    transition:background .18s ease;
+  }
+  .palanca:hover{background:#CFC4BA;}
+  .palanca::after{
+    content:"";position:absolute;top:3px;left:3px;width:21px;height:21px;
+    border-radius:50%;background:#fff;transition:transform .18s ease;
+    box-shadow:0 1px 3px rgba(93,48,14,.28);
+  }
+  .palanca[aria-pressed="true"]{background:var(--sage);}
+  .palanca[aria-pressed="true"]:hover{background:#528B6B;}
+  .palanca[aria-pressed="true"]::after{transform:translateX(19px);}
+  .palanca:disabled{opacity:.5;cursor:wait;}
+  @media (prefers-reduced-motion:reduce){
+    .palanca,.palanca::after{transition:none;}
+  }
+
+  /* Estrella: marca qué fotos rotan en la portada de la tienda */
+  .estrella{
+    flex:0 0 auto;width:34px;height:34px;border-radius:50%;background:#EFE7E0;
+    border:0;padding:0;cursor:pointer;font-size:16px;line-height:1;
+    color:#B0A499;transition:background .18s ease,color .18s ease;
+  }
+  .estrella:hover{background:#E4D9C9;}
+  .estrella[aria-pressed="true"]{background:#FDEBCF;color:#C6862A;}
+  .estrella:disabled{opacity:.5;cursor:wait;}
+
+  /* ---------- Login ---------- */
+  #pantallaLogin{
+    min-height:100vh;
+    display:flex;
+    align-items:center;
+    justify-content:center;
+    background:var(--pink);
+  }
+  .cajaLogin{
+    background:#fff;
+    padding:40px 32px;
+    border-radius:16px;
+    width:320px;
+    text-align:center;
+    box-shadow:0 4px 24px rgba(93,48,14,0.15);
+  }
+  .cajaLogin h1{
+    font-size:26px;
+    margin:0 0 2px;
+    color:var(--brown);
+  }
+  .cajaLogin p.sub{
+    font-size:12px;
+    letter-spacing:1px;
+    color:var(--brown-soft);
+    margin:0 0 24px;
+    text-transform:uppercase;
+  }
+  .cajaLogin .campo{margin-bottom:14px;text-align:left;}
+  .errorLogin{color:var(--coral-dark);font-size:13px;margin-top:10px;display:none;}
+
+  /* ---------- App shell ---------- */
+  #app{display:none;min-height:100vh;}
+  header.topbar{
+    background:var(--pink);
+    padding:16px 24px;
+    display:flex;
+    align-items:center;
+    justify-content:space-between;
+    flex-wrap:wrap;
+    gap:12px;
+  }
+  header.topbar h1{
+    font-size:20px;
+    margin:0;
+    color:var(--brown);
+  }
+  header.topbar .usuarioInfo{
+    font-size:13px;
+    color:var(--brown-soft);
+    display:flex;
+    align-items:center;
+    gap:10px;
+  }
+  nav.tabs{
+    display:flex;
+    gap:4px;
+    padding:10px 24px;
+    background:#fff;
+    border-bottom:1px solid var(--border);
+    flex-wrap:wrap;
+  }
+  nav.tabs button.tab{
+    background:transparent;
+    color:var(--brown-soft);
+    font-weight:600;
+    padding:8px 14px;
+    border-radius:8px;
+  }
+  nav.tabs button.tab:hover{background:var(--bg);}
+  nav.tabs button.tab.activo{
+    background:var(--coral);
+    color:#fff;
+  }
+  main{padding:24px;max-width:1100px;margin:0 auto;}
+  .oculto{display:none !important;}
+
+  .tarjetas{
+    display:grid;
+    grid-template-columns:repeat(auto-fit,minmax(160px,1fr));
+    gap:14px;
+    margin-bottom:24px;
+  }
+  .tarjeta{
+    background:var(--surface);
+    border:1px solid var(--border);
+    border-radius:12px;
+    padding:16px;
+  }
+  .tarjeta .etiqueta{font-size:12px;color:var(--brown-soft);margin:0 0 6px;}
+  .tarjeta .valor{font-size:24px;font-weight:700;margin:0;}
+
+  .panel{
+    background:var(--surface);
+    border:1px solid var(--border);
+    border-radius:12px;
+    padding:20px;
+    margin-bottom:20px;
+  }
+  .panel h2{font-size:16px;margin:0 0 14px;}
+  .filaBotones{display:flex;justify-content:space-between;align-items:center;margin-bottom:14px;flex-wrap:wrap;gap:10px;}
+
+  table{width:100%;border-collapse:collapse;font-size:13px;}
+  th, td{text-align:left;padding:8px 10px;border-bottom:1px solid var(--border);}
+  th{color:var(--brown-soft);font-weight:600;background:var(--bg);}
+  tr:hover td{background:#fffaf5;}
+  .vacio{padding:24px;text-align:center;color:var(--brown-soft);font-size:13px;}
+
+  .formulario{
+    display:grid;
+    grid-template-columns:repeat(auto-fit,minmax(160px,1fr));
+    gap:12px;
+    margin-bottom:16px;
+    padding:16px;
+    background:var(--bg);
+    border-radius:10px;
+  }
+  .formulario .campoAncho{grid-column:1/-1;}
+  .badge{
+    display:inline-block;
+    padding:2px 8px;
+    border-radius:20px;
+    font-size:11px;
+    font-weight:600;
+  }
+  .badge.mint{background:var(--mint);color:#1f4a30;}
+  .badge.peach{background:var(--peach);color:#7a4a0a;}
+  .badge.pink{background:var(--pink);color:var(--coral-dark);}
+  .badge.gift{background:var(--brown);color:#fff;}
+  .toast{
+    position:fixed;
+    bottom:20px;
+    right:20px;
+    background:var(--brown);
+    color:#fff;
+    padding:12px 18px;
+    border-radius:8px;
+    font-size:13px;
+    display:none;
+    z-index:99;
+  }
+</style>
+</head>
+<body>
+
+<!-- ================= LOGIN ================= -->
+<div id="pantallaLogin">
+  <div class="cajaLogin">
+    <h1>Avellana Studio</h1>
+    <p class="sub">Maquillaje · Belleza</p>
+    <div class="campo">
+      <label>Usuario</label>
+      <input type="text" id="loginUsuario" placeholder="anyelo" />
+    </div>
+    <div class="campo">
+      <label>Contraseña</label>
+      <input type="password" id="loginPassword" placeholder="••••••••" />
+    </div>
+    <button id="btnEntrar" style="width:100%" onclick="ejecutarConBoton('btnEntrar', iniciarSesion, 'Entrando...')">Entrar</button>
+    <p class="errorLogin" id="errorLogin">Usuario o contraseña incorrectos.</p>
+  </div>
+</div>
+
+<!-- ================= APP ================= -->
+<div id="app">
+  <header class="topbar">
+    <h1>Avellana Studio</h1>
+    <div class="usuarioInfo">
+      <span id="nombreUsuarioActual"></span>
+      <button id="btnActualizar" class="secundario" onclick="ejecutarConBoton('btnActualizar', actualizarDatos, 'Actualizando...')">Actualizar</button>
+      <button class="secundario" onclick="cerrarSesion()">Salir</button>
+    </div>
+  </header>
+
+  <!-- Aviso de pedidos pendientes: se ve desde cualquier pestaña -->
+  <div class="avisoPedidos oculto" id="avisoPedidos" onclick="mostrarTab('pedidos')" role="button" tabindex="0"
+       onkeydown="if(event.key==='Enter'||event.key===' '){event.preventDefault();mostrarTab('pedidos')}">
+    <span class="pulso"></span>
+    <span id="avisoPedidosTexto"></span>
+    <span class="avisoIr">Ver pedidos →</span>
+  </div>
+
+  <nav class="tabs">
+    <button class="tab" data-tab="resumen" onclick="mostrarTab('resumen')">Resumen</button>
+    <button class="tab" data-tab="tendencias" onclick="mostrarTab('tendencias')">Tendencias</button>
+    <button class="tab" data-tab="pedidos" onclick="mostrarTab('pedidos')">Pedidos<span class="chivo oculto" id="chivoTab">0</span></button>
+    <button class="tab" data-tab="inventario" onclick="mostrarTab('inventario')">Inventario</button>
+    <button class="tab" data-tab="tienda" onclick="mostrarTab('tienda')">Tienda</button>
+    <button class="tab" data-tab="ventas" onclick="mostrarTab('ventas')">Ventas</button>
+    <button class="tab" data-tab="clientes" onclick="mostrarTab('clientes')">Clientes</button>
+    <button class="tab" data-tab="finanzas" onclick="mostrarTab('finanzas')">Finanzas</button>
+    <button class="tab" data-tab="contenido" onclick="mostrarTab('contenido')">Publicaciones</button>
+    <button class="tab" data-tab="config" onclick="mostrarTab('config')">Configuración</button>
+  </nav>
+
+  <main>
+
+    <!-- ---------- RESUMEN ---------- -->
+    <section id="tab-resumen">
+      <div class="tarjetas">
+        <div class="tarjeta"><p class="etiqueta">Saldo actual</p><p class="valor" id="rSaldo">₡0</p></div>
+        <div class="tarjeta"><p class="etiqueta">Productos en stock</p><p class="valor" id="rStock">0</p></div>
+        <div class="tarjeta"><p class="etiqueta">Ventas del mes</p><p class="valor" id="rVentasMes">₡0</p></div>
+        <div class="tarjeta"><p class="etiqueta">Clientes</p><p class="valor" id="rClientes">0</p></div>
+      </div>
+      <div class="panel">
+        <h2>Punto de equilibrio</h2>
+        <p style="font-size:13px;color:var(--brown-soft);margin:0 0 10px;" id="peTexto"></p>
+        <div style="background:var(--bg);border-radius:20px;height:20px;overflow:hidden;">
+          <div id="peBarra" style="height:100%;background:var(--coral);width:0%;border-radius:20px;transition:width .3s;"></div>
+        </div>
+      </div>
+      <div class="panel">
+        <h2>Stock bajo (5 unidades o menos)</h2>
+        <div id="rStockBajo"></div>
+      </div>
+      <div class="panel">
+        <h2>Ventas recientes</h2>
+        <div id="rVentasRecientes"></div>
+      </div>
+    </section>
+
+    <!-- ---------- TENDENCIAS ---------- -->
+    <section id="tab-tendencias" class="oculto">
+      <div class="filaBotones">
+        <h2 style="margin:0">Tendencias</h2>
+        <select id="tPeriodo" onchange="renderTendencias()" style="max-width:200px;">
+          <option value="historico">Histórico completo</option>
+          <option value="mes">Este mes</option>
+          <option value="30">Últimos 30 días</option>
+          <option value="90">Últimos 90 días</option>
+          <option value="anio">Este año</option>
+        </select>
+      </div>
+      <div class="panel">
+        <h2 style="margin:0 0 2px;">Totales del periodo seleccionado</h2>
+        <div class="tarjetas">
+          <div class="tarjeta"><p class="etiqueta">Total de ventas</p><p class="valor" id="tTotalVentas">0</p></div>
+          <div class="tarjeta"><p class="etiqueta">Ingreso total</p><p class="valor" id="tIngresoTotal">₡0</p></div>
+          <div class="tarjeta"><p class="etiqueta">Costo total</p><p class="valor" id="tCostoTotal">₡0</p></div>
+          <div class="tarjeta"><p class="etiqueta">Ganancia total</p><p class="valor" style="color:var(--sage);" id="tGananciaTotal">₡0</p></div>
+        </div>
+      </div>
+      <div class="panel">
+        <h2 style="margin:0 0 2px;">Estimación de ingresos por inventario disponible</h2>
+        <p style="font-size:12px;color:var(--brown-soft);margin:0 0 14px;">Si vendés todo el stock actual, al precio de lista de cada producto</p>
+        <div class="tarjetas" style="margin-bottom:16px;">
+          <div class="tarjeta"><p class="etiqueta">Ingreso potencial</p><p class="valor" id="eIngresoPotencial">₡0</p></div>
+          <div class="tarjeta"><p class="etiqueta">Costo del inventario</p><p class="valor" id="eCostoInventario">₡0</p></div>
+          <div class="tarjeta"><p class="etiqueta">Ganancia potencial</p><p class="valor" style="color:var(--sage);" id="eGananciaPotencial">₡0</p></div>
+        </div>
+        <div id="eTablaInventario"></div>
+      </div>
+      <div class="tarjetas">
+        <div class="tarjeta"><p class="etiqueta">Ticket promedio</p><p class="valor" id="tTicketPromedio">₡0</p></div>
+        <div class="tarjeta"><p class="etiqueta">Producto más vendido</p><p class="valor" style="font-size:16px;" id="tProductoTop">—</p></div>
+        <div class="tarjeta"><p class="etiqueta">Categoría líder</p><p class="valor" style="font-size:16px;" id="tCategoriaTop">—</p></div>
+        <div class="tarjeta"><p class="etiqueta">Tono más vendido</p><p class="valor" style="font-size:16px;" id="tTonoTop">—</p></div>
+      </div>
+      <div class="panel">
+        <h2>Top 5 productos por unidades vendidas</h2>
+        <div id="tTopProductos"></div>
+      </div>
+      <div style="display:grid;grid-template-columns:repeat(auto-fit,minmax(260px,1fr));gap:20px;">
+        <div class="panel">
+          <h2>Ventas por categoría</h2>
+          <div id="tCategorias"></div>
+        </div>
+        <div class="panel">
+          <h2>Ventas por tono / color</h2>
+          <div id="tTonos"></div>
+        </div>
+      </div>
+      <div class="panel">
+        <h2>Productos de bajo movimiento</h2>
+        <p style="font-size:13px;color:var(--brown-soft);margin:0 0 12px;">Los que menos se venden en el periodo — candidatos a no volver a comprar o bajar de precio.</p>
+        <div id="tBajoMovimiento"></div>
+      </div>
+    </section>
+
+    <!-- ---------- INVENTARIO ---------- -->
+    <section id="tab-inventario" class="oculto">
+      <div class="panel">
+        <div class="filaBotones">
+          <h2 style="margin:0">Productos</h2>
+          <button onclick="nuevoProducto()">+ Nuevo producto</button>
+        </div>
+        <div class="formulario oculto" id="formProducto">
+          <div class="campoAncho">
+            <label>¿Tenés esto en inventario ahora mismo?</label>
+            <div class="filtrosTienda" style="margin:4px 0 0">
+              <button type="button" class="chipT activo" id="modoStockSi" onclick="elegirModalidadProducto('stock')">Sí, tengo stock</button>
+              <button type="button" class="chipT" id="modoStockNo" onclick="elegirModalidadProducto('encargo')">No, es por encargo</button>
+            </div>
+            <p class="ayudaTienda" style="margin:6px 0 0">
+              "Por encargo" lo muestra en la tienda para que lo pidan, pero no resta de ningún inventario ni se
+              puede comprar directo — se coordina por WhatsApp, igual que cualquier otro encargo.
+            </p>
+          </div>
+          <div>
+            <label>Nombre</label>
+            <input id="pNombre" placeholder="Rubor crema y polvo" />
+            <p class="ayudaTienda" style="margin:4px 0 0">
+              Siempre en español: qué tipo de producto es ("Rubor crema y polvo", "Base de maquillaje",
+              "Primer"). Si el producto tiene un nombre de línea pegajoso que la clienta reconoce de redes
+              sociales (ej. "Easy Bake"), ponelo antes con un guión: <b>"Easy Bake — Polvo suelto fijador"</b>.
+              La marca ya se muestra aparte, no hace falta repetirla acá.
+            </p>
+          </div>
+          <div><label>Categoría</label>
+            <select id="pCategoria">
+              <option>Maquillaje</option>
+              <option>Cuidado personal</option>
+              <option>Bienestar</option>
+            </select>
+          </div>
+          <div>
+            <label>Tono / color (opcional)</label>
+            <input id="pTono" placeholder="Espresso, Rose Envy, Cherry Cola…" />
+            <p class="ayudaTienda" style="margin:4px 0 0">
+              Siempre en inglés, tal cual lo llama la marca — copiá el nombre del tono directo del sitio
+              donde comprás (Amazon, Sephora, etc.), sin traducirlo.
+            </p>
+          </div>
+          <div><label>Marca</label><select id="pMarca" onchange="alternarMarcaNueva()"></select></div>
+          <div id="pMarcaNuevaWrap" class="oculto"><label>Nombre de la marca nueva</label><input id="pMarcaNueva" placeholder="Ej: Fenty Beauty" /></div>
+          <div id="pCampoOrigen"><label>Origen</label>
+            <select id="pOrigen" onchange="alternarOrigenNuevo()">
+              <option>Amazon</option>
+              <option>Sephora</option>
+              <option>Target</option>
+              <option>Marshalls</option>
+              <option>Revendedor CR</option>
+              <option>Otro</option>
+            </select>
+          </div>
+          <div id="pOrigenNuevoWrap" class="oculto"><label>¿Cuál origen?</label><input id="pOrigenNuevo" placeholder="Ej: Walmart" /></div>
+          <div id="pCampoMoneda"><label>Moneda de compra</label>
+            <select id="pMoneda" onchange="alternarMonedaProducto()">
+              <option value="USD">Dólares ($)</option>
+              <option value="CRC">Colones (₡)</option>
+            </select>
+          </div>
+          <div id="pCampoCosto"><label>Costo de compra</label><input id="pCosto" type="text" inputmode="decimal" placeholder="12.50 o 1500" oninput="recalcularPrecioPorMargen()" /></div>
+          <div id="pCampoTipoCambio"><label>Tipo de cambio (₡ por $)</label><input id="pTipoCambio" type="number" step="1" value="520" oninput="recalcularPrecioPorMargen()" /></div>
+          <div class="campoAncho">
+            <label id="pLabelPrecio">Precio de venta (₡)</label>
+            <div class="filtrosTienda" style="margin:4px 0 0">
+              <button type="button" class="chipT activo" id="modoPrecioManual" onclick="elegirModoPrecio('manual')">Precio manual</button>
+              <button type="button" class="chipT" id="modoPrecioMargen" onclick="elegirModoPrecio('margen')">Elegir % de ganancia</button>
+            </div>
+            <div id="pCampoMargen" class="oculto" style="margin-top:8px">
+              <select id="pMargenPct" onchange="recalcularPrecioPorMargen()"></select>
+              <p class="ayudaTienda" id="pAyudaMargen" style="margin:6px 0 0"></p>
+            </div>
+            <input id="pPrecioVenta" type="text" inputmode="decimal" placeholder="8000" style="margin-top:8px" oninput="actualizarVistaDescuento()" />
+          </div>
+          <div><label>Descuento</label>
+            <select id="pDescuento" onchange="actualizarVistaDescuento()">
+              <option value="0">Sin descuento</option>
+              <option value="5">5%</option>
+              <option value="10">10%</option>
+              <option value="15">15%</option>
+              <option value="20">20%</option>
+              <option value="25">25%</option>
+              <option value="30">30%</option>
+              <option value="35">35%</option>
+              <option value="40">40%</option>
+              <option value="45">45%</option>
+              <option value="50">50%</option>
+            </select>
+            <p class="ayudaTienda" id="pAyudaDescuento" style="margin:6px 0 0"></p>
+          </div>
+          <div class="campoAncho">
+            <label style="display:flex;align-items:center;gap:8px;font-weight:400">
+              <input type="checkbox" id="pAplicarATonos" checked style="width:auto">
+              Aplicar este costo, precio y descuento a los demás tonos de este producto
+            </label>
+            <p class="ayudaTienda" style="margin:6px 0 0">
+              Si este producto tiene más tonos (mismo nombre y marca) con costo, precio o descuento distinto,
+              se les pone igual al guardar — así no hay que repetirlo tono por tono. Desmarcá esto si este tono
+              en particular costó, se vende o tiene un descuento distinto a los demás.
+            </p>
+          </div>
+          <div id="pCampoStock"><label>Stock inicial</label><input id="pStock" type="number" step="1" value="1" /></div>
+          <div><label>Contenido / medida (opcional)</label><input id="pMedida" placeholder="10 ml, 50 g, 1 unidad…" /></div>
+          <div class="campoAncho">
+            <label>Qué es y para qué sirve (opcional)</label>
+            <input id="pDescripcion" placeholder="Ej: Rubor en crema de larga duración, ideal para un efecto natural." />
+            <p class="ayudaTienda" style="margin:6px 0 0">
+              Esto se ve en la ficha del producto cuando la clienta lo toca en la tienda. Si lo dejás vacío,
+              simplemente no se muestra esa parte — no es obligatorio.
+            </p>
+          </div>
+          <div class="campoAncho"><button id="btnGuardarProducto" onclick="ejecutarConBoton('btnGuardarProducto', guardarProducto)">Guardar producto</button></div>
+        </div>
+        <div class="filaBotones" style="margin-bottom:14px;flex-wrap:wrap">
+          <div class="cajaBusqueda">
+            <span class="iconoBusqueda">🔍</span>
+            <input id="inventarioBusqueda" type="text" placeholder="Buscar por nombre, tono o marca…"
+              oninput="filtrarInventarioTexto(this.value)" />
+          </div>
+          <select id="inventarioFiltroMarca" onchange="filtrarInventarioMarca(this.value)">
+            <option value="todas">Todas las marcas</option>
+          </select>
+          <select id="inventarioOrden" onchange="ordenarInventario(this.value)">
+            <option value="duplicados">Marca, nombre y tono (agrupa duplicados)</option>
+            <option value="nombreAsc">Nombre (A → Z)</option>
+            <option value="nombreDesc">Nombre (Z → A)</option>
+            <option value="precioDesc">Precio (mayor a menor)</option>
+            <option value="precioAsc">Precio (menor a mayor)</option>
+            <option value="stockDesc">Stock (mayor a menor)</option>
+          </select>
+        </div>
+        <div class="filtrosTienda" style="margin-bottom:14px">
+          <button class="chipT activo" data-fi="todos" onclick="filtrarInventarioEstado('todos')">Todos</button>
+          <button class="chipT" data-fi="stock" onclick="filtrarInventarioEstado('stock')">Con stock</button>
+          <button class="chipT" data-fi="agotado" onclick="filtrarInventarioEstado('agotado')">Agotado</button>
+          <button class="chipT" data-fi="encargo" onclick="filtrarInventarioEstado('encargo')">Por encargo</button>
+          <button class="chipT" data-fi="visibles" onclick="filtrarInventarioEstado('visibles')">Visibles</button>
+          <button class="chipT" data-fi="ocultos" onclick="filtrarInventarioEstado('ocultos')">Ocultos</button>
+          <button class="chipT" data-fi="duplicados" onclick="filtrarInventarioEstado('duplicados')">⚠ Solo duplicados</button>
+        </div>
+        <p class="ayudaTienda" id="inventarioContador" style="margin:0 0 10px"></p>
+        <div id="listaProductos"></div>
+      </div>
+    </section>
+
+    <!-- ---------- PEDIDOS ---------- -->
+    <section id="tab-pedidos" class="oculto">
+      <div class="panel">
+        <div class="filaBotones">
+          <h2 style="margin:0">Pedidos de la tienda</h2>
+          <button class="secundario" onclick="cargarDatos()">Actualizar</button>
+        </div>
+        <p class="ayudaTienda">
+          Cuando marcás un pedido como <strong>Pagado</strong>, se descuenta el stock y se registra
+          la venta con su costo y margen. Hasta ese momento el stock queda solo apartado.
+        </p>
+
+        <div class="resumenTienda" id="resumenPedidos"></div>
+
+        <div class="filtrosTienda" style="margin-bottom:16px">
+          <button class="chipT activo" data-fp="activos"  onclick="filtrarPedidos('activos')">Por atender</button>
+          <button class="chipT" data-fp="todos"     onclick="filtrarPedidos('todos')">Todos</button>
+          <button class="chipT" data-fp="Nuevo"     onclick="filtrarPedidos('Nuevo')">Nuevos</button>
+          <button class="chipT" data-fp="Contactado" onclick="filtrarPedidos('Contactado')">Contactados</button>
+          <button class="chipT" data-fp="Pagado"    onclick="filtrarPedidos('Pagado')">Pagados</button>
+          <button class="chipT" data-fp="Enviado"   onclick="filtrarPedidos('Enviado')">Enviados</button>
+        </div>
+
+        <div id="listaPedidos"></div>
+      </div>
+
+      <div class="panel">
+        <h2 style="margin:0 0 6px">Esperando que llegue</h2>
+        <p class="ayudaTienda">
+          Clientas que pidieron aviso de un producto agotado. Cuando lo repongas, escribiles:
+          es la lista más caliente que vas a tener.
+        </p>
+        <div id="listaSolicitudes"></div>
+      </div>
+
+      <div class="panel">
+        <h2 style="margin:0 0 6px">Pedidos por encargo</h2>
+        <p class="ayudaTienda">
+          Piden algo que no tenemos en stock. Escribiles para confirmar precio y tiempo antes de cobrar el
+          adelanto — el mensaje ya trae el 50%/50% y el plazo armado.
+        </p>
+        <div id="listaEncargos"></div>
+      </div>
+    </section>
+
+    <!-- ---------- TIENDA (qué ve el público) ---------- -->
+    <section id="tab-tienda" class="oculto">
+      <div class="panel">
+        <div class="filaBotones">
+          <h2 style="margin:0">Qué ve la gente en la tienda</h2>
+          <a class="btnEnlace" id="tiendaEnlace" href="https://avellana-studio.pages.dev/" target="_blank" rel="noopener">Abrir la tienda ↗</a>
+        </div>
+        <p class="ayudaTienda">
+          Prendé o apagá cada producto. Los apagados <strong>no aparecen</strong> en la página pública,
+          aunque tengan stock. Los que están en cero se muestran como «Agotado» con la opción de que
+          la clienta pida aviso — no hay que apagarlos por eso.
+        </p>
+
+        <div class="resumenTienda" id="resumenTienda"></div>
+
+        <div class="cajaBusqueda" style="margin-bottom:12px">
+          <span class="iconoBusqueda">🔍</span>
+          <input id="tiendaBusqueda" type="text" placeholder="Buscar por nombre, tono o marca…" oninput="filtrarTiendaTexto(this.value)" />
+        </div>
+
+        <div class="filaBotones" style="margin-bottom:14px">
+          <div class="filtrosTienda">
+            <button class="chipT activo" data-ft="todos" onclick="filtrarTienda('todos')">Todos</button>
+            <button class="chipT" data-ft="visibles" onclick="filtrarTienda('visibles')">Visibles</button>
+            <button class="chipT" data-ft="ocultos" onclick="filtrarTienda('ocultos')">Ocultos</button>
+            <button class="chipT" data-ft="agotados" onclick="filtrarTienda('agotados')">Sin stock</button>
+          </div>
+          <div class="filtrosTienda">
+            <button class="btnSuaveT" onclick="visibilidadEnLote(true)">Mostrar todos</button>
+            <button class="btnSuaveT" onclick="ocultarSinStock()">Ocultar los que no tienen stock</button>
+          </div>
+        </div>
+
+        <div id="listaTienda"></div>
+      </div>
+    </section>
+
+    <!-- ---------- VENTAS ---------- -->
+    <section id="tab-ventas" class="oculto">
+      <div class="panel">
+        <div class="filaBotones">
+          <h2 style="margin:0">Ventas</h2>
+          <div style="display:flex;gap:8px;">
+            <button class="secundario" onclick="nuevaRegalia()">+ Registrar regalía</button>
+            <button onclick="nuevaVenta()">+ Registrar venta</button>
+          </div>
+        </div>
+        <div class="formulario oculto" id="formVenta">
+          <div><label>Cliente</label><select id="vCliente" onchange="alternarClienteNuevo()"></select></div>
+          <div id="vClienteNuevoNombre" class="oculto"><label>Nombre del cliente nuevo</label><input id="vNuevoNombre" placeholder="María Pérez" /></div>
+          <div id="vClienteNuevoTel" class="oculto"><label>Teléfono (opcional)</label><input id="vNuevoTelefono" placeholder="8888-8888" /></div>
+          <div id="vClienteNuevoUbic" class="oculto"><label>Ubicación</label>
+            <select id="vNuevoUbicacion">
+              <option>San Carlos</option>
+              <option>San José</option>
+              <option>Otro</option>
+            </select>
+          </div>
+          <div><label>Producto</label><select id="vProducto" onchange="autocompletarPrecioVenta()"></select></div>
+          <div><label>Cantidad</label><input id="vCantidad" type="number" value="1" min="1" oninput="autocompletarPrecioVenta()" /></div>
+          <div><label>Precio de venta (₡, total)</label><input id="vPrecio" type="text" inputmode="decimal" /></div>
+          <div><label>Canal</label>
+            <select id="vCanal">
+              <option>Instagram</option>
+              <option>Facebook Marketplace</option>
+              <option>WhatsApp</option>
+              <option>Entrega personal</option>
+              <option>Envío</option>
+            </select>
+          </div>
+          <div><label>Forma de pago</label>
+            <select id="vFormaPago" onchange="alternarRegalia()">
+              <option>Efectivo</option>
+              <option>SINPE Móvil</option>
+              <option>A pagos</option>
+              <option>Regalía</option>
+            </select>
+          </div>
+          <div><label>Estado de entrega</label>
+            <select id="vEstado">
+              <option>Pendiente</option>
+              <option>Entregado</option>
+            </select>
+          </div>
+          <div class="campoAncho" style="border-top:1px solid var(--border);padding-top:12px;">
+            <label style="display:flex;align-items:center;gap:6px;cursor:pointer;">
+              <input type="checkbox" id="vTieneRegalo" onchange="alternarRegaloVenta()" style="width:auto;" />
+              Agregar un producto de regalo a esta venta
+            </label>
+          </div>
+          <div id="vRegaloProductoWrap" class="oculto"><label>Producto de regalo</label><select id="vProductoRegalo"></select></div>
+          <div id="vRegaloCantidadWrap" class="oculto"><label>Cantidad de regalo</label><input id="vCantidadRegalo" type="number" value="1" min="1" /></div>
+          <div class="campoAncho"><button id="btnGuardarVenta" onclick="ejecutarConBoton('btnGuardarVenta', guardarVenta)">Guardar venta</button></div>
+        </div>
+        <div id="listaVentas"></div>
+      </div>
+    </section>
+
+    <!-- ---------- CLIENTES ---------- -->
+    <section id="tab-clientes" class="oculto">
+      <div class="panel">
+        <div class="filaBotones">
+          <h2 style="margin:0">Clientes</h2>
+          <select id="filtroClientes" onchange="renderClientes()" style="max-width:200px;">
+            <option value="todos">Mostrar: Todos</option>
+            <option value="pendientes">Con saldo pendiente</option>
+            <option value="pagados">Pagados</option>
+          </select>
+          <button onclick="nuevoCliente()">+ Nuevo cliente</button>
+        </div>
+        <div class="formulario oculto" id="formCliente">
+          <div><label>Nombre</label><input id="cNombre" placeholder="María Pérez" /></div>
+          <div><label>Teléfono</label><input id="cTelefono" placeholder="8888-8888" /></div>
+          <div><label>Ubicación</label>
+            <select id="cUbicacion">
+              <option>San Carlos</option>
+              <option>San José</option>
+              <option>Otro</option>
+            </select>
+          </div>
+          <div><label>Canal preferido</label>
+            <select id="cCanal">
+              <option>WhatsApp</option>
+              <option>Instagram</option>
+              <option>Facebook</option>
+            </select>
+          </div>
+          <div class="campoAncho"><label>Notas</label><input id="cNotas" placeholder="Opcional" /></div>
+          <div class="campoAncho"><button id="btnGuardarCliente" onclick="ejecutarConBoton('btnGuardarCliente', guardarCliente)">Guardar cliente</button></div>
+        </div>
+        <div id="listaClientes"></div>
+      </div>
+      <div class="panel">
+        <h2>Registrar abono</h2>
+        <div class="formulario" id="formAbono">
+          <div><label>Cliente</label><select id="aCliente"></select></div>
+          <div><label>Monto del abono (₡)</label><input id="aMonto" type="text" inputmode="decimal" placeholder="3000" /></div>
+          <div class="campoAncho"><label>Notas (opcional)</label><input id="aNotas" placeholder="Pago SINPE" /></div>
+          <div class="campoAncho"><button id="btnGuardarAbono" onclick="ejecutarConBoton('btnGuardarAbono', guardarAbono)">Guardar abono</button></div>
+        </div>
+      </div>
+      <div class="panel">
+        <h2>Historial de abonos</h2>
+        <div id="listaAbonos"></div>
+      </div>
+    </section>
+
+    <!-- ---------- FINANZAS ---------- -->
+    <section id="tab-finanzas" class="oculto">
+      <div class="tarjetas">
+        <div class="tarjeta"><p class="etiqueta">Ingresos totales</p><p class="valor" id="fIngresos">₡0</p></div>
+        <div class="tarjeta"><p class="etiqueta">Gastos totales</p><p class="valor" id="fGastos">₡0</p></div>
+        <div class="tarjeta"><p class="etiqueta">Aportes de capital</p><p class="valor" id="fAportes">₡0</p></div>
+        <div class="tarjeta"><p class="etiqueta">Saldo</p><p class="valor" id="fSaldo">₡0</p></div>
+      </div>
+      <div class="panel">
+        <div class="filaBotones">
+          <h2 style="margin:0">Movimientos</h2>
+          <button onclick="nuevoMovimiento()">+ Nuevo movimiento</button>
+        </div>
+        <div class="formulario oculto" id="formMovimiento">
+          <div><label>Tipo</label>
+            <select id="mTipo">
+              <option value="ingreso">Ingreso</option>
+              <option value="gasto">Gasto</option>
+              <option value="aporte">Aporte de capital</option>
+            </select>
+          </div>
+          <div><label>Monto (₡)</label><input id="mMonto" type="text" inputmode="decimal" /></div>
+          <div><label>Categoría</label><input id="mCategoria" placeholder="Compra inventario, envío, etc." /></div>
+          <div class="campoAncho"><label>Descripción</label><input id="mDescripcion" placeholder="Opcional" /></div>
+          <div class="campoAncho"><button id="btnGuardarMovimiento" onclick="ejecutarConBoton('btnGuardarMovimiento', guardarMovimiento)">Guardar movimiento</button></div>
+        </div>
+        <div id="listaMovimientos"></div>
+      </div>
+    </section>
+
+    <!-- ---------- PUBLICACIONES ---------- -->
+    <section id="tab-contenido" class="oculto">
+      <div class="panel">
+        <div class="filaBotones">
+          <h2 style="margin:0">Calendario de publicaciones</h2>
+          <select id="filtroContenido" onchange="renderContenido()" style="max-width:200px;">
+            <option value="todas">Mostrar: Todas</option>
+            <option value="planeadas">Planeadas</option>
+            <option value="publicadas">Publicadas</option>
+          </select>
+          <button onclick="nuevaPublicacion()">+ Nueva publicación</button>
+        </div>
+        <div class="formulario oculto" id="formContenido">
+          <div><label>Fecha</label><input id="ktFecha" type="date" /></div>
+          <div><label>Tipo</label>
+            <select id="ktTipo">
+              <option>Meme / relatable</option>
+              <option>Educación / tips</option>
+              <option>Comunidad</option>
+              <option>Venta directa</option>
+            </select>
+          </div>
+          <div><label>Formato</label>
+            <select id="ktFormato">
+              <option>Feed</option>
+              <option>Reel</option>
+              <option>Historia</option>
+            </select>
+          </div>
+          <div><label>Producto</label>
+            <select id="ktProducto">
+              <option>General</option>
+              <option>Sheglam</option>
+              <option>Otro</option>
+            </select>
+          </div>
+          <div><label>Estado</label>
+            <select id="ktEstado">
+              <option>Planeado</option>
+              <option>Publicado</option>
+            </select>
+          </div>
+          <div class="campoAncho"><label>Descripción</label><input id="ktDescripcion" placeholder="Ej: sticker hámster + frase sobre gloss reseco" /></div>
+          <div class="campoAncho"><label>Notas (opcional)</label><input id="ktNotas" placeholder="Link, idea de referencia, etc." /></div>
+          <div class="campoAncho"><button id="btnGuardarContenido" onclick="ejecutarConBoton('btnGuardarContenido', guardarPublicacion)">Guardar publicación</button></div>
+        </div>
+        <div id="listaContenido"></div>
+      </div>
+    </section>
+
+    <!-- ---------- CONFIGURACIÓN ---------- -->
+    <section id="tab-config" class="oculto">
+      <div class="panel">
+        <h2>Configuración general</h2>
+        <div class="formulario">
+          <div><label>Tipo de cambio actual (₡ por $)</label><input id="cfgTipoCambio" type="number" step="1" /></div>
+          <div class="campoAncho"><button id="btnGuardarConfig" onclick="ejecutarConBoton('btnGuardarConfig', guardarConfig)">Guardar configuración</button></div>
+        </div>
+      </div>
+    </section>
+
+  </main>
+</div>
+
+<div class="toast" id="toast"></div>
+
+<script>
+// ============================================================
+// CONFIGURACIÓN
+// La clave YA NO vive acá. Este archivo llama a /api/proxy (una función
+// de Cloudflare Pages que corre en el servidor, nunca en el navegador) y
+// es esa función la que le agrega la clave antes de hablar con Apps Script.
+// Así, aunque alguien vea el código fuente de esta página, nunca ve la clave.
+// ============================================================
+const CONFIG = {
+  API_URL: '/api/proxy'
+};
+
+let estado = {
+  usuario: null,
+  productos: [],
+  ventas: [],
+  clientes: [],
+  movimientos: [],
+  config: [],
+  abonos: [],
+  contenido: [],
+  pedidos: [],
+  solicitudes: []
+};
+
+// ids en edición (null = el formulario está en modo "crear nuevo")
+let productoEditando = null;
+let clienteEditando = null;
+let movimientoEditando = null;
+let ventaEditando = null; // guarda la venta original completa (no solo el id) para reconciliar stock al editar
+let publicacionEditando = null;
+
+// ---------- API ----------
+
+async function apiLeer() {
+  const res = await fetch(`${CONFIG.API_URL}?accion=leer`);
+  return res.json();
+}
+
+// Si el fetch falla (sin internet, el proxy tarda demasiado, la respuesta no
+// es JSON válido) esto ANTES se colaba como una excepción sin capturar en
+// cada pantalla que guarda algo — el botón "Guardar" no hacía nada, sin
+// ningún aviso, y parecía que el precio/dato simplemente no se guardó.
+// Ahora se atrapa acá UNA sola vez y se devuelve el mismo { ok:false, error }
+// que ya todas las pantallas saben mostrar con mostrarToast('Error: ...').
+async function apiPost(cuerpo) {
+  try {
+    const res = await fetch(CONFIG.API_URL, {
+      method: 'POST',
+      body: JSON.stringify(cuerpo)
+    });
+    return await res.json();
+  } catch (err) {
+    return {
+      ok: false,
+      error: 'No se pudo conectar con el servidor. Revisá tu conexión e intentá guardar de nuevo.',
+      sinConexion: true
+    };
+  }
+}
+
+// ---------- Login ----------
+
+async function iniciarSesion() {
+  const usuario = document.getElementById('loginUsuario').value.trim();
+  const password = document.getElementById('loginPassword').value;
+  document.getElementById('errorLogin').style.display = 'none';
+
+  if (!usuario || !password) return;
+
+  const resultado = await apiPost({ accion: 'login', usuario, password });
+  if (resultado.ok) {
+    estado.usuario = { usuario: resultado.usuario, rol: resultado.rol };
+    localStorage.setItem('avellana_usuario', JSON.stringify(estado.usuario));
+    await entrarApp();
+  } else if (resultado.sinConexion) {
+    mostrarToast('No se pudo conectar. Revisa la URL del Apps Script.');
+  } else {
+    document.getElementById('errorLogin').style.display = 'block';
+  }
+}
+
+function cerrarSesion() {
+  localStorage.removeItem('avellana_usuario');
+  estado.usuario = null;
+  document.getElementById('app').style.display = 'none';
+  document.getElementById('pantallaLogin').style.display = 'flex';
+}
+
+async function entrarApp() {
+  document.getElementById('pantallaLogin').style.display = 'none';
+  document.getElementById('app').style.display = 'block';
+  document.getElementById('nombreUsuarioActual').textContent = estado.usuario.usuario;
+  await cargarDatos();
+  arrancarVigilancia();
+  // Si hay pedidos sin atender, se abre directo ahí en vez del resumen
+  mostrarTab(pedidosPendientes().length ? 'pedidos' : 'resumen');
+}
+
+// ---------- Carga de datos ----------
+
+async function actualizarDatos() {
+  const ok = await cargarDatos();
+  if (ok) mostrarToast('Datos actualizados.');
+}
+
+async function cargarDatos() {
+  try {
+    const datos = await apiLeer();
+    if (!datos.ok) { mostrarToast('Error leyendo datos.'); return false; }
+    estado.productos = datos.productos || [];
+    estado.ventas = datos.ventas || [];
+    estado.clientes = datos.clientes || [];
+    estado.movimientos = datos.movimientos || [];
+    estado.config = datos.config || [];
+    estado.abonos = datos.abonos || [];
+    estado.contenido = datos.contenido || [];
+    estado.pedidos = datos.pedidos || [];
+    estado.solicitudes = datos.solicitudes || [];
+    renderTodo();
+    return true;
+  } catch (err) {
+    mostrarToast('No se pudo conectar. Revisa la URL del Apps Script.');
+  }
+}
+
+// ---------- Vigilancia de pedidos nuevos ----------
+// El correo puede tardar o caer en spam, así que el dashboard se refresca solo
+// mientras esté abierto y avisa apenas entra algo.
+let vigilanciaId = null;
+
+function arrancarVigilancia() {
+  if (vigilanciaId) clearInterval(vigilanciaId);
+  vigilanciaId = setInterval(async () => {
+    if (document.hidden) return;              // no gasta llamadas con la pestaña de fondo
+    const antes = pedidosPendientes().length;
+    await cargarDatos();
+    const ahora = pedidosPendientes().length;
+    if (ahora > antes) {
+      mostrarToast(`Entró ${ahora - antes === 1 ? 'un pedido nuevo' : (ahora - antes) + ' pedidos nuevos'}.`);
+      sonarAviso();
+    }
+  }, 120000);                                  // cada 2 minutos
+}
+
+// Un bip corto generado en el momento: no depende de ningún archivo de audio.
+function sonarAviso() {
+  try {
+    const ctx = new (window.AudioContext || window.webkitAudioContext)();
+    const osc = ctx.createOscillator();
+    const vol = ctx.createGain();
+    osc.connect(vol); vol.connect(ctx.destination);
+    osc.frequency.value = 880;
+    vol.gain.setValueAtTime(0.0001, ctx.currentTime);
+    vol.gain.exponentialRampToValueAtTime(0.12, ctx.currentTime + 0.02);
+    vol.gain.exponentialRampToValueAtTime(0.0001, ctx.currentTime + 0.45);
+    osc.start(); osc.stop(ctx.currentTime + 0.45);
+  } catch (e) { /* si el navegador no deja sonar, no pasa nada */ }
+}
+
+function valorConfig(clave, porDefecto) {
+  const fila = estado.config.find(c => c.clave === clave);
+  return fila ? fila.valor : porDefecto;
+}
+
+// ---------- Navegación de tabs ----------
+
+function mostrarTab(nombre) {
+  document.querySelectorAll('main section').forEach(s => s.classList.add('oculto'));
+  document.getElementById('tab-' + nombre).classList.remove('oculto');
+  document.querySelectorAll('nav.tabs .tab').forEach(b => b.classList.remove('activo'));
+  document.querySelector(`nav.tabs .tab[data-tab="${nombre}"]`).classList.add('activo');
+}
+
+function alternar(idFormulario) {
+  document.getElementById(idFormulario).classList.toggle('oculto');
+}
+
+function mostrarToast(mensaje) {
+  const toast = document.getElementById('toast');
+  toast.textContent = mensaje;
+  toast.style.display = 'block';
+  setTimeout(() => { toast.style.display = 'none'; }, 3500);
+}
+
+// Deja el botón visualmente "presionado" (deshabilitado + texto "Guardando...")
+// mientras la función async corre, para confirmar que el toque sí se registró.
+async function ejecutarConBoton(idBoton, fn, textoCargando) {
+  await ejecutarConBotonElemento(document.getElementById(idBoton), fn, textoCargando || 'Guardando...');
+}
+
+// Igual que ejecutarConBoton, pero recibe el elemento directamente — para botones
+// generados dinámicamente (Editar/Eliminar por fila) que no tienen un id fijo.
+// Si ya está deshabilitado (un toque anterior sigue en curso), ignora el toque nuevo.
+async function ejecutarConBotonElemento(boton, fn, textoCargando) {
+  if (!boton || boton.disabled) return;
+  const textoOriginal = boton.textContent;
+  boton.disabled = true;
+  if (textoCargando) boton.textContent = textoCargando;
+  try {
+    await fn();
+  } finally {
+    boton.disabled = false;
+    if (textoCargando) boton.textContent = textoOriginal;
+  }
+}
+
+function formatoColones(monto) {
+  // Punto para los miles (₡14.500). toLocaleString('es-CR') mete un espacio
+  // fino en vez del punto, y además queda distinto a la tienda pública.
+  const n = Math.round(Number(monto) || 0);
+  const signo = n < 0 ? '-' : '';
+  return signo + '₡' + String(Math.abs(n)).replace(/\B(?=(\d{3})+(?!\d))/g, '.');
+}
+
+function escaparHtml(texto) {
+  const div = document.createElement('div');
+  div.textContent = texto == null ? '' : String(texto);
+  return div.innerHTML;
+}
+
+// Interpreta montos escritos como los tipeamos en Costa Rica: "1500" o "1.500" -> 1500,
+// "1.500,50" o "1500,50" -> 1500.5, "12.50" (con solo 2 decimales) -> 12.5 (formato USD).
+function parseMonto(valor) {
+  let texto = String(valor == null ? '' : valor).trim();
+  if (!texto) return 0;
+  if (texto.includes(',')) {
+    texto = texto.replace(/\./g, '').replace(',', '.');
+  } else if (/^\d{1,3}(\.\d{3})+$/.test(texto)) {
+    texto = texto.replace(/\./g, '');
+  }
+  const numero = Number(texto);
+  return isNaN(numero) ? 0 : numero;
+}
+
+// ---------- Render general ----------
+
+function renderTodo() {
+  renderResumen();
+  renderTendencias();
+  renderProductos();
+  renderPedidos();
+  renderSolicitudes();
+  renderTienda();
+  renderClientes();
+  renderVentas();
+  renderMovimientos();
+  renderAbonos();
+  renderContenido();
+  llenarSelectoresVenta();
+  llenarSelectorMarcas();
+  llenarSelectorClientesAbono();
+  document.getElementById('cfgTipoCambio').value = valorConfig('tipoCambio', 520);
+}
+
+// ---------- Resumen ----------
+
+function renderResumen() {
+  const stockTotal = estado.productos.reduce((suma, p) => suma + (Number(p.stock) || 0), 0);
+  document.getElementById('rStock').textContent = stockTotal;
+  document.getElementById('rClientes').textContent = estado.clientes.length;
+
+  const hoy = new Date();
+  const ventasDelMes = estado.ventas.filter(v => {
+    const fecha = new Date(v.fecha);
+    return fecha.getMonth() === hoy.getMonth() && fecha.getFullYear() === hoy.getFullYear();
+  });
+  const totalVentasMes = ventasDelMes.reduce((suma, v) => suma + (Number(v.precioVenta) || 0), 0);
+  document.getElementById('rVentasMes').textContent = formatoColones(totalVentasMes);
+
+  document.getElementById('rSaldo').textContent = formatoColones(calcularSaldo());
+
+  renderPuntoEquilibrio();
+
+  const bajos = estado.productos.filter(p => (Number(p.stock) || 0) <= 5);
+  const cajaBajo = document.getElementById('rStockBajo');
+  cajaBajo.innerHTML = bajos.length
+    ? tablaSimple(['Producto', 'Stock'], bajos.map(p => [escaparHtml(p.nombre), p.stock]))
+    : '<div class="vacio">No hay productos con stock bajo.</div>';
+
+  const recientes = [...estado.ventas].sort((a, b) => new Date(b.fecha) - new Date(a.fecha)).slice(0, 5);
+  const cajaVentas = document.getElementById('rVentasRecientes');
+  cajaVentas.innerHTML = recientes.length
+    ? tablaSimple(['Fecha', 'Producto', 'Monto'], recientes.map(v => [
+        escaparHtml(v.fecha), escaparHtml(nombreProducto(v.productoId)), formatoColones(v.precioVenta)
+      ]))
+    : '<div class="vacio">Todavía no hay ventas registradas.</div>';
+}
+
+function calcularSaldo() {
+  let saldo = 0;
+  estado.movimientos.forEach(m => {
+    const monto = Number(m.monto) || 0;
+    if (m.tipo === 'gasto') saldo -= monto; else saldo += monto;
+  });
+  estado.ventas.forEach(v => { saldo += Number(v.precioVenta) || 0; });
+  return saldo;
+}
+
+function calcularInversionTotal() {
+  let total = 0;
+  estado.movimientos.forEach(m => {
+    if (m.tipo === 'aporte' || m.tipo === 'gasto') total += Number(m.monto) || 0;
+  });
+  return total;
+}
+
+function calcularGananciaAcumulada() {
+  return estado.ventas.reduce((suma, v) => {
+    const costo = (Number(v.costoUnitarioCRC) || 0) * (Number(v.cantidad) || 1);
+    return suma + ((Number(v.precioVenta) || 0) - costo);
+  }, 0);
+}
+
+function renderPuntoEquilibrio() {
+  const inversion = calcularInversionTotal();
+  const ganancia = calcularGananciaAcumulada();
+  const texto = document.getElementById('peTexto');
+  const barra = document.getElementById('peBarra');
+
+  if (inversion <= 0) {
+    texto.textContent = 'Registrá el aporte de capital inicial en Finanzas para calcular el punto de equilibrio.';
+    barra.style.width = '0%';
+    return;
+  }
+
+  const porcentaje = Math.max(0, Math.min(100, (ganancia / inversion) * 100));
+  barra.style.width = porcentaje.toFixed(0) + '%';
+
+  if (ganancia >= inversion) {
+    texto.textContent = `Superaste el punto de equilibrio. Ganancia neta hasta ahora: ${formatoColones(ganancia - inversion)}.`;
+    barra.style.background = 'var(--sage)';
+  } else {
+    texto.textContent = `Llevás recuperado ${formatoColones(ganancia)} de ${formatoColones(inversion)} invertidos (${porcentaje.toFixed(0)}%). Te faltan ${formatoColones(inversion - ganancia)} para el punto de equilibrio.`;
+    barra.style.background = 'var(--coral)';
+  }
+}
+
+function tablaSimple(encabezados, filas) {
+  return `<table><thead><tr>${encabezados.map(e => `<th>${e}</th>`).join('')}</tr></thead>
+    <tbody>${filas.map(f => `<tr>${f.map(c => `<td>${c}</td>`).join('')}</tr>`).join('')}</tbody></table>`;
+}
+
+function botonesAccion(fnEditar, fnEliminar, id) {
+  const editar = fnEditar ? `<button class="secundario" style="padding:4px 10px;font-size:12px;" onclick="${fnEditar}(${id})">Editar</button>` : '';
+  return `<div style="display:flex;gap:6px;">
+    ${editar}
+    <button class="secundario" style="padding:4px 10px;font-size:12px;color:#A5323F;border-color:#A5323F;" onclick="ejecutarConBotonElemento(this, () => ${fnEliminar}(${id}))">Eliminar</button>
+  </div>`;
+}
+
+// ---------- Tendencias ----------
+
+const PALETA_TONOS = ['#D24558', '#61A07D', '#FAC977', '#8a5a3a', '#A5323F', '#5D300E', '#FDA6AB'];
+
+function ventasEnPeriodo(periodo) {
+  if (periodo === 'historico') return estado.ventas;
+  const hoy = new Date();
+  return estado.ventas.filter(v => {
+    const fecha = new Date(v.fecha);
+    if (isNaN(fecha)) return false;
+    if (periodo === 'mes') return fecha.getMonth() === hoy.getMonth() && fecha.getFullYear() === hoy.getFullYear();
+    if (periodo === 'anio') return fecha.getFullYear() === hoy.getFullYear();
+    const limite = new Date(hoy);
+    limite.setDate(limite.getDate() - Number(periodo));
+    return fecha >= limite;
+  });
+}
+
+function barraTendencia(etiqueta, valor, maximo, color) {
+  const porcentaje = maximo > 0 ? Math.round((valor / maximo) * 100) : 0;
+  return `<div style="margin-bottom:8px;">
+    <div style="display:flex;justify-content:space-between;font-size:12px;margin-bottom:3px;">
+      <span>${escaparHtml(etiqueta)}</span><span style="color:var(--brown-soft);">${valor}</span>
+    </div>
+    <div style="background:var(--bg);border-radius:6px;height:8px;">
+      <div style="background:${color};width:${porcentaje}%;height:100%;border-radius:6px;"></div>
+    </div>
+  </div>`;
+}
+
+function renderEstimacionInventario() {
+  const conStock = estado.productos.filter(p => (Number(p.stock) || 0) > 0);
+
+  const ingresoPotencial = conStock.reduce((s, p) => s + (Number(p.stock) || 0) * (Number(p.precioVenta) || 0), 0);
+  const costoInventario = conStock.reduce((s, p) => s + (Number(p.stock) || 0) * (Number(p.costoTotalCRC) || 0), 0);
+  const gananciaPotencial = ingresoPotencial - costoInventario;
+
+  document.getElementById('eIngresoPotencial').textContent = formatoColones(ingresoPotencial);
+  document.getElementById('eCostoInventario').textContent = formatoColones(costoInventario);
+  document.getElementById('eGananciaPotencial').textContent = formatoColones(gananciaPotencial);
+
+  const filas = [...conStock]
+    .map(p => ({ ...p, subtotal: (Number(p.stock) || 0) * (Number(p.precioVenta) || 0) }))
+    .sort((a, b) => b.subtotal - a.subtotal);
+
+  document.getElementById('eTablaInventario').innerHTML = filas.length
+    ? tablaSimple(['Producto', 'Stock', 'Precio venta', 'Subtotal'], filas.map(p => [
+        escaparHtml(p.nombre), p.stock, formatoColones(p.precioVenta), formatoColones(p.subtotal)
+      ]))
+    : '<div class="vacio">Todavía no hay productos con stock disponible.</div>';
+}
+
+function renderTendencias() {
+  renderEstimacionInventario();
+  const periodo = document.getElementById('tPeriodo').value;
+  const ventas = ventasEnPeriodo(periodo);
+
+  const unidadesPorProducto = {};
+  const unidadesPorCategoria = {};
+  const unidadesPorTono = {};
+
+  ventas.forEach(v => {
+    const cantidad = Number(v.cantidad) || 0;
+    const producto = estado.productos.find(p => String(p.id) === String(v.productoId));
+    unidadesPorProducto[v.productoId] = (unidadesPorProducto[v.productoId] || 0) + cantidad;
+    if (producto) {
+      const categoria = producto.categoria || 'Sin categoría';
+      unidadesPorCategoria[categoria] = (unidadesPorCategoria[categoria] || 0) + cantidad;
+      const tono = String(producto.tono == null ? '' : producto.tono).trim();
+      if (tono) unidadesPorTono[tono] = (unidadesPorTono[tono] || 0) + cantidad;
+    }
+  });
+
+  const ticketPromedio = ventas.length ? ventas.reduce((s, v) => s + (Number(v.precioVenta) || 0), 0) / ventas.length : 0;
+  document.getElementById('tTicketPromedio').textContent = formatoColones(ticketPromedio);
+
+  const ingresoTotal = ventas.reduce((s, v) => s + (Number(v.precioVenta) || 0), 0);
+  const costoTotal = ventas.reduce((s, v) => s + (Number(v.costoUnitarioCRC) || 0) * (Number(v.cantidad) || 1), 0);
+  document.getElementById('tTotalVentas').textContent = ventas.length;
+  document.getElementById('tIngresoTotal').textContent = formatoColones(ingresoTotal);
+  document.getElementById('tCostoTotal').textContent = formatoColones(costoTotal);
+  document.getElementById('tGananciaTotal').textContent = formatoColones(ingresoTotal - costoTotal);
+
+  const topProductos = Object.entries(unidadesPorProducto).sort((a, b) => b[1] - a[1]).slice(0, 5);
+  const maxProducto = topProductos.length ? topProductos[0][1] : 0;
+  document.getElementById('tProductoTop').textContent = topProductos.length ? nombreProducto(topProductos[0][0]) : '—';
+  document.getElementById('tTopProductos').innerHTML = topProductos.length
+    ? topProductos.map(([id, unidades]) => barraTendencia(nombreProducto(id), unidades, maxProducto, 'var(--coral)')).join('')
+    : '<div class="vacio">Todavía no hay ventas en este periodo.</div>';
+
+  const categorias = Object.entries(unidadesPorCategoria).sort((a, b) => b[1] - a[1]);
+  const maxCategoria = categorias.length ? categorias[0][1] : 0;
+  document.getElementById('tCategoriaTop').textContent = categorias.length ? categorias[0][0] : '—';
+  document.getElementById('tCategorias').innerHTML = categorias.length
+    ? categorias.map(([nombre, unidades]) => barraTendencia(nombre, unidades, maxCategoria, 'var(--sage)')).join('')
+    : '<div class="vacio">Sin datos en este periodo.</div>';
+
+  const tonos = Object.entries(unidadesPorTono).sort((a, b) => b[1] - a[1]);
+  const maxTono = tonos.length ? tonos[0][1] : 0;
+  document.getElementById('tTonoTop').textContent = tonos.length ? tonos[0][0] : '—';
+  document.getElementById('tTonos').innerHTML = tonos.length
+    ? tonos.map(([nombre, unidades], i) => barraTendencia(nombre, unidades, maxTono, PALETA_TONOS[i % PALETA_TONOS.length])).join('')
+    : '<div class="vacio">Todavía no hay productos con tono o color asignado.</div>';
+
+  const bajos = [...estado.productos]
+    .map(p => ({ ...p, unidadesVendidas: unidadesPorProducto[p.id] || 0 }))
+    .sort((a, b) => a.unidadesVendidas - b.unidadesVendidas)
+    .slice(0, 5);
+  document.getElementById('tBajoMovimiento').innerHTML = bajos.length
+    ? tablaSimple(['Producto', 'Categoría', 'Unidades vendidas', 'Stock'], bajos.map(p => [
+        escaparHtml(p.nombre), escaparHtml(p.categoria), p.unidadesVendidas, p.stock
+      ]))
+    : '<div class="vacio">Todavía no hay productos cargados.</div>';
+}
+
+// ---------- Inventario ----------
+
+let filtroInventarioTextoActual = '';
+let filtroInventarioMarcaActual = 'todas';
+let filtroInventarioEstadoActual = 'todos';
+let ordenInventarioActual = 'duplicados';
+
+function normalizaTexto(s) {
+  return String(s || '').toLowerCase().normalize('NFD').replace(/[̀-ͯ]/g, '');
+}
+
+function filtrarInventarioTexto(valor) {
+  filtroInventarioTextoActual = valor;
+  renderProductos();
+}
+function filtrarInventarioMarca(valor) {
+  filtroInventarioMarcaActual = valor;
+  renderProductos();
+}
+function filtrarInventarioEstado(cual) {
+  filtroInventarioEstadoActual = cual;
+  document.querySelectorAll('.chipT[data-fi]').forEach(b => b.classList.toggle('activo', b.dataset.fi === cual));
+  renderProductos();
+}
+function ordenarInventario(cual) {
+  ordenInventarioActual = cual;
+  renderProductos();
+}
+
+// Comparadores disponibles en el selector "Ordenar por". "duplicados" es el
+// orden por defecto (marca+nombre+tono) que agrupa los productos iguales.
+function comparadorInventario(cual, claveProducto) {
+  const porNombre = (a, b) => normalizaTexto(a.nombre).localeCompare(normalizaTexto(b.nombre));
+  switch (cual) {
+    case 'nombreAsc':  return porNombre;
+    case 'nombreDesc': return (a, b) => porNombre(b, a);
+    case 'precioDesc': return (a, b) => (Number(b.precioVenta) || 0) - (Number(a.precioVenta) || 0);
+    case 'precioAsc':  return (a, b) => (Number(a.precioVenta) || 0) - (Number(b.precioVenta) || 0);
+    case 'stockDesc':  return (a, b) => (Number(b.stock) || 0) - (Number(a.stock) || 0);
+    default:           return (a, b) => claveProducto(a).localeCompare(claveProducto(b));
+  }
+}
+
+function renderProductos() {
+  const caja = document.getElementById('listaProductos');
+  const contador = document.getElementById('inventarioContador');
+  if (!estado.productos.length) {
+    caja.innerHTML = '<div class="vacio">Todavía no hay productos cargados.</div>';
+    if (contador) contador.textContent = '';
+    return;
+  }
+
+  // Se ordena por marca + nombre + tono para que los productos iguales (y sus
+  // posibles duplicados) queden agrupados uno al lado del otro en la tabla —
+  // así se pueden detectar a simple vista en vez de estar sueltos por toda la lista.
+  const claveProducto = p => [p.marca, p.nombre, p.tono].map(v => String(v || '').trim().toLowerCase()).join('|');
+  const conteoClaves = {};
+  estado.productos.forEach(p => {
+    const k = claveProducto(p);
+    conteoClaves[k] = (conteoClaves[k] || 0) + 1;
+  });
+
+  // Selector de marca: se arma una sola vez por lista de productos, conservando
+  // la marca elegida si sigue existiendo.
+  const selectMarca = document.getElementById('inventarioFiltroMarca');
+  if (selectMarca) {
+    const marcas = [...new Set(estado.productos.map(p => p.marca).filter(Boolean))].sort((a, b) => a.localeCompare(b));
+    const opcionesActuales = [...selectMarca.options].map(o => o.value).join(',');
+    const opcionesNuevas = ['todas', ...marcas].join(',');
+    if (opcionesActuales !== opcionesNuevas) {
+      selectMarca.innerHTML = '<option value="todas">Todas las marcas</option>' +
+        marcas.map(m => `<option value="${escaparHtml(m)}">${escaparHtml(m)}</option>`).join('');
+    }
+    selectMarca.value = marcas.includes(filtroInventarioMarcaActual) || filtroInventarioMarcaActual === 'todas'
+      ? filtroInventarioMarcaActual : 'todas';
+  }
+  const selectOrden = document.getElementById('inventarioOrden');
+  if (selectOrden) selectOrden.value = ordenInventarioActual;
+
+  const textoBusqueda = normalizaTexto(filtroInventarioTextoActual.trim());
+
+  let filtrados = estado.productos.filter(p => {
+    if (textoBusqueda) {
+      const coincide = [p.nombre, p.tono, p.marca].some(v => normalizaTexto(v).includes(textoBusqueda));
+      if (!coincide) return false;
+    }
+    if (filtroInventarioMarcaActual !== 'todas' && p.marca !== filtroInventarioMarcaActual) return false;
+
+    switch (filtroInventarioEstadoActual) {
+      case 'stock':      return (Number(p.stock) || 0) > 0;
+      case 'agotado':     return p.modalidad !== 'encargo' && (Number(p.stock) || 0) <= 0;
+      case 'encargo':     return p.modalidad === 'encargo';
+      case 'visibles':    return seVeEnLaTienda(p);
+      case 'ocultos':     return !seVeEnLaTienda(p);
+      case 'duplicados':  return conteoClaves[claveProducto(p)] > 1;
+      default:            return true;
+    }
+  });
+
+  const ordenados = filtrados.slice().sort(comparadorInventario(ordenInventarioActual, claveProducto));
+
+  if (contador) {
+    contador.textContent = filtrados.length === estado.productos.length
+      ? `${estado.productos.length} producto${estado.productos.length === 1 ? '' : 's'} en total`
+      : `Mostrando ${ordenados.length} de ${estado.productos.length} productos`;
+  }
+
+  if (!ordenados.length) {
+    caja.innerHTML = '<div class="vacio">Ningún producto coincide con esa búsqueda o filtro.</div>';
+    return;
+  }
+
+  caja.innerHTML = tablaSimple(
+    ['Foto', 'Nombre', 'Tono', 'Categoría', 'Marca', 'Costo', 'Precio venta', 'Margen', 'Stock', 'Estado', 'Tienda', 'Acciones'],
+    ordenados.map(p => {
+      const costo = Number(p.costoTotalCRC) || 0;
+      const tieneDescuento = Number(p.descuento) > 0;
+      const precioFinal = precioConDescuento(p.precioVenta, p.descuento);
+      const margen = precioFinal - costo;
+      const esDuplicado = conteoClaves[claveProducto(p)] > 1;
+      const nombreCelda = esDuplicado
+        ? `<span style="color:#A5323F;font-weight:700" title="Hay ${conteoClaves[claveProducto(p)]} productos con la misma marca, nombre y tono">⚠ ${escaparHtml(p.nombre)}</span>`
+        : escaparHtml(p.nombre);
+      const fotoCelda = p.foto
+        ? `<div class="miniFoto" style="cursor:default"><img src="${escaparHtml(p.foto)}" alt="" loading="lazy"></div>`
+        : `<div class="miniFoto" style="cursor:default"><span class="miniIcono">📷</span></div>`;
+      const precioCelda = tieneDescuento
+        ? `<span style="color:var(--gris,#999);text-decoration:line-through;font-size:12px">${formatoColones(p.precioVenta)}</span><br>
+           <span style="color:#A5323F;font-weight:700">${formatoColones(precioFinal)}</span>
+           <span class="pastilla roja" style="margin-left:4px">-${Number(p.descuento)}%</span>`
+        : formatoColones(p.precioVenta);
+      return [
+        fotoCelda,
+        nombreCelda,
+        p.tono ? escaparHtml(p.tono) : '<span style="color:var(--gris,#999)">—</span>',
+        escaparHtml(p.categoria), escaparHtml(p.marca), formatoColones(costo), precioCelda,
+        `<span style="color:${margen >= 0 ? '#1f4a30' : '#A5323F'};font-weight:600">${formatoColones(margen)}</span>`,
+        p.stock,
+        `<span class="badge ${p.stock > 5 ? 'mint' : 'pink'}">${escaparHtml(p.estado || (p.stock > 0 ? 'Disponible' : 'Agotado'))}</span>`,
+        seVeEnLaTienda(p)
+          ? '<span class="pastilla verde">Visible</span>'
+          : estaPublicado(p)
+            ? '<span class="pastilla ambar" title="Encendido, pero no se muestra hasta ponerle costo de compra y precio de venta">Sin precio</span>'
+            : '<span class="pastilla gris">Oculto</span>',
+        botonesAccion('editarProducto', 'eliminarProducto', p.id)
+      ];
+    })
+  );
+}
+
+/* ══════════════════════════════════════════════════════════════
+   PEDIDOS de la tienda
+   ══════════════════════════════════════════════════════════════ */
+const PASOS = ['Nuevo', 'Contactado', 'Pagado', 'Enviado'];
+let filtroPedidos = 'activos';
+
+function pedidosPendientes() {
+  return estado.pedidos.filter(p => String(p.estado || '').trim() === 'Nuevo');
+}
+function pedidosActivos() {
+  return estado.pedidos.filter(p => ['Nuevo', 'Contactado', 'Pagado'].includes(String(p.estado || '').trim()));
+}
+
+function itemsDe(p) {
+  try { return JSON.parse(p.items || '[]'); } catch (e) { return []; }
+}
+
+function fechaCorta(v) {
+  const d = new Date(v);
+  if (isNaN(d.getTime())) return '';
+  const hoy = new Date();
+  const mismoDia = d.toDateString() === hoy.toDateString();
+  const hora = d.toLocaleTimeString('es-CR', { hour: '2-digit', minute: '2-digit' });
+  if (mismoDia) return 'Hoy ' + hora;
+  return d.toLocaleDateString('es-CR', { day: 'numeric', month: 'short' }) + ' ' + hora;
+}
+
+// Aviso permanente + número en la pestaña
+function renderAvisoPedidos() {
+  const nuevos = pedidosPendientes().length;
+  const activos = pedidosActivos().length;
+  const encargos = encargosPendientes().length;
+
+  const chivo = document.getElementById('chivoTab');
+  if (chivo) {
+    chivo.textContent = activos + encargos;
+    chivo.classList.toggle('oculto', activos + encargos === 0);
+  }
+
+  const aviso = document.getElementById('avisoPedidos');
+  if (!aviso) return;
+  if (nuevos === 0 && encargos === 0) { aviso.classList.add('oculto'); return; }
+  aviso.classList.remove('oculto');
+
+  const partes = [];
+  if (nuevos)   partes.push(nuevos === 1 ? '1 pedido sin atender' : `${nuevos} pedidos sin atender`);
+  if (encargos) partes.push(encargos === 1 ? '1 encargo por confirmar' : `${encargos} encargos por confirmar`);
+  document.getElementById('avisoPedidosTexto').textContent = 'Tenés ' + partes.join(' y ');
+}
+
+function filtrarPedidos(cual) {
+  filtroPedidos = cual;
+  document.querySelectorAll('.chipT[data-fp]').forEach(b => b.classList.toggle('activo', b.dataset.fp === cual));
+  renderPedidos();
+}
+
+function renderPedidos() {
+  renderAvisoPedidos();
+  const caja = document.getElementById('listaPedidos');
+  const resumen = document.getElementById('resumenPedidos');
+  if (!caja) return;
+
+  const todos = estado.pedidos;
+  const porEstado = e => todos.filter(p => String(p.estado || '').trim() === e).length;
+  const cobrado = todos.filter(p => ['Pagado', 'Enviado'].includes(String(p.estado || '').trim()))
+    .reduce((a, p) => a + (Number(p.total) || 0), 0);
+
+  resumen.innerHTML = `
+    <div class="cajaT${porEstado('Nuevo') ? ' alerta' : ''}"><div class="n">${porEstado('Nuevo')}</div><div class="t">Sin atender</div></div>
+    <div class="cajaT"><div class="n">${porEstado('Contactado')}</div><div class="t">Esperando pago</div></div>
+    <div class="cajaT"><div class="n">${porEstado('Pagado')}</div><div class="t">Por enviar</div></div>
+    <div class="cajaT"><div class="n">${formatoColones(cobrado)}</div><div class="t">Cobrado</div></div>`;
+
+  let lista = todos.slice().reverse();  // el más reciente primero
+  if (filtroPedidos === 'activos') lista = lista.filter(p => ['Nuevo', 'Contactado', 'Pagado'].includes(String(p.estado || '').trim()));
+  else if (filtroPedidos !== 'todos') lista = lista.filter(p => String(p.estado || '').trim() === filtroPedidos);
+
+  if (!lista.length) {
+    caja.innerHTML = `<div class="vacio">${filtroPedidos === 'activos'
+      ? 'Todo al día. No hay pedidos por atender.'
+      : 'No hay pedidos en este filtro.'}</div>`;
+    return;
+  }
+
+  caja.innerHTML = lista.map(p => {
+    const est = String(p.estado || 'Nuevo').trim();
+    const items = itemsDe(p);
+    const tel = String(p.telefono || '').replace(/\D/g, '');
+    const siguiente = PASOS[PASOS.indexOf(est) + 1];
+    const revisar = String(p.notas || '').trim();
+
+    const destino = p.entrega === 'retiro'
+      ? 'Retira en el punto'
+      : [p.provincia, p.canton, p.distrito].filter(Boolean).join(' · ') +
+        (p.direccion ? '<br>' + escaparHtml(p.direccion) : '');
+
+    // El mensaje cambia según cómo se paga: en retiro se puede efectivo o SINPE,
+    // en envío (correos/exprés) es solo SINPE. Debe quedar igual al de Code.gs.
+    const primerNombre = String(p.nombre || '').trim().split(' ')[0];
+    const saludo = encodeURIComponent(
+      p.entrega === 'retiro'
+        ? `Hola ${primerNombre}, somos Avellana Studio. Gracias por enviar tu orden. Te escribimos por acá para confirmar el pedido y el método de entrega y pago (podés cancelar en efectivo o SINPE al retirar). Gracias.`
+        : `Hola ${primerNombre}, somos Avellana Studio. Gracias por enviar tu orden. Te escribimos por acá para confirmar el pedido, la dirección de envío y el pago por SINPE. Gracias.`);
+
+    return `<div class="pedido ${est === 'Nuevo' ? 'nuevo' : ''} ${revisar ? 'revisar' : ''}">
+      <div class="pedidoTop">
+        <span class="pedidoNombre">${escaparHtml(p.nombre)}</span>
+        <span class="pedidoNum">${escaparHtml(p.numero)} · ${fechaCorta(p.fecha)}</span>
+        <span class="pedidoTotal">${formatoColones(p.total)}</span>
+      </div>
+      <div class="pedidoMeta">
+        ${escaparHtml(p.entregaTexto || '')}${p.envio ? ' · envío ' + formatoColones(p.envio) : ''}<br>
+        ${destino}
+        ${p.correo ? '<br>' + escaparHtml(p.correo) : ''}
+      </div>
+      ${revisar ? `<div class="pedidoAlerta">${escaparHtml(revisar)}</div>` : ''}
+      <div class="pedidoItems">
+        ${items.map(i => `<div><span>${escaparHtml(i.nombre)}${i.tono ? ' · ' + escaparHtml(i.tono) : ''} × ${i.cantidad}</span><span>${formatoColones(i.subtotal)}</span></div>`).join('')}
+      </div>
+      <div class="pedidoAcciones">
+        <a class="wa" href="https://wa.me/506${tel}?text=${saludo}" target="_blank" rel="noopener">WhatsApp ${escaparHtml(p.telefono)}</a>
+        ${siguiente
+          ? `<button class="btnPaso" onclick="avanzarPedido('${escaparHtml(p.id)}','${siguiente}')">Marcar ${siguiente}</button>`
+          : '<span class="pastilla verde">Entregado</span>'}
+        <select class="selEstado" onchange="avanzarPedido('${escaparHtml(p.id)}', this.value)">
+          ${PASOS.concat(['Cancelado']).map(e => `<option value="${e}" ${e === est ? 'selected' : ''}>${e}</option>`).join('')}
+        </select>
+        <button class="btnCancelar" onclick="eliminarPedido('${escaparHtml(p.id)}')">Borrar</button>
+      </div>
+    </div>`;
+  }).join('');
+}
+
+// Cambia el estado. Al pasar a Pagado descuenta stock y registra las ventas.
+async function avanzarPedido(id, nuevoEstado) {
+  const p = estado.pedidos.find(x => String(x.id) === String(id));
+  if (!p) return;
+  const anterior = String(p.estado || 'Nuevo').trim();
+  if (anterior === nuevoEstado) return;
+
+  const yaCobrado = ['Pagado', 'Enviado'].includes(anterior);
+  const vaACobrar = ['Pagado', 'Enviado'].includes(nuevoEstado);
+
+  // El descuento de stock ocurre UNA sola vez: al cruzar a Pagado por primera vez
+  if (vaACobrar && !yaCobrado) {
+    const items = itemsDe(p);
+    const faltantes = items.filter(i => {
+      const prod = estado.productos.find(x => String(x.id) === String(i.id));
+      return !prod || (Number(prod.stock) || 0) < i.cantidad;
+    });
+    if (faltantes.length) {
+      const detalle = faltantes.map(f => '· ' + f.nombre).join('\n');
+      if (!confirm(`Ojo: no hay stock suficiente para:\n${detalle}\n\n¿Marcar como pagado de todas formas? El stock puede quedar en negativo.`)) return;
+    }
+    if (!confirm(`Confirmás que ${p.nombre} ya pagó ${formatoColones(p.total)} por SINPE?\n\nEsto descuenta el stock y registra la venta.`)) return;
+
+    const cliente = await asegurarCliente(p);
+    for (const i of items) {
+      const prod = estado.productos.find(x => String(x.id) === String(i.id));
+      if (!prod) continue;
+      await apiPost({
+        accion: 'editar_fila', hoja: 'Productos', id: prod.id,
+        fila: filaProductoConStock(prod, (Number(prod.stock) || 0) - i.cantidad)
+      });
+      await apiPost({
+        accion: 'agregar_fila', hoja: 'Ventas',
+        fila: {
+          id: '', fecha: new Date().toISOString().slice(0, 10),
+          clienteId: cliente, productoId: prod.id, cantidad: i.cantidad,
+          costoUnitarioCRC: Number(prod.costoTotalCRC) || 0,
+          precioVenta: i.precioUnitario, canal: 'Tienda web',
+          estadoEntrega: p.entrega === 'retiro' ? 'Retiro' : 'Por enviar',
+          usuario: estado.usuario, formaPago: 'SINPE'
+        }
+      });
+    }
+  }
+
+  const res = await apiPost({ accion: 'editar_fila', hoja: 'Pedidos', id: p.id, fila: { ...p, estado: nuevoEstado } });
+  if (!res.ok) { mostrarToast('No se pudo guardar: ' + (res.error || '')); return; }
+
+  mostrarToast(`Pedido ${p.numero} → ${nuevoEstado}.`);
+  await cargarDatos();
+}
+
+// Reutiliza el cliente si ya existe (por teléfono); si no, lo crea.
+async function asegurarCliente(p) {
+  const tel = String(p.telefono || '').replace(/\D/g, '');
+  const existente = estado.clientes.find(c => String(c.telefono || '').replace(/\D/g, '') === tel);
+  if (existente) return existente.id;
+
+  const res = await apiPost({
+    accion: 'agregar_fila', hoja: 'Clientes',
+    fila: {
+      id: '', nombre: p.nombre, telefono: tel,
+      ubicacion: [p.provincia, p.canton, p.distrito].filter(Boolean).join(', '),
+      canalPreferido: 'WhatsApp', notas: 'Llegó por la tienda web'
+    }
+  });
+  return res.ok ? res.id : '';
+}
+
+async function eliminarPedido(id) {
+  const p = estado.pedidos.find(x => String(x.id) === String(id));
+  if (!p) return;
+  if (!confirm(`Borrar el pedido ${p.numero} de ${p.nombre}?\n\nNo se puede deshacer. Si ya lo cobraste, la venta registrada NO se borra.`)) return;
+  const res = await apiPost({ accion: 'eliminar_fila', hoja: 'Pedidos', id: p.id });
+  if (res.ok) { mostrarToast('Pedido borrado.'); await cargarDatos(); }
+  else mostrarToast('Error: ' + res.error);
+}
+
+// Filas viejas sin columna "tipo" son avisos de reposición (como siempre fue).
+function tipoSolicitud(s) {
+  return s.tipo === 'encargo' ? 'encargo' : 'restock';
+}
+
+function renderSolicitudes() {
+  renderAvisosStock();
+  renderEncargos();
+}
+
+function renderAvisosStock() {
+  const caja = document.getElementById('listaSolicitudes');
+  if (!caja) return;
+  const pendientes = estado.solicitudes.filter(s =>
+    tipoSolicitud(s) === 'restock' && String(s.estado || '').toLowerCase() !== 'avisado');
+  if (!pendientes.length) {
+    caja.innerHTML = '<div class="vacio">Nadie ha pedido aviso de un producto agotado.</div>';
+    return;
+  }
+  caja.innerHTML = tablaSimple(
+    ['N°', 'Producto', 'Quién', 'WhatsApp', 'Cuándo', ''],
+    pendientes.slice().reverse().map(s => {
+      const tel = String(s.telefono || '').replace(/\D/g, '');
+      const hay = estado.productos.find(p => String(p.id) === String(s.productoId));
+      const disponible = hay && (Number(hay.stock) || 0) > 0;
+      return [
+        escaparHtml(s.numero || '—'),
+        escaparHtml(s.producto) + (disponible ? ' <span class="pastilla verde">Ya hay</span>' : ''),
+        escaparHtml(s.nombre),
+        `<a class="wa" style="padding:5px 11px;font-size:12.5px" target="_blank" rel="noopener"
+           href="https://wa.me/506${tel}?text=${encodeURIComponent('¡Hola ' + String(s.nombre).split(' ')[0] + '! Ya tenemos disponible ' + s.producto + ' 💛')}">Avisar</a>`,
+        fechaCorta(s.fecha),
+        `<button class="btnCancelar" style="margin:0" onclick="marcarAvisada('${escaparHtml(s.id)}')">Ya avisé</button>`
+      ];
+    })
+  );
+}
+
+// Términos del encargo — si se cambian, cambiarlos igual en Code.gs (TIENDA.encargo*).
+const ENCARGO_DIAS_MIN = 20, ENCARGO_DIAS_MAX = 25, ENCARGO_ADELANTO_PCT = 50;
+
+function mensajeEncargo(s) {
+  return 'Hola ' + String(s.nombre).split(' ')[0] + ', vimos que querés que te consigamos ' + s.producto + '. ' +
+    'Nos toma entre ' + ENCARGO_DIAS_MIN + ' y ' + ENCARGO_DIAS_MAX + ' días hábiles en llegar y pedimos el ' +
+    ENCARGO_ADELANTO_PCT + '% del valor por adelantado; el otro ' + (100 - ENCARGO_ADELANTO_PCT) +
+    '% se paga cuando te lo entregamos. ¿Seguimos con el pedido?';
+}
+
+function encargosPendientes() {
+  return estado.solicitudes.filter(s =>
+    tipoSolicitud(s) === 'encargo' && String(s.estado || '').toLowerCase() !== 'avisado');
+}
+
+function renderEncargos() {
+  const caja = document.getElementById('listaEncargos');
+  if (!caja) return;
+  const pendientes = encargosPendientes();
+  if (!pendientes.length) {
+    caja.innerHTML = '<div class="vacio">No hay solicitudes de encargo pendientes.</div>';
+    return;
+  }
+  caja.innerHTML = tablaSimple(
+    ['N°', 'Qué piden', 'Quién', 'WhatsApp', 'Cuándo', ''],
+    pendientes.slice().reverse().map(s => {
+      const tel = String(s.telefono || '').replace(/\D/g, '');
+      return [
+        escaparHtml(s.numero || '—'),
+        escaparHtml(s.producto),
+        escaparHtml(s.nombre),
+        `<a class="wa" style="padding:5px 11px;font-size:12.5px" target="_blank" rel="noopener"
+           href="https://wa.me/506${tel}?text=${encodeURIComponent(mensajeEncargo(s))}">Confirmar</a>`,
+        fechaCorta(s.fecha),
+        `<div style="display:flex;gap:4px">
+          <button style="padding:4px 8px;font-size:12px;background:#4CAF50;color:#FFF;border:none;cursor:pointer;border-radius:3px" onclick="marcarProcedio('${escaparHtml(s.id)}')">✅ Procedió</button>
+          <button style="padding:4px 8px;font-size:12px;background:#F44336;color:#FFF;border:none;cursor:pointer;border-radius:3px" onclick="marcarNoProcedio('${escaparHtml(s.id)}')">❌ No procedió</button>
+         </div>`
+      ];
+    })
+  );
+}
+
+async function marcarAvisada(id) {
+  const s = estado.solicitudes.find(x => String(x.id) === String(id));
+  if (!s) return;
+  const res = await apiPost({ accion: 'editar_fila', hoja: 'Solicitudes', id: s.id, fila: { ...s, estado: 'Avisado' } });
+  if (res.ok) { mostrarToast('Marcada como avisada.'); await cargarDatos(); }
+  else mostrarToast('Error: ' + res.error);
+}
+
+async function marcarProcedio(id) {
+  const s = estado.solicitudes.find(x => String(x.id) === String(id));
+  if (!s) return;
+  const res = await apiPost({ accion: 'editar_fila', hoja: 'Solicitudes', id: s.id, fila: { ...s, estado: 'Procedió' } });
+  if (res.ok) { mostrarToast('✅ Cliente procedió con el encargo.'); await cargarDatos(); }
+  else mostrarToast('Error: ' + res.error);
+}
+
+async function marcarNoProcedio(id) {
+  const s = estado.solicitudes.find(x => String(x.id) === String(id));
+  if (!s) return;
+  const res = await apiPost({ accion: 'editar_fila', hoja: 'Solicitudes', id: s.id, fila: { ...s, estado: 'No procedió' } });
+  if (res.ok) { mostrarToast('❌ Cliente rechazó el encargo.'); await cargarDatos(); }
+  else mostrarToast('Error: ' + res.error);
+}
+
+/* ══════════════════════════════════════════════════════════════
+   TIENDA — control de qué productos ve el público
+   ══════════════════════════════════════════════════════════════ */
+let filtroTienda = 'todos';
+let filtroTiendaTextoActual = '';
+
+function filtrarTiendaTexto(valor) {
+  filtroTiendaTextoActual = valor;
+  renderTienda();
+}
+
+// Un producto sin el campo definido se considera visible: así los que ya
+// existían antes de esta función no desaparecen de golpe de la tienda.
+function estaPublicado(p) {
+  const v = String(p.publicado ?? '').trim().toLowerCase();
+  if (v === '') return true;
+  return !['no', 'false', '0', 'oculto'].includes(v);
+}
+
+// El interruptor de "publicado" es solo una parte: el servidor (Code.gs)
+// NUNCA muestra un producto en la tienda pública si le falta el costo de
+// compra o el precio de venta, sin importar el interruptor — así se puede
+// ir cargando inventario sin que el cliente vea nada a ₡0. Esta función
+// refleja esa misma regla acá, para que lo que se ve en el dashboard
+// coincida con lo que realmente ve el cliente.
+function tienePrecioCompleto(p) {
+  return Number(p.costoCompra) > 0 && Number(p.precioVenta) > 0;
+}
+function seVeEnLaTienda(p) {
+  return estaPublicado(p) && tienePrecioCompleto(p);
+}
+
+// A diferencia de "publicado", acá vacío SÍ es "no": la foto de portada es
+// opt-in, para que nunca rote en la tienda una foto que nadie eligió a mano.
+function estaEnPortada(p) {
+  const v = String(p.portada ?? '').trim().toLowerCase();
+  return ['sí', 'si', 'true', '1'].includes(v);
+}
+
+function renderTienda() {
+  const caja = document.getElementById('listaTienda');
+  const resumen = document.getElementById('resumenTienda');
+  if (!caja) return;
+
+  const todos = estado.productos;
+  const visibles = todos.filter(seVeEnLaTienda);
+  const sinPrecio = todos.filter(p => estaPublicado(p) && !tienePrecioCompleto(p));
+  const conStock = visibles.filter(p => (Number(p.stock) || 0) > 0);
+  const sinFoto = visibles.filter(p => !String(p.foto || '').trim());
+
+  const enPortada = todos.filter(estaEnPortada);
+
+  resumen.innerHTML = `
+    <div class="cajaT"><div class="n">${visibles.length}</div><div class="t">En la tienda</div></div>
+    <div class="cajaT"><div class="n">${todos.length - visibles.length}</div><div class="t">Ocultos</div></div>
+    <div class="cajaT${sinPrecio.length ? ' alerta' : ''}"><div class="n">${sinPrecio.length}</div><div class="t">Sin costo/precio</div></div>
+    <div class="cajaT"><div class="n">${conStock.length}</div><div class="t">Se pueden pedir</div></div>
+    <div class="cajaT${sinFoto.length ? ' alerta' : ''}"><div class="n">${sinFoto.length}</div><div class="t">Sin foto</div></div>
+    <div class="cajaT"><div class="n">${enPortada.length}</div><div class="t">En portada</div></div>`;
+
+  let lista = todos;
+  if (filtroTienda === 'visibles')  lista = todos.filter(seVeEnLaTienda);
+  if (filtroTienda === 'ocultos')   lista = todos.filter(p => !seVeEnLaTienda(p));
+  if (filtroTienda === 'agotados')  lista = todos.filter(p => (Number(p.stock) || 0) <= 0);
+
+  const texto = normalizaTexto(filtroTiendaTextoActual.trim());
+  if (texto) {
+    lista = lista.filter(p =>
+      normalizaTexto(p.nombre).includes(texto) ||
+      normalizaTexto(p.tono).includes(texto) ||
+      normalizaTexto(p.marca).includes(texto)
+    );
+  }
+
+  if (!lista.length) {
+    caja.innerHTML = '<div class="vacio">No hay productos que coincidan con ese filtro.</div>';
+    return;
+  }
+
+  caja.innerHTML = '<div class="rejillaT">' + lista.map(p => {
+    const on = estaPublicado(p);        // lo que controla el interruptor
+    const visible = seVeEnLaTienda(p);  // lo que el cliente realmente ve
+    const esEncargo = p.modalidad === 'encargo';
+    const stock = Number(p.stock) || 0;
+    const avisos = [];
+    if (esEncargo) {
+      avisos.push('<span class="pastilla ambar">Por encargo</span>');
+    } else if (stock <= 0) {
+      avisos.push('<span class="pastilla gris">Sin stock</span>');
+    } else if (stock <= 3) {
+      avisos.push(`<span class="pastilla ambar">Quedan ${stock}</span>`);
+    } else {
+      avisos.push(`<span class="pastilla verde">Stock ${stock}</span>`);
+    }
+    if (visible && !String(p.foto || '').trim()) avisos.push('<span class="pastilla roja">Falta la foto</span>');
+    if (on && !tienePrecioCompleto(p)) avisos.push('<span class="pastilla roja" title="Falta costo de compra y/o precio de venta">Sin costo/precio — no se muestra</span>');
+
+    return `<div class="fichaT ${visible ? '' : 'apagada'}" id="fichaT-${escaparHtml(p.id)}">
+      <label class="miniFoto" title="${p.foto ? 'Cambiar foto' : 'Subir foto'}">
+        ${p.foto ? `<img src="${escaparHtml(p.foto)}" alt="" loading="lazy">` : `<span class="miniIcono">📷</span>`}
+        <input type="file" accept="image/*" hidden onchange="subirFoto('${escaparHtml(p.id)}', this)">
+      </label>
+      <div class="infoT">
+        <div class="nomT">${escaparHtml(p.nombre)}</div>
+        <div class="metaT">${escaparHtml(p.marca || 'Sin marca')}${p.tono ? ' · ' + escaparHtml(p.tono) : ''} · ${
+          Number(p.descuento) > 0
+            ? `<span style="text-decoration:line-through;opacity:.6">${formatoColones(p.precioVenta)}</span> <b style="color:#A5323F">${formatoColones(precioConDescuento(p.precioVenta, p.descuento))}</b> (-${Number(p.descuento)}%)`
+            : formatoColones(p.precioVenta)
+        }</div>
+        <div class="avisosT">${avisos.join('')}</div>
+      </div>
+      <button class="estrella" role="switch" aria-pressed="${estaEnPortada(p)}"
+        aria-label="${estaEnPortada(p) ? 'Quitar' : 'Mostrar'} ${escaparHtml(p.nombre)} en la foto rotativa del inicio"
+        title="${p.foto ? 'Mostrar en la portada de la tienda' : 'Subí una foto primero'}"
+        ${p.foto ? '' : 'disabled'}
+        onclick="alternarPortada('${escaparHtml(p.id)}', this)">★</button>
+      <button class="palanca" role="switch" aria-pressed="${on}"
+        aria-label="${on ? 'Quitar' : 'Mostrar'} ${escaparHtml(p.nombre)} en la tienda"
+        onclick="alternarVisibilidad('${escaparHtml(p.id)}', this)"></button>
+    </div>`;
+  }).join('') + '</div>';
+}
+
+// Achica la imagen en el navegador antes de mandarla (más rápido de subir,
+// menos espacio en Drive, y el tamaño ya queda parejo entre fotos).
+function redimensionarImagen(file, maxAncho) {
+  return new Promise((resolve, reject) => {
+    const img = new Image();
+    const url = URL.createObjectURL(file);
+    img.onload = () => {
+      const escala = Math.min(1, maxAncho / img.width);
+      const w = Math.round(img.width * escala) || 1;
+      const h = Math.round(img.height * escala) || 1;
+      const canvas = document.createElement('canvas');
+      canvas.width = w; canvas.height = h;
+      canvas.getContext('2d').drawImage(img, 0, 0, w, h);
+      URL.revokeObjectURL(url);
+      resolve(canvas.toDataURL('image/jpeg', 0.85));
+    };
+    img.onerror = () => { URL.revokeObjectURL(url); reject(new Error('imagen inválida')); };
+    img.src = url;
+  });
+}
+
+async function subirFoto(id, input) {
+  const file = input.files[0];
+  if (!file) return;
+
+  const miniFoto = document.querySelector(`#fichaT-${CSS.escape(String(id))} .miniFoto`);
+  miniFoto?.classList.add('subiendo');
+  if (miniFoto) miniFoto.querySelector('.miniIcono, img')?.remove();
+  if (miniFoto) miniFoto.insertAdjacentHTML('afterbegin', '<span class="miniIcono">…</span>');
+
+  try {
+    const dataUrl = await redimensionarImagen(file, 1000);
+    const base64 = dataUrl.split(',')[1];
+    const res = await apiPost({
+      accion: 'subir_foto', productoId: id, base64,
+      mimeType: 'image/jpeg', nombreArchivo: file.name
+    });
+    if (res.ok) {
+      const p = estado.productos.find(x => String(x.id) === String(id));
+      if (p) p.foto = res.foto;
+      mostrarToast('Foto guardada.');
+      renderTienda();
+    } else {
+      mostrarToast('No se pudo subir la foto: ' + (res.error || 'error desconocido'));
+      renderTienda();
+    }
+  } catch (err) {
+    mostrarToast('No se pudo procesar esa imagen.');
+    renderTienda();
+  } finally {
+    input.value = '';
+  }
+}
+
+function filtrarTienda(cual) {
+  filtroTienda = cual;
+  document.querySelectorAll('.chipT').forEach(b => b.classList.toggle('activo', b.dataset.ft === cual));
+  renderTienda();
+}
+
+async function alternarVisibilidad(id, boton) {
+  const p = estado.productos.find(x => String(x.id) === String(id));
+  if (!p) return;
+  const nuevo = estaPublicado(p) ? 'No' : 'Sí';
+
+  boton.disabled = true;
+  boton.setAttribute('aria-pressed', nuevo === 'Sí');           // respuesta inmediata
+  document.getElementById('fichaT-' + id)?.classList.toggle('apagada', nuevo !== 'Sí');
+
+  const res = await apiPost({
+    accion: 'editar_fila', hoja: 'Productos', id: p.id,
+    fila: { ...p, publicado: nuevo }
+  });
+
+  if (res.ok) {
+    p.publicado = nuevo;                                        // sin recargar todo
+    mostrarToast(nuevo === 'Sí' ? 'Ya se ve en la tienda.' : 'Se quitó de la tienda.');
+    renderTienda();
+  } else {
+    boton.setAttribute('aria-pressed', estaPublicado(p));        // revertir
+    document.getElementById('fichaT-' + id)?.classList.toggle('apagada', !estaPublicado(p));
+    mostrarToast('No se pudo guardar: ' + (res.error || 'error desconocido'));
+  }
+  boton.disabled = false;
+}
+
+async function alternarPortada(id, boton) {
+  const p = estado.productos.find(x => String(x.id) === String(id));
+  if (!p) return;
+  const nuevo = estaEnPortada(p) ? 'No' : 'Sí';
+
+  boton.disabled = true;
+  boton.setAttribute('aria-pressed', nuevo === 'Sí');           // respuesta inmediata
+
+  const res = await apiPost({
+    accion: 'editar_fila', hoja: 'Productos', id: p.id,
+    fila: { ...p, portada: nuevo }
+  });
+
+  if (res.ok) {
+    p.portada = nuevo;                                          // sin recargar todo
+    mostrarToast(nuevo === 'Sí' ? 'Entra a la foto rotativa del inicio.' : 'Se quitó de la foto rotativa.');
+    renderTienda();
+  } else {
+    boton.setAttribute('aria-pressed', estaEnPortada(p));        // revertir
+    mostrarToast('No se pudo guardar: ' + (res.error || 'error desconocido'));
+  }
+  boton.disabled = false;
+}
+
+async function visibilidadEnLote(mostrar) {
+  const objetivo = mostrar ? 'Sí' : 'No';
+  const afectados = estado.productos.filter(p => estaPublicado(p) !== mostrar);
+  if (!afectados.length) { mostrarToast('No hay nada que cambiar.'); return; }
+  if (!confirm(`${mostrar ? 'Mostrar' : 'Ocultar'} ${afectados.length} producto(s) en la tienda?`)) return;
+
+  mostrarToast(`Guardando ${afectados.length}…`);
+  for (const p of afectados) {
+    const res = await apiPost({ accion: 'editar_fila', hoja: 'Productos', id: p.id, fila: { ...p, publicado: objetivo } });
+    if (res.ok) p.publicado = objetivo;
+  }
+  renderTienda();
+  mostrarToast('Listo.');
+}
+
+async function ocultarSinStock() {
+  const afectados = estado.productos.filter(p => (Number(p.stock) || 0) <= 0 && estaPublicado(p));
+  if (!afectados.length) { mostrarToast('Todos los agotados ya están ocultos.'); return; }
+  if (!confirm(`Ocultar ${afectados.length} producto(s) sin stock?`)) return;
+
+  for (const p of afectados) {
+    const res = await apiPost({ accion: 'editar_fila', hoja: 'Productos', id: p.id, fila: { ...p, publicado: 'No' } });
+    if (res.ok) p.publicado = 'No';
+  }
+  renderTienda();
+  mostrarToast(`Se ocultaron ${afectados.length}.`);
+}
+
+function alternarMonedaProducto() {
+  const esDolares = document.getElementById('pMoneda').value === 'USD';
+  document.getElementById('pCampoTipoCambio').classList.toggle('oculto', !esDolares);
+  recalcularPrecioPorMargen();
+}
+
+// ---------- Precio de venta: manual o por % de ganancia ----------
+let modoPrecio = 'manual';
+
+function llenarSelectorMargenes() {
+  const sel = document.getElementById('pMargenPct');
+  if (!sel || sel.options.length) return; // ya está lleno, no repetir
+  let html = '';
+  for (let pct = 5; pct <= 100; pct += 5) html += `<option value="${pct}">${pct}%</option>`;
+  sel.innerHTML = html;
+  sel.value = '30';
+}
+
+function elegirModoPrecio(m) {
+  llenarSelectorMargenes();
+  modoPrecio = m === 'margen' ? 'margen' : 'manual';
+  document.getElementById('modoPrecioManual').classList.toggle('activo', modoPrecio === 'manual');
+  document.getElementById('modoPrecioMargen').classList.toggle('activo', modoPrecio === 'margen');
+  document.getElementById('pCampoMargen').classList.toggle('oculto', modoPrecio === 'manual');
+  document.getElementById('pPrecioVenta').readOnly = modoPrecio === 'margen';
+  if (modoPrecio === 'margen') recalcularPrecioPorMargen();
+}
+
+// Costo de compra ya convertido a colones — misma cuenta que usa guardarProducto().
+function costoTotalCRCActual() {
+  const moneda = document.getElementById('pMoneda').value;
+  const costo = parseMonto(document.getElementById('pCosto').value);
+  const tipoCambio = Number(document.getElementById('pTipoCambio').value) || 0;
+  return moneda === 'USD' ? Math.round(costo * tipoCambio) : Math.round(costo);
+}
+
+function recalcularPrecioPorMargen() {
+  if (modoPrecio !== 'margen') return;
+  const costo = costoTotalCRCActual();
+  const pct = Number(document.getElementById('pMargenPct').value) || 0;
+
+  if (costo <= 0) {
+    // Sin costo puesto todavía no hay nada que calcular — mejor decirlo
+    // claro que mostrar "Costo ₡0 ... = ₡0", que parece un error.
+    document.getElementById('pPrecioVenta').value = '';
+    document.getElementById('pAyudaMargen').textContent = 'Escribí primero el costo de compra (arriba) para calcular el precio.';
+    return;
+  }
+
+  const precio = Math.round(costo * (1 + pct / 100));
+  document.getElementById('pPrecioVenta').value = precio;
+  const ganancia = precio - costo;
+  document.getElementById('pAyudaMargen').textContent =
+    `Costo ${formatoColones(costo)} + ${pct}% de ganancia (${formatoColones(ganancia)}) = precio de venta ${formatoColones(precio)}`;
+}
+
+function llenarSelectorMarcas() {
+  const marcas = [...new Set(estado.productos.map(p => p.marca).filter(Boolean))].sort((a, b) => a.localeCompare(b, 'es'));
+  const selMarca = document.getElementById('pMarca');
+  const seleccionActual = selMarca.value;
+  selMarca.innerHTML = marcas.map(m => `<option value="${escaparHtml(m)}">${escaparHtml(m)}</option>`).join('')
+    + '<option value="__nueva__">+ Marca nueva…</option>';
+  if (marcas.includes(seleccionActual) || seleccionActual === '__nueva__') selMarca.value = seleccionActual;
+  alternarMarcaNueva();
+}
+
+function alternarMarcaNueva() {
+  const esNueva = document.getElementById('pMarca').value === '__nueva__';
+  document.getElementById('pMarcaNuevaWrap').classList.toggle('oculto', !esNueva);
+}
+
+const ORIGENES_FIJOS = ['Amazon', 'Sephora', 'Target', 'Marshalls', 'Revendedor CR'];
+
+function alternarOrigenNuevo() {
+  const esOtro = document.getElementById('pOrigen').value === 'Otro';
+  document.getElementById('pOrigenNuevoWrap').classList.toggle('oculto', !esOtro);
+}
+
+// Precio final ya con el descuento aplicado (redondeado a colones enteros).
+// Se usa igual en el formulario, en Inventario y en Tienda.
+function precioConDescuento(precioVenta, descuento) {
+  const pct = Number(descuento) || 0;
+  const precio = Number(precioVenta) || 0;
+  return pct > 0 ? Math.round(precio * (1 - pct / 100)) : precio;
+}
+
+function actualizarVistaDescuento() {
+  const pct = Number(document.getElementById('pDescuento').value) || 0;
+  const precio = parseMonto(document.getElementById('pPrecioVenta').value);
+  const ayuda = document.getElementById('pAyudaDescuento');
+  if (!ayuda) return;
+  ayuda.textContent = pct > 0 && precio > 0
+    ? `Precio final en la tienda: ${formatoColones(precioConDescuento(precio, pct))} (antes ${formatoColones(precio)})`
+    : '';
+}
+
+// Si el origen guardado no es uno de los fijos, selecciona "Otro" y lo
+// muestra en el campo de texto — para no perder orígenes ya escritos a mano.
+function fijarOrigenEnFormulario(origen) {
+  const sel = document.getElementById('pOrigen');
+  if (origen && !ORIGENES_FIJOS.includes(origen)) {
+    sel.value = 'Otro';
+    document.getElementById('pOrigenNuevo').value = origen;
+  } else {
+    sel.value = origen || 'Amazon';
+    document.getElementById('pOrigenNuevo').value = '';
+  }
+  alternarOrigenNuevo();
+}
+
+// Devuelve el origen a guardar: el texto escrito si eligió "Otro", o la opción fija.
+function obtenerOrigenSeleccionado() {
+  const sel = document.getElementById('pOrigen').value;
+  if (sel === 'Otro') {
+    const nuevo = document.getElementById('pOrigenNuevo').value.trim();
+    return nuevo || 'Otro';
+  }
+  return sel;
+}
+
+let modalidadProducto = 'stock';
+
+function elegirModalidadProducto(m) {
+  modalidadProducto = m === 'encargo' ? 'encargo' : 'stock';
+  document.getElementById('modoStockSi').classList.toggle('activo', modalidadProducto === 'stock');
+  document.getElementById('modoStockNo').classList.toggle('activo', modalidadProducto === 'encargo');
+  actualizarCamposPorModalidad();
+}
+
+function actualizarCamposPorModalidad() {
+  const esEncargo = modalidadProducto === 'encargo';
+  // Un encargo sí puede tener costo/origen/moneda — es útil saber cuánto te va
+  // a costar traerlo aunque todavía no lo tengas. Lo único que de verdad no
+  // aplica es "Stock inicial": no hay unidades que contar hasta que llegue.
+  document.getElementById('pCampoStock')?.classList.toggle('oculto', esEncargo);
+  document.getElementById('pLabelPrecio').textContent = esEncargo ? 'Precio de venta estimado (₡)' : 'Precio de venta (₡)';
+}
+
+function nuevoProducto() {
+  productoEditando = null;
+  elegirModalidadProducto('stock');
+  elegirModoPrecio('manual');
+  document.getElementById('pNombre').value = '';
+  document.getElementById('pTono').value = '';
+  document.getElementById('pMedida').value = '';
+  document.getElementById('pDescripcion').value = '';
+  document.getElementById('pMarca').value = '__nueva__';
+  document.getElementById('pMarcaNueva').value = '';
+  alternarMarcaNueva();
+  fijarOrigenEnFormulario('Amazon');
+  document.getElementById('pMoneda').value = 'USD';
+  alternarMonedaProducto();
+  document.getElementById('pCosto').value = '';
+  document.getElementById('pTipoCambio').value = 520;
+  document.getElementById('pPrecioVenta').value = '';
+  document.getElementById('pStock').value = 1;
+  document.getElementById('pDescuento').value = '0';
+  actualizarVistaDescuento();
+  document.getElementById('pAplicarATonos').checked = true;
+  document.getElementById('btnGuardarProducto').textContent = 'Guardar producto';
+  document.getElementById('formProducto').classList.remove('oculto');
+}
+
+function editarProducto(id) {
+  const p = estado.productos.find(x => String(x.id) === String(id));
+  if (!p) return;
+  productoEditando = id;
+  elegirModalidadProducto(p.modalidad === 'encargo' ? 'encargo' : 'stock');
+  elegirModoPrecio('manual');
+  document.getElementById('pNombre').value = p.nombre || '';
+  document.getElementById('pCategoria').value = p.categoria || 'Maquillaje';
+  document.getElementById('pTono').value = p.tono || '';
+  document.getElementById('pMedida').value = p.medida || '';
+  document.getElementById('pDescripcion').value = p.descripcion || '';
+  document.getElementById('pMarca').value = p.marca || '__nueva__';
+  document.getElementById('pMarcaNueva').value = '';
+  alternarMarcaNueva();
+  fijarOrigenEnFormulario(p.origen);
+  document.getElementById('pMoneda').value = p.moneda || 'USD';
+  alternarMonedaProducto();
+  document.getElementById('pCosto').value = p.costoCompra || '';
+  document.getElementById('pTipoCambio').value = p.tipoCambio || 520;
+  document.getElementById('pPrecioVenta').value = p.precioVenta || '';
+  document.getElementById('pStock').value = p.stock || 0;
+  const selDescuento = document.getElementById('pDescuento');
+  const descuentoGuardado = String(Number(p.descuento) || 0);
+  selDescuento.value = [...selDescuento.options].some(o => o.value === descuentoGuardado) ? descuentoGuardado : '0';
+  actualizarVistaDescuento();
+  document.getElementById('pAplicarATonos').checked = true;
+  document.getElementById('btnGuardarProducto').textContent = 'Guardar cambios';
+  document.getElementById('formProducto').classList.remove('oculto');
+}
+
+async function eliminarProducto(id) {
+  const p = estado.productos.find(x => String(x.id) === String(id));
+  if (!confirm(`¿Eliminar "${p ? p.nombre : 'este producto'}"? No se puede deshacer.`)) return;
+  const resultado = await apiPost({ accion: 'eliminar_fila', hoja: 'Productos', id });
+  if (resultado.ok) { mostrarToast('Producto eliminado.'); await cargarDatos(); }
+  else mostrarToast('Error: ' + resultado.error);
+}
+
+async function guardarProducto() {
+  const nombre = document.getElementById('pNombre').value;
+  if (!nombre) { mostrarToast('Poné el nombre del producto.'); return; }
+
+  let marca = document.getElementById('pMarca').value;
+  if (marca === '__nueva__') {
+    marca = document.getElementById('pMarcaNueva').value.trim();
+    if (!marca) { mostrarToast('Escribí el nombre de la marca nueva.'); return; }
+  }
+
+  // OJO: editar_fila reescribe la fila COMPLETA. Partimos del producto original
+  // para no borrar columnas que este formulario no toca (publicado, foto, descripcion).
+  const original = productoEditando
+    ? (estado.productos.find(p => String(p.id) === String(productoEditando)) || {})
+    : {};
+
+  const esEncargo = modalidadProducto === 'encargo';
+  let fila;
+
+  if (esEncargo) {
+    // Sí lleva costo de compra y precio estimados — es lo que te deja calcular
+    // el margen antes de traerlo. Lo único que de verdad no aplica es el
+    // stock: no hay unidades que contar hasta que el producto llegue.
+    const moneda = document.getElementById('pMoneda').value;
+    const costo = parseMonto(document.getElementById('pCosto').value);
+    const tipoCambio = Number(document.getElementById('pTipoCambio').value) || 0;
+    const costoTotalCRC = moneda === 'USD' ? Math.round(costo * tipoCambio) : Math.round(costo);
+
+    fila = {
+      ...original,
+      id: productoEditando || '',
+      nombre,
+      categoria: document.getElementById('pCategoria').value,
+      marca,
+      origen: obtenerOrigenSeleccionado(),
+      costoCompra: costo,
+      tipoCambio: moneda === 'USD' ? tipoCambio : '',
+      costoTotalCRC,
+      precioVenta: parseMonto(document.getElementById('pPrecioVenta').value),
+      descuento: Number(document.getElementById('pDescuento').value) || 0,
+      stock: 0,
+      estado: 'Por encargo',
+      moneda,
+      tono: document.getElementById('pTono').value,
+      medida: document.getElementById('pMedida').value,
+      descripcion: document.getElementById('pDescripcion').value,
+      modalidad: 'encargo',
+      publicado: original.publicado === undefined || original.publicado === ''
+        ? 'Sí' : original.publicado
+    };
+  } else {
+    const moneda = document.getElementById('pMoneda').value;
+    const costo = parseMonto(document.getElementById('pCosto').value);
+    const tipoCambio = Number(document.getElementById('pTipoCambio').value) || 0;
+    const costoTotalCRC = moneda === 'USD' ? Math.round(costo * tipoCambio) : Math.round(costo);
+    const stock = Number(document.getElementById('pStock').value) || 0;
+
+    fila = {
+      ...original,
+      id: productoEditando || '',
+      nombre,
+      categoria: document.getElementById('pCategoria').value,
+      marca,
+      origen: obtenerOrigenSeleccionado(),
+      costoCompra: costo,
+      tipoCambio: moneda === 'USD' ? tipoCambio : '',
+      costoTotalCRC,
+      precioVenta: parseMonto(document.getElementById('pPrecioVenta').value),
+      descuento: Number(document.getElementById('pDescuento').value) || 0,
+      stock,
+      estado: stock > 0 ? 'Disponible' : 'Agotado',
+      moneda,
+      tono: document.getElementById('pTono').value,
+      medida: document.getElementById('pMedida').value,
+      descripcion: document.getElementById('pDescripcion').value,
+      modalidad: 'stock',
+      // Un producto nuevo nace visible en la tienda salvo que se diga lo contrario
+      publicado: original.publicado === undefined || original.publicado === ''
+        ? 'Sí' : original.publicado
+    };
+  }
+
+  const accion = productoEditando ? 'editar_fila' : 'agregar_fila';
+  const resultado = await apiPost({ accion, hoja: 'Productos', id: productoEditando, fila });
+  if (resultado.ok) {
+    mostrarToast(productoEditando ? 'Producto actualizado.' : 'Producto guardado.');
+    document.getElementById('formProducto').classList.add('oculto');
+
+    // Costo y precio en cascada: si este producto tiene más tonos (mismo
+    // nombre + marca), se les pone el mismo costo/precio de una — así no
+    // hay que repetirlo tono por tono en productos con muchas variantes.
+    // Se puede desactivar con la casilla (ej. un tono que costó distinto
+    // por una oferta puntual). Solo toca costo/precio; todo lo demás de
+    // cada tono (foto, stock, medida) queda tal cual estaba.
+    const idGuardado = productoEditando || resultado.id;
+    const aplicarATonos = document.getElementById('pAplicarATonos').checked;
+    if (idGuardado && aplicarATonos && (Number(fila.precioVenta) > 0 || Number(fila.costoCompra) > 0 || Number(fila.descuento) > 0)) {
+      try {
+        await aplicarCostoPrecioATonosHermanos(fila, idGuardado);
+      } catch (err) {
+        // El producto principal ya se guardó bien; si la cascada falla de
+        // forma inesperada no debe tapar eso ni dejar el resto a medias.
+        mostrarToast('El producto se guardó, pero no se pudo aplicar el costo/precio/descuento a los demás tonos. Volvé a guardarlo para reintentar.');
+      }
+    }
+
+    productoEditando = null;
+    await cargarDatos();
+  } else mostrarToast('Error: ' + resultado.error);
+}
+
+async function aplicarCostoPrecioATonosHermanos(filaGuardada, idGuardado) {
+  const clave = (filaGuardada.marca || '').trim().toLowerCase() + '|' + (filaGuardada.nombre || '').trim().toLowerCase();
+  const nuevoPrecio = Number(filaGuardada.precioVenta) || 0;
+  const nuevoCosto = Number(filaGuardada.costoCompra) || 0;
+  const nuevoDescuento = Number(filaGuardada.descuento) || 0;
+  const hermanos = estado.productos.filter(p =>
+    String(p.id) !== String(idGuardado) &&
+    (p.marca || '').trim().toLowerCase() + '|' + (p.nombre || '').trim().toLowerCase() === clave &&
+    (Number(p.precioVenta) !== nuevoPrecio || Number(p.costoCompra) !== nuevoCosto || (Number(p.descuento) || 0) !== nuevoDescuento)
+  );
+  if (!hermanos.length) return;
+
+  mostrarToast(`Aplicando costo/precio/descuento a ${hermanos.length} tono(s) más de este producto…`);
+
+  // Un tono que falla (red inestable, respuesta rara del servidor) no debe
+  // frenar a los demás — antes una sola falla cortaba todo el ciclo y el
+  // resto se quedaba con el costo/precio viejo sin ningún aviso. Cada tono
+  // se intenta hasta 2 veces antes de darlo por fallado.
+  async function aplicarConReintento(h) {
+    for (let intento = 1; intento <= 2; intento++) {
+      try {
+        const resultado = await apiPost({
+          accion: 'editar_fila', hoja: 'Productos', id: h.id,
+          fila: {
+            ...h,
+            precioVenta: nuevoPrecio,
+            costoCompra: nuevoCosto,
+            descuento: nuevoDescuento,
+            tipoCambio: filaGuardada.tipoCambio,
+            costoTotalCRC: filaGuardada.costoTotalCRC,
+            moneda: filaGuardada.moneda
+          }
+        });
+        if (resultado.ok) return true;
+      } catch (err) { /* reintenta */ }
+    }
+    return false;
+  }
+
+  let ok = 0;
+  const fallidos = [];
+  for (const h of hermanos) {
+    const logrado = await aplicarConReintento(h);
+    if (logrado) ok++; else fallidos.push(h.tono || '(sin tono)');
+  }
+
+  mostrarToast(fallidos.length === 0
+    ? `Costo, precio y descuento aplicados a los ${ok} tono(s) restantes.`
+    : `Aplicado a ${ok} de ${hermanos.length} tono(s). Faltó: ${fallidos.join(', ')} — guardalos de nuevo para reintentar.`);
+}
+
+// ---------- Clientes ----------
+
+function totalCompradoCliente(clienteId) {
+  return estado.ventas
+    .filter(v => String(v.clienteId) === String(clienteId))
+    .reduce((s, v) => s + (Number(v.precioVenta) || 0), 0);
+}
+
+function totalDebeCliente(clienteId) {
+  return estado.ventas
+    .filter(v => String(v.clienteId) === String(clienteId) && v.formaPago === 'A pagos')
+    .reduce((s, v) => s + (Number(v.precioVenta) || 0), 0);
+}
+
+function totalAbonadoCliente(clienteId) {
+  return estado.abonos
+    .filter(a => String(a.clienteId) === String(clienteId))
+    .reduce((s, a) => s + (Number(a.monto) || 0), 0);
+}
+
+function renderClientes() {
+  const caja = document.getElementById('listaClientes');
+  if (!estado.clientes.length) { caja.innerHTML = '<div class="vacio">Todavía no hay clientes.</div>'; return; }
+
+  const filtro = document.getElementById('filtroClientes')?.value || 'todos';
+  const conSaldo = estado.clientes.map(c => {
+    const debe = totalDebeCliente(c.id);
+    const abonado = totalAbonadoCliente(c.id);
+    const saldo = Math.max(debe - abonado, 0);
+    const pagado = debe > 0 && saldo === 0; // debía algo y ya lo cubrió todo
+    return { c, debe, abonado, saldo, pagado };
+  });
+
+  let filas = conSaldo;
+  if (filtro === 'pendientes') filas = conSaldo.filter(f => f.saldo > 0);
+  else if (filtro === 'pagados') filas = conSaldo.filter(f => f.pagado);
+  else filas = [...conSaldo].sort((a, b) => (a.pagado === b.pagado) ? 0 : (a.pagado ? 1 : -1)); // "Todos": pagados al final
+
+  if (!filas.length) { caja.innerHTML = '<div class="vacio">No hay clientes que coincidan con este filtro.</div>'; return; }
+
+  caja.innerHTML = tablaSimple(
+    ['Nombre', 'Teléfono', 'Ubicación', 'Canal preferido', 'Total comprado', 'Debe (a pagos)', 'Abonado', 'Saldo pendiente', 'Acciones'],
+    filas.map(({ c, debe, abonado, saldo, pagado }) => {
+      return [
+        escaparHtml(c.nombre), escaparHtml(c.telefono), escaparHtml(c.ubicacion), escaparHtml(c.canalPreferido),
+        `<span style="font-weight:600">${formatoColones(totalCompradoCliente(c.id))}</span>`,
+        formatoColones(debe),
+        formatoColones(abonado),
+        `<span style="font-weight:600;color:${saldo > 0 ? '#A5323F' : '#1f4a30'}">${formatoColones(saldo)}</span>` +
+          (pagado ? ' <span style="background:#e3f3e6;color:#1f4a30;border-radius:999px;padding:2px 8px;font-size:11px;font-weight:600;white-space:nowrap;">✅ Pagado</span>' : ''),
+        `<div style="display:flex;gap:6px;flex-wrap:wrap;">
+          <button class="secundario" style="padding:4px 10px;font-size:12px;" onclick="nuevoAbono(${c.id})">+ Abono</button>
+          ${botonesAccion('editarCliente', 'eliminarCliente', c.id)}
+        </div>`
+      ];
+    })
+  );
+}
+
+function nuevoCliente() {
+  clienteEditando = null;
+  document.getElementById('cNombre').value = '';
+  document.getElementById('cTelefono').value = '';
+  document.getElementById('cNotas').value = '';
+  document.getElementById('btnGuardarCliente').textContent = 'Guardar cliente';
+  document.getElementById('formCliente').classList.remove('oculto');
+}
+
+function editarCliente(id) {
+  const c = estado.clientes.find(x => String(x.id) === String(id));
+  if (!c) return;
+  clienteEditando = id;
+  document.getElementById('cNombre').value = c.nombre || '';
+  document.getElementById('cTelefono').value = c.telefono || '';
+  document.getElementById('cUbicacion').value = c.ubicacion || 'San Carlos';
+  document.getElementById('cCanal').value = c.canalPreferido || 'WhatsApp';
+  document.getElementById('cNotas').value = c.notas || '';
+  document.getElementById('btnGuardarCliente').textContent = 'Guardar cambios';
+  document.getElementById('formCliente').classList.remove('oculto');
+}
+
+async function eliminarCliente(id) {
+  const c = estado.clientes.find(x => String(x.id) === String(id));
+  if (!confirm(`¿Eliminar a "${c ? c.nombre : 'este cliente'}"? No se puede deshacer.`)) return;
+  const resultado = await apiPost({ accion: 'eliminar_fila', hoja: 'Clientes', id });
+  if (resultado.ok) { mostrarToast('Cliente eliminado.'); await cargarDatos(); }
+  else mostrarToast('Error: ' + resultado.error);
+}
+
+async function guardarCliente() {
+  const nombre = document.getElementById('cNombre').value;
+  if (!nombre) { mostrarToast('Poné el nombre del cliente.'); return; }
+  const fila = {
+    id: clienteEditando || '',
+    nombre,
+    telefono: document.getElementById('cTelefono').value,
+    ubicacion: document.getElementById('cUbicacion').value,
+    canalPreferido: document.getElementById('cCanal').value,
+    notas: document.getElementById('cNotas').value
+  };
+  const accion = clienteEditando ? 'editar_fila' : 'agregar_fila';
+  const resultado = await apiPost({ accion, hoja: 'Clientes', id: clienteEditando, fila });
+  if (resultado.ok) {
+    mostrarToast(clienteEditando ? 'Cliente actualizado.' : 'Cliente guardado.');
+    document.getElementById('formCliente').classList.add('oculto');
+    clienteEditando = null;
+    await cargarDatos();
+  } else mostrarToast('Error: ' + resultado.error);
+}
+
+// ---------- Abonos ----------
+
+function llenarSelectorClientesAbono() {
+  const sel = document.getElementById('aCliente');
+  const seleccionActual = sel.value;
+  sel.innerHTML = estado.clientes.map(c => `<option value="${c.id}">${escaparHtml(c.nombre)}</option>`).join('');
+  if ([...sel.options].some(o => o.value === seleccionActual)) sel.value = seleccionActual;
+}
+
+function nuevoAbono(clienteId) {
+  document.getElementById('aMonto').value = '';
+  document.getElementById('aNotas').value = '';
+  if (clienteId != null) document.getElementById('aCliente').value = String(clienteId);
+  document.getElementById('formAbono').scrollIntoView({ behavior: 'smooth', block: 'center' });
+  document.getElementById('aMonto').focus();
+}
+
+async function guardarAbono() {
+  const clienteId = document.getElementById('aCliente').value;
+  if (!clienteId) { mostrarToast('Elegí un cliente.'); return; }
+  const monto = parseMonto(document.getElementById('aMonto').value);
+  if (monto <= 0) { mostrarToast('Poné un monto de abono mayor a cero.'); return; }
+
+  const fila = {
+    id: '',
+    fecha: new Date().toISOString().slice(0, 10),
+    clienteId,
+    monto,
+    notas: document.getElementById('aNotas').value,
+    usuario: estado.usuario.usuario
+  };
+  const resultado = await apiPost({ accion: 'agregar_fila', hoja: 'Abonos', fila });
+  if (resultado.ok) {
+    mostrarToast('Abono guardado.');
+    document.getElementById('aMonto').value = '';
+    document.getElementById('aNotas').value = '';
+    await cargarDatos();
+  } else mostrarToast('Error: ' + resultado.error);
+}
+
+async function eliminarAbono(id) {
+  if (!confirm('¿Eliminar este abono? No se puede deshacer.')) return;
+  const resultado = await apiPost({ accion: 'eliminar_fila', hoja: 'Abonos', id });
+  if (resultado.ok) { mostrarToast('Abono eliminado.'); await cargarDatos(); }
+  else mostrarToast('Error: ' + resultado.error);
+}
+
+function renderAbonos() {
+  const caja = document.getElementById('listaAbonos');
+  if (!estado.abonos.length) { caja.innerHTML = '<div class="vacio">Todavía no hay abonos registrados.</div>'; return; }
+  const ordenados = [...estado.abonos].sort((a, b) => new Date(b.fecha) - new Date(a.fecha));
+  caja.innerHTML = tablaSimple(
+    ['Fecha', 'Cliente', 'Monto', 'Notas', 'Acciones'],
+    ordenados.map(a => [
+      escaparHtml(a.fecha), escaparHtml(nombreCliente(a.clienteId)), formatoColones(a.monto), escaparHtml(a.notas),
+      botonesAccion(null, 'eliminarAbono', a.id)
+    ])
+  );
+}
+
+// ---------- Ventas ----------
+
+function llenarSelectoresVenta() {
+  const selCliente = document.getElementById('vCliente');
+  const selProducto = document.getElementById('vProducto');
+  const selProductoRegalo = document.getElementById('vProductoRegalo');
+  const opcionesClientes = estado.clientes.map(c => `<option value="${c.id}">${escaparHtml(c.nombre)}</option>`).join('');
+  selCliente.innerHTML = '<option value="__nuevo__">+ Cliente nuevo…</option><option value="__ninguno__">— Sin cliente (regalo general) —</option>' + opcionesClientes;
+  const opcionesProductos = estado.productos.map(p => `<option value="${p.id}" data-precio="${p.precioVenta}">${escaparHtml(p.nombre)}${p.marca ? ' — ' + escaparHtml(p.marca) : ''} (stock: ${p.stock})</option>`).join('');
+  selProducto.innerHTML = opcionesProductos;
+  selProductoRegalo.innerHTML = opcionesProductos;
+  alternarClienteNuevo();
+}
+
+function alternarRegaloVenta() {
+  const marcado = document.getElementById('vTieneRegalo').checked;
+  document.getElementById('vRegaloProductoWrap').classList.toggle('oculto', !marcado);
+  document.getElementById('vRegaloCantidadWrap').classList.toggle('oculto', !marcado);
+}
+
+function alternarClienteNuevo() {
+  const esNuevo = document.getElementById('vCliente').value === '__nuevo__';
+  ['vClienteNuevoNombre', 'vClienteNuevoTel', 'vClienteNuevoUbic'].forEach(id => {
+    document.getElementById(id).classList.toggle('oculto', !esNuevo);
+  });
+}
+
+function autocompletarPrecioVenta() {
+  if (document.getElementById('vFormaPago').value === 'Regalía') { document.getElementById('vPrecio').value = 0; return; }
+  const opcion = document.getElementById('vProducto').selectedOptions[0];
+  const cantidad = Number(document.getElementById('vCantidad').value) || 1;
+  if (opcion) document.getElementById('vPrecio').value = Math.round(Number(opcion.dataset.precio) * cantidad);
+}
+
+function alternarRegalia() {
+  const esRegalia = document.getElementById('vFormaPago').value === 'Regalía';
+  const campoPrecio = document.getElementById('vPrecio');
+  campoPrecio.disabled = esRegalia;
+  if (esRegalia) campoPrecio.value = 0;
+  else autocompletarPrecioVenta();
+}
+
+// Reconstruye la fila completa de un producto, cambiando solo el stock.
+function filaProductoConStock(p, nuevoStock) {
+  // Se copia el producto entero primero: así una venta nunca borra la foto,
+  // la descripción ni la visibilidad en la tienda al actualizar el stock.
+  return {
+    ...p,
+    stock: nuevoStock,
+    estado: nuevoStock > 0 ? 'Disponible' : 'Agotado'
+  };
+}
+
+function nuevaVenta() {
+  ventaEditando = null;
+  document.getElementById('vCliente').value = '__nuevo__';
+  alternarClienteNuevo();
+  document.getElementById('vNuevoNombre').value = '';
+  document.getElementById('vNuevoTelefono').value = '';
+  if (document.getElementById('vProducto').options.length) document.getElementById('vProducto').selectedIndex = 0;
+  document.getElementById('vCantidad').value = 1;
+  document.getElementById('vCanal').value = 'Instagram';
+  document.getElementById('vFormaPago').value = 'Efectivo';
+  alternarRegalia();
+  autocompletarPrecioVenta();
+  document.getElementById('vEstado').value = 'Pendiente';
+  document.getElementById('vTieneRegalo').checked = false;
+  if (document.getElementById('vProductoRegalo').options.length) document.getElementById('vProductoRegalo').selectedIndex = 0;
+  document.getElementById('vCantidadRegalo').value = 1;
+  alternarRegaloVenta();
+  document.getElementById('btnGuardarVenta').textContent = 'Guardar venta';
+  document.getElementById('formVenta').classList.remove('oculto');
+}
+
+// Regalía suelta: mismo formulario que una venta, pero sin cliente obligatorio
+// y con Forma de pago ya en "Regalía" (precio en cero).
+function nuevaRegalia() {
+  nuevaVenta();
+  document.getElementById('vCliente').value = '__ninguno__';
+  alternarClienteNuevo();
+  document.getElementById('vFormaPago').value = 'Regalía';
+  alternarRegalia();
+  document.getElementById('btnGuardarVenta').textContent = 'Guardar regalía';
+}
+
+function editarVenta(id) {
+  const v = estado.ventas.find(x => String(x.id) === String(id));
+  if (!v) return;
+  ventaEditando = v;
+  document.getElementById('vCliente').value = v.clienteId ? String(v.clienteId) : '__ninguno__';
+  alternarClienteNuevo();
+  document.getElementById('vProducto').value = String(v.productoId);
+  document.getElementById('vCantidad').value = v.cantidad || 1;
+  document.getElementById('vCanal').value = v.canal || 'Instagram';
+  document.getElementById('vFormaPago').value = v.formaPago || 'Efectivo';
+  alternarRegalia();
+  document.getElementById('vPrecio').value = v.precioVenta || 0;
+  document.getElementById('vEstado').value = v.estadoEntrega || 'Pendiente';
+  document.getElementById('vTieneRegalo').checked = false;
+  alternarRegaloVenta();
+  document.getElementById('btnGuardarVenta').textContent = 'Guardar cambios';
+  document.getElementById('formVenta').classList.remove('oculto');
+}
+
+function nombreProducto(id) {
+  const producto = estado.productos.find(p => String(p.id) === String(id));
+  return producto ? producto.nombre : '—';
+}
+
+function nombreCliente(id) {
+  const cliente = estado.clientes.find(c => String(c.id) === String(id));
+  return cliente ? cliente.nombre : '—';
+}
+
+function renderVentas() {
+  const caja = document.getElementById('listaVentas');
+  if (!estado.ventas.length) { caja.innerHTML = '<div class="vacio">Todavía no hay ventas.</div>'; return; }
+  const ordenadas = [...estado.ventas].sort((a, b) => new Date(b.fecha) - new Date(a.fecha));
+  const badgePago = { 'Efectivo': 'mint', 'SINPE Móvil': 'peach', 'A pagos': 'pink', 'Regalía': 'gift' };
+  caja.innerHTML = tablaSimple(
+    ['Fecha', 'Cliente', 'Producto', 'Cant.', 'Costo', 'Venta', 'Ganancia', 'Canal', 'Pago', 'Estado', 'Acciones'],
+    ordenadas.map(v => {
+      const costo = (Number(v.costoUnitarioCRC) || 0) * (Number(v.cantidad) || 1);
+      const ganancia = (Number(v.precioVenta) || 0) - costo;
+      return [
+        escaparHtml(v.fecha), escaparHtml(nombreCliente(v.clienteId)), escaparHtml(nombreProducto(v.productoId)), v.cantidad,
+        formatoColones(costo), formatoColones(v.precioVenta),
+        `<span style="color:${ganancia >= 0 ? '#1f4a30' : '#A5323F'};font-weight:600">${formatoColones(ganancia)}</span>`,
+        escaparHtml(v.canal),
+        `<span class="badge ${badgePago[v.formaPago] || 'peach'}">${escaparHtml(v.formaPago || '—')}</span>`,
+        `<span class="badge ${v.estadoEntrega === 'Entregado' ? 'mint' : 'peach'}">${escaparHtml(v.estadoEntrega)}</span>`,
+        botonesAccion('editarVenta', 'eliminarVenta', v.id)
+      ];
+    })
+  );
+}
+
+async function eliminarVenta(id) {
+  const v = estado.ventas.find(x => String(x.id) === String(id));
+  if (!v) return;
+  if (!confirm('¿Eliminar esta venta? Se le devuelve el stock al producto. No se puede deshacer.')) return;
+
+  const resultado = await apiPost({ accion: 'eliminar_fila', hoja: 'Ventas', id });
+  if (!resultado.ok) { mostrarToast('Error: ' + resultado.error); return; }
+
+  // devolver el stock al producto
+  const producto = estado.productos.find(p => String(p.id) === String(v.productoId));
+  if (producto) {
+    const stockRestaurado = (Number(producto.stock) || 0) + (Number(v.cantidad) || 0);
+    await apiPost({
+      accion: 'editar_fila', hoja: 'Productos', id: producto.id,
+      fila: filaProductoConStock(producto, stockRestaurado)
+    });
+  }
+
+  mostrarToast('Venta eliminada y stock restaurado.');
+  await cargarDatos();
+}
+
+async function guardarVenta() {
+  const productoId = document.getElementById('vProducto').value;
+  if (!productoId) { mostrarToast('Elegí un producto.'); return; }
+
+  // Cliente: existente, nuevo (creado en el mismo paso), o ninguno (regalo general)
+  let clienteId = document.getElementById('vCliente').value;
+  if (clienteId === '__ninguno__') {
+    clienteId = '';
+  } else if (clienteId === '__nuevo__') {
+    const nombre = document.getElementById('vNuevoNombre').value.trim();
+    if (!nombre) { mostrarToast('Poné el nombre del cliente nuevo.'); return; }
+    const filaCliente = {
+      id: '', nombre,
+      telefono: document.getElementById('vNuevoTelefono').value,
+      ubicacion: document.getElementById('vNuevoUbicacion').value,
+      canalPreferido: 'WhatsApp', notas: ''
+    };
+    const resCliente = await apiPost({ accion: 'agregar_fila', hoja: 'Clientes', fila: filaCliente });
+    if (!resCliente.ok) { mostrarToast('Error creando cliente: ' + resCliente.error); return; }
+    clienteId = resCliente.id;
+  }
+
+  const cantidad = Number(document.getElementById('vCantidad').value) || 1;
+  const producto = estado.productos.find(p => String(p.id) === String(productoId));
+  const costoUnitarioCRC = producto ? (Number(producto.costoTotalCRC) || 0) : 0;
+  const formaPago = document.getElementById('vFormaPago').value;
+  const precioVenta = formaPago === 'Regalía' ? 0 : parseMonto(document.getElementById('vPrecio').value);
+
+  // Si estamos editando y el producto no cambió, la cantidad anterior de esta venta
+  // todavía cuenta como "disponible" para el nuevo cálculo (se va a re-descontar).
+  const mismoProductoQueAntes = ventaEditando && String(ventaEditando.productoId) === String(productoId);
+  const stockDisponible = producto
+    ? (Number(producto.stock) || 0) + (mismoProductoQueAntes ? Number(ventaEditando.cantidad) || 0 : 0)
+    : 0;
+
+  if (producto && cantidad > stockDisponible) {
+    mostrarToast(`Solo hay ${stockDisponible} en stock de "${producto.nombre}".`);
+    return;
+  }
+
+  // Regalo opcional dentro de la misma transacción: se valida ANTES de guardar nada,
+  // para no dejar la venta principal guardada si falla el regalo.
+  const hayRegalo = document.getElementById('vTieneRegalo').checked;
+  let productoRegalo = null;
+  let cantidadRegalo = 0;
+  let stockDisponibleRegalo = 0;
+  if (hayRegalo) {
+    const productoRegaloId = document.getElementById('vProductoRegalo').value;
+    if (!productoRegaloId) { mostrarToast('Elegí el producto de regalo, o desmarcá la casilla.'); return; }
+    cantidadRegalo = Number(document.getElementById('vCantidadRegalo').value) || 1;
+    productoRegalo = estado.productos.find(p => String(p.id) === String(productoRegaloId));
+    const esMismoProductoQueElRegalo = producto && productoRegalo && String(producto.id) === String(productoRegalo.id);
+    stockDisponibleRegalo = esMismoProductoQueElRegalo
+      ? Math.max(stockDisponible - cantidad, 0)
+      : (productoRegalo ? Number(productoRegalo.stock) || 0 : 0);
+    if (productoRegalo && cantidadRegalo > stockDisponibleRegalo) {
+      mostrarToast(`Solo hay ${stockDisponibleRegalo} en stock de "${productoRegalo.nombre}" para el regalo.`);
+      return;
+    }
+  }
+
+  const fila = {
+    id: ventaEditando ? ventaEditando.id : '',
+    fecha: ventaEditando ? ventaEditando.fecha : new Date().toISOString().slice(0, 10),
+    clienteId,
+    productoId,
+    cantidad,
+    costoUnitarioCRC,
+    precioVenta,
+    canal: document.getElementById('vCanal').value,
+    estadoEntrega: document.getElementById('vEstado').value,
+    usuario: ventaEditando ? ventaEditando.usuario : estado.usuario.usuario,
+    formaPago
+  };
+  const accion = ventaEditando ? 'editar_fila' : 'agregar_fila';
+  const resultado = await apiPost({ accion, hoja: 'Ventas', id: ventaEditando ? ventaEditando.id : undefined, fila });
+  if (!resultado.ok) { mostrarToast('Error: ' + resultado.error); return; }
+
+  // Si el producto cambió respecto a la venta original, devolver el stock al producto viejo
+  if (ventaEditando && !mismoProductoQueAntes) {
+    const productoViejo = estado.productos.find(p => String(p.id) === String(ventaEditando.productoId));
+    if (productoViejo) {
+      const stockRestaurado = (Number(productoViejo.stock) || 0) + (Number(ventaEditando.cantidad) || 0);
+      await apiPost({
+        accion: 'editar_fila', hoja: 'Productos', id: productoViejo.id,
+        fila: filaProductoConStock(productoViejo, stockRestaurado)
+      });
+    }
+  }
+
+  // Descontar stock del producto actual de la venta (restando también el regalo si es el mismo producto)
+  const esMismoProductoQueElRegalo = producto && productoRegalo && String(producto.id) === String(productoRegalo.id);
+  if (producto) {
+    let nuevoStock = Math.max(stockDisponible - cantidad, 0);
+    if (esMismoProductoQueElRegalo) nuevoStock = Math.max(nuevoStock - cantidadRegalo, 0);
+    await apiPost({
+      accion: 'editar_fila', hoja: 'Productos', id: producto.id,
+      fila: filaProductoConStock(producto, nuevoStock)
+    });
+  }
+
+  // Regalo: se guarda como una segunda fila de Ventas, con precio en cero pero costo real
+  if (hayRegalo && productoRegalo) {
+    const filaRegalo = {
+      id: '',
+      fecha: ventaEditando ? ventaEditando.fecha : new Date().toISOString().slice(0, 10),
+      clienteId,
+      productoId: productoRegalo.id,
+      cantidad: cantidadRegalo,
+      costoUnitarioCRC: Number(productoRegalo.costoTotalCRC) || 0,
+      precioVenta: 0,
+      canal: document.getElementById('vCanal').value,
+      estadoEntrega: document.getElementById('vEstado').value,
+      usuario: estado.usuario.usuario,
+      formaPago: 'Regalía'
+    };
+    await apiPost({ accion: 'agregar_fila', hoja: 'Ventas', fila: filaRegalo });
+
+    if (!esMismoProductoQueElRegalo) {
+      const nuevoStockRegalo = Math.max(stockDisponibleRegalo - cantidadRegalo, 0);
+      await apiPost({
+        accion: 'editar_fila', hoja: 'Productos', id: productoRegalo.id,
+        fila: filaProductoConStock(productoRegalo, nuevoStockRegalo)
+      });
+    }
+  }
+
+  const mensajeGuardado = ventaEditando
+    ? 'Venta actualizada.'
+    : (hayRegalo ? 'Venta y regalo guardados.' : (formaPago === 'Regalía' ? 'Regalía guardada.' : 'Venta guardada.'));
+  mostrarToast(mensajeGuardado);
+  document.getElementById('formVenta').classList.add('oculto');
+  ventaEditando = null;
+  await cargarDatos();
+}
+
+// ---------- Finanzas ----------
+
+function renderMovimientos() {
+  const ingresos = estado.movimientos.filter(m => m.tipo === 'ingreso').reduce((s, m) => s + (Number(m.monto) || 0), 0)
+    + estado.ventas.reduce((s, v) => s + (Number(v.precioVenta) || 0), 0);
+  const gastos = estado.movimientos.filter(m => m.tipo === 'gasto').reduce((s, m) => s + (Number(m.monto) || 0), 0);
+  const aportes = estado.movimientos.filter(m => m.tipo === 'aporte').reduce((s, m) => s + (Number(m.monto) || 0), 0);
+
+  document.getElementById('fIngresos').textContent = formatoColones(ingresos);
+  document.getElementById('fGastos').textContent = formatoColones(gastos);
+  document.getElementById('fAportes').textContent = formatoColones(aportes);
+  document.getElementById('fSaldo').textContent = formatoColones(calcularSaldo());
+
+  const caja = document.getElementById('listaMovimientos');
+  if (!estado.movimientos.length) { caja.innerHTML = '<div class="vacio">Todavía no hay movimientos.</div>'; return; }
+  const ordenados = [...estado.movimientos].sort((a, b) => new Date(b.fecha) - new Date(a.fecha));
+  caja.innerHTML = tablaSimple(
+    ['Fecha', 'Tipo', 'Categoría', 'Monto', 'Descripción', 'Usuario', 'Acciones'],
+    ordenados.map(m => [
+      escaparHtml(m.fecha), escaparHtml(m.tipo), escaparHtml(m.categoria), formatoColones(m.monto),
+      escaparHtml(m.descripcion), escaparHtml(m.usuario),
+      botonesAccion('editarMovimiento', 'eliminarMovimiento', m.id)
+    ])
+  );
+}
+
+function nuevoMovimiento() {
+  movimientoEditando = null;
+  document.getElementById('mTipo').value = 'ingreso';
+  document.getElementById('mMonto').value = '';
+  document.getElementById('mCategoria').value = '';
+  document.getElementById('mDescripcion').value = '';
+  document.getElementById('btnGuardarMovimiento').textContent = 'Guardar movimiento';
+  document.getElementById('formMovimiento').classList.remove('oculto');
+}
+
+function editarMovimiento(id) {
+  const m = estado.movimientos.find(x => String(x.id) === String(id));
+  if (!m) return;
+  movimientoEditando = id;
+  document.getElementById('mTipo').value = m.tipo || 'ingreso';
+  document.getElementById('mMonto').value = m.monto || '';
+  document.getElementById('mCategoria').value = m.categoria || '';
+  document.getElementById('mDescripcion').value = m.descripcion || '';
+  document.getElementById('btnGuardarMovimiento').textContent = 'Guardar cambios';
+  document.getElementById('formMovimiento').classList.remove('oculto');
+}
+
+async function eliminarMovimiento(id) {
+  if (!confirm('¿Eliminar este movimiento? No se puede deshacer.')) return;
+  const resultado = await apiPost({ accion: 'eliminar_fila', hoja: 'Movimientos', id });
+  if (resultado.ok) { mostrarToast('Movimiento eliminado.'); await cargarDatos(); }
+  else mostrarToast('Error: ' + resultado.error);
+}
+
+async function guardarMovimiento() {
+  const fila = {
+    id: movimientoEditando || '',
+    fecha: new Date().toISOString().slice(0, 10),
+    tipo: document.getElementById('mTipo').value,
+    monto: parseMonto(document.getElementById('mMonto').value),
+    categoria: document.getElementById('mCategoria').value,
+    descripcion: document.getElementById('mDescripcion').value,
+    usuario: estado.usuario.usuario
+  };
+  const accion = movimientoEditando ? 'editar_fila' : 'agregar_fila';
+  const resultado = await apiPost({ accion, hoja: 'Movimientos', id: movimientoEditando, fila });
+  if (resultado.ok) {
+    mostrarToast(movimientoEditando ? 'Movimiento actualizado.' : 'Movimiento guardado.');
+    document.getElementById('formMovimiento').classList.add('oculto');
+    movimientoEditando = null;
+    await cargarDatos();
+  } else mostrarToast('Error: ' + resultado.error);
+}
+
+// ---------- Publicaciones ----------
+
+function renderContenido() {
+  const filtro = document.getElementById('filtroContenido') ? document.getElementById('filtroContenido').value : 'todas';
+  let lista = [...estado.contenido];
+  if (filtro === 'planeadas') lista = lista.filter(k => k.estado !== 'Publicado');
+  if (filtro === 'publicadas') lista = lista.filter(k => k.estado === 'Publicado');
+  lista.sort((a, b) => new Date(a.fecha) - new Date(b.fecha));
+
+  const caja = document.getElementById('listaContenido');
+  if (!lista.length) { caja.innerHTML = '<div class="vacio">Todavía no hay publicaciones planeadas.</div>'; return; }
+  caja.innerHTML = tablaSimple(
+    ['Fecha', 'Tipo', 'Formato', 'Producto', 'Descripción', 'Estado', 'Acciones'],
+    lista.map(k => [
+      escaparHtml(k.fecha), escaparHtml(k.tipo), escaparHtml(k.formato), escaparHtml(k.producto),
+      escaparHtml(k.descripcion),
+      k.estado === 'Publicado' ? '<span style="color:var(--sage);font-weight:600;">✅ Publicado</span>' : '<span style="color:var(--brown-soft);">🕓 Planeado</span>',
+      botonesAccion('editarPublicacion', 'eliminarPublicacion', k.id)
+    ])
+  );
+}
+
+function nuevaPublicacion() {
+  publicacionEditando = null;
+  document.getElementById('ktFecha').value = new Date().toISOString().slice(0, 10);
+  document.getElementById('ktTipo').value = 'Meme / relatable';
+  document.getElementById('ktFormato').value = 'Feed';
+  document.getElementById('ktProducto').value = 'General';
+  document.getElementById('ktEstado').value = 'Planeado';
+  document.getElementById('ktDescripcion').value = '';
+  document.getElementById('ktNotas').value = '';
+  document.getElementById('btnGuardarContenido').textContent = 'Guardar publicación';
+  document.getElementById('formContenido').classList.remove('oculto');
+}
+
+function editarPublicacion(id) {
+  const k = estado.contenido.find(x => String(x.id) === String(id));
+  if (!k) return;
+  publicacionEditando = id;
+  document.getElementById('ktFecha').value = k.fecha || '';
+  document.getElementById('ktTipo').value = k.tipo || 'Meme / relatable';
+  document.getElementById('ktFormato').value = k.formato || 'Feed';
+  document.getElementById('ktProducto').value = k.producto || 'General';
+  document.getElementById('ktEstado').value = k.estado || 'Planeado';
+  document.getElementById('ktDescripcion').value = k.descripcion || '';
+  document.getElementById('ktNotas').value = k.notas || '';
+  document.getElementById('btnGuardarContenido').textContent = 'Guardar cambios';
+  document.getElementById('formContenido').classList.remove('oculto');
+}
+
+async function eliminarPublicacion(id) {
+  if (!confirm('¿Eliminar esta publicación del calendario? No se puede deshacer.')) return;
+  const resultado = await apiPost({ accion: 'eliminar_fila', hoja: 'Contenido', id });
+  if (resultado.ok) { mostrarToast('Publicación eliminada.'); await cargarDatos(); }
+  else mostrarToast('Error: ' + resultado.error);
+}
+
+async function guardarPublicacion() {
+  const fila = {
+    id: publicacionEditando || '',
+    fecha: document.getElementById('ktFecha').value,
+    tipo: document.getElementById('ktTipo').value,
+    formato: document.getElementById('ktFormato').value,
+    producto: document.getElementById('ktProducto').value,
+    descripcion: document.getElementById('ktDescripcion').value,
+    estado: document.getElementById('ktEstado').value,
+    notas: document.getElementById('ktNotas').value,
+    usuario: estado.usuario.usuario
+  };
+  const accion = publicacionEditando ? 'editar_fila' : 'agregar_fila';
+  const resultado = await apiPost({ accion, hoja: 'Contenido', id: publicacionEditando, fila });
+  if (resultado.ok) {
+    mostrarToast(publicacionEditando ? 'Publicación actualizada.' : 'Publicación guardada.');
+    document.getElementById('formContenido').classList.add('oculto');
+    publicacionEditando = null;
+    await cargarDatos();
+  } else mostrarToast('Error: ' + resultado.error);
+}
+
+// ---------- Configuración ----------
+
+async function guardarConfig() {
+  const filas = estado.config.filter(c => c.clave !== 'tipoCambio')
+    .map(c => [c.clave, c.valor]);
+  filas.push(['tipoCambio', Number(document.getElementById('cfgTipoCambio').value) || 520]);
+  const resultado = await apiPost({ accion: 'reemplazar_todo', hoja: 'Config', filas });
+  if (resultado.ok) { mostrarToast('Configuración guardada.'); await cargarDatos(); }
+  else mostrarToast('Error: ' + resultado.error);
+}
+
+// ---------- Arranque ----------
+
+(function iniciar() {
+  const guardado = localStorage.getItem('avellana_usuario');
+  if (guardado) {
+    estado.usuario = JSON.parse(guardado);
+    entrarApp();
+  }
+})();
+</script>
+</body>
+</html>

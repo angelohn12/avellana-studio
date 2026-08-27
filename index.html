@@ -1056,7 +1056,11 @@ async function intentarCargarCatalogo(){
   const controlador = new AbortController();
   const corte = setTimeout(() => controlador.abort(), 20000);
   try {
-    const r = await fetch(CONFIG.API + '?accion=catalogo', { method:'GET', signal: controlador.signal });
+    // Antes iba directo a Apps Script (CONFIG.API) — ahora pasa por /api/catalogo,
+    // que vive en el mismo dominio y guarda una copia por 5 min compartida
+    // entre todas las visitas. Mucho más rápido y no depende de que Apps
+    // Script responda rápido en cada visita. Ver functions/api/catalogo.js.
+    const r = await fetch('/api/catalogo', { method:'GET', signal: controlador.signal });
     return await r.json();
   } catch (errFetch) {
     if (controlador.signal.aborted) throw Object.assign(new Error('tiempo agotado'), { agotado: true });
