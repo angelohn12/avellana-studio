@@ -70,6 +70,9 @@ const CONFIG = {
 
   POCAS_UNIDADES: 3,                // muestra "Pocas unidades" con esto o menos
   MAX_POR_PRODUCTO: 3,              // tope de unidades del mismo producto por pedido
+  MAX_POR_PRODUCTO_MAYOREO: 60,     // tope para productos con precio mayorista (igual que el servidor)
+  MINIMO_MAYOREO: 3,                // unidades del mismo producto (sumando tonos) para precio
+                                    // mayorista — se reemplaza por el que manda el servidor
 
   DIAS_DEFECTO: 1,                  // plazo para reportar defecto de fábrica
   INSTAGRAM: 'avellana.sstudio',
@@ -424,6 +427,18 @@ header{
   letter-spacing:.06em;background:var(--coral);color:#FFF;padding:2px 6px;border-radius:3px;
   margin-left:7px;vertical-align:middle;
 }
+/* Precio al por mayor: debajo del precio normal, en salvia para que se
+   distinga del descuento (coral) sin competir con él. */
+.prod-mayoreo{font-size:11.5px;color:var(--salvia);margin-top:3px;line-height:1.35;font-variant-numeric:tabular-nums}
+.prod-mayoreo b{font-weight:700}
+.prod-mayoreo span{color:var(--tinta-3)}
+.tag-mayoreo{
+  display:inline-flex;align-items:center;font-family:"DM Mono",monospace;font-size:9.5px;font-weight:600;
+  letter-spacing:.06em;background:var(--salvia);color:#FFF;padding:2px 6px;border-radius:3px;
+  margin-left:7px;vertical-align:middle;
+}
+.lc-antes{color:var(--tinta-3);text-decoration:line-through;margin-left:6px}
+.lc-pista{font-size:11.5px;color:var(--salvia);margin-top:3px;line-height:1.35}
 
 /* Tarjeta e nombre de producto también abren la ficha de detalle */
 .prod-img[data-ver],.prod-nombre[data-ver]{cursor:pointer}
@@ -1001,6 +1016,32 @@ const precioHtml = (p) => {
   return `<span class="prod-precio-antes">${colones(p.precioVenta)}</span><span class="prod-precio-ahora">${colones(precioFinal(p))}</span><span class="tag-descuento">-${pct}%</span>`;
 };
 
+/* ── mayoreo ─────────────────────────
+   Un producto con precio mayorista baja a ese precio cuando el carrito
+   lleva el mínimo (CONFIG.MINIMO_MAYOREO) de ese mismo producto, sumando
+   todos sus tonos. Es la misma regla que aplica el servidor al guardar el
+   pedido: el servidor recalcula siempre, esto es solo para mostrarlo. */
+const claveGrupo = (p) => (p.marca || '').trim().toLowerCase() + '|' + (p.nombre || '').trim().toLowerCase();
+const tieneMayoreo = (p) => Number(p?.precioMayorista) > 0 && p.modalidad !== 'encargo';
+
+function unidadesMayoreoEnCarrito(clave){
+  return Object.entries(CARRITO).reduce((a, [id, n]) => {
+    const x = PRODUCTOS.find(q => String(q.id) === String(id));
+    return a + (x && tieneMayoreo(x) && claveGrupo(x) === clave ? n : 0);
+  }, 0);
+}
+const aplicaMayoreo = (p) => tieneMayoreo(p) && unidadesMayoreoEnCarrito(claveGrupo(p)) >= CONFIG.MINIMO_MAYOREO;
+// Precio por unidad que se cobra en el carrito (mayorista si ya llegó al mínimo)
+const precioCarrito = (p) => aplicaMayoreo(p) ? Number(p.precioMayorista) : precioFinal(p);
+// El tope de 3 es para compras al detalle; con precio mayorista se puede pedir en cantidad
+const topeMaximo = (p) => tieneMayoreo(p) ? CONFIG.MAX_POR_PRODUCTO_MAYOREO : CONFIG.MAX_POR_PRODUCTO;
+const topeDe = (p) => Math.min(topeMaximo(p), Number(p.stock) || 0);
+
+function mayoreoHtml(p, conTonos){
+  if (!tieneMayoreo(p)) return '';
+  return `<div class="prod-mayoreo">Al por mayor <b>${colones(p.precioMayorista)}</b> c/u desde ${CONFIG.MINIMO_MAYOREO}${conTonos ? ' <span>· podés combinar tonos</span>' : ''}</div>`;
+}
+
 function esc(t){
   return String(t == null ? '' : t)
     .replace(/&/g,'&amp;').replace(/</g,'&lt;').replace(/>/g,'&gt;')
@@ -1126,6 +1167,7 @@ async function cargarCatalogo(){
     // si alguien apaga un producto, no aparece ni por accidente.
     PRODUCTOS = d.productos.filter(estaPublicado);
     if (!PRODUCTOS.length) throw new Error('catálogo vacío');
+    if (Number(d.minimoMayorista) >= 2) CONFIG.MINIMO_MAYOREO = Number(d.minimoMayorista);
   } catch (e) {
     // En producción, nunca mostrar "Vista de prueba" — solo avisar que hay un problema
     // técnico y pedir que recarguen. El catálogo de ejemplo es solo para desarrollo.
@@ -1151,7 +1193,7 @@ function limpiarCarritoFantasma(){
   Object.keys(CARRITO).forEach(id => {
     const p = PRODUCTOS.find(x => String(x.id) === String(id));
     if (!p || (Number(p.stock) || 0) <= 0){ delete CARRITO[id]; cambio = true; return; }
-    const tope = Math.min(CONFIG.MAX_POR_PRODUCTO, Number(p.stock) || 0);
+    const tope = topeDe(p);
     if (CARRITO[id] > tope){ CARRITO[id] = tope; cambio = true; }
   });
   if (cambio) guardarCarrito();
@@ -1379,7 +1421,7 @@ function pintarGrilla(reanimar = false){
     const p = varianteActiva(grupo); // la variante (tono) que se muestra ahora mismo
     const est  = estadoStock(p);
     const enCarrito = CARRITO[p.id] || 0;
-    const tope = Math.min(CONFIG.MAX_POR_PRODUCTO, Number(p.stock) || 0);
+    const tope = topeDe(p);
 
     let control;
     if (!est.hay){
@@ -1413,6 +1455,7 @@ function pintarGrilla(reanimar = false){
         <div class="prod-nombre" data-ver="${esc(p.id)}" role="button" tabindex="0">${esc(p.nombre)}</div>
         ${selector}
         <div class="prod-precio">${precioHtml(p)}</div>
+        ${est.hay ? mayoreoHtml(p, false) : ''}
         <span class="etiqueta ${est.clase}">${est.texto}</span>
         ${control}
       </div>
@@ -1442,7 +1485,7 @@ function htmlDetalleProducto(p){
   const grupo = grupoDeProducto(p);
   const est = estadoStock(p);
   const enCarrito = CARRITO[p.id] || 0;
-  const tope = Math.min(CONFIG.MAX_POR_PRODUCTO, Number(p.stock) || 0);
+  const tope = topeDe(p);
 
   let control;
   if (!est.hay){
@@ -1481,6 +1524,7 @@ function htmlDetalleProducto(p){
     ${(p.marca || (grupo.variantes.length <= 1 && p.tono)) ? `<div class="prod-marca">${[p.marca, grupo.variantes.length <= 1 ? p.tono : null].filter(Boolean).join(' · ')}</div>` : ''}
     ${selectorTono}
     <div class="prod-precio">${precioHtml(p)}</div>
+    ${est.hay ? mayoreoHtml(p, grupo.variantes.length > 1) : ''}
     <span class="etiqueta ${est.clase}">${est.texto}</span>
     ${p.medida ? `<div class="detalle-medida">${esc(p.medida)}</div>` : ''}
     ${p.descripcion ? `<p class="detalle-descripcion">${esc(p.descripcion)}</p>` : ''}
@@ -1508,13 +1552,13 @@ function refrescarDetalleAbierto(id){
 function agregar(id, n = 1){
   const p = PRODUCTOS.find(x => String(x.id) === String(id));
   if (!p) return;
-  const tope = Math.min(CONFIG.MAX_POR_PRODUCTO, Number(p.stock) || 0);
+  const tope = topeDe(p);
   const actual = CARRITO[id] || 0;
   const nuevo = Math.max(0, Math.min(tope, actual + n));
 
   if (n > 0 && nuevo === actual){
-    brindis(actual >= CONFIG.MAX_POR_PRODUCTO
-      ? `Máximo ${CONFIG.MAX_POR_PRODUCTO} por pedido`
+    brindis(actual >= topeMaximo(p)
+      ? `Máximo ${topeMaximo(p)} por pedido`
       : 'No queda más de este producto');
     return;
   }
@@ -1545,8 +1589,11 @@ function totalUnidades(){
 function subtotal(){
   return Object.entries(CARRITO).reduce((a, [id, n]) => {
     const p = PRODUCTOS.find(x => String(x.id) === String(id));
-    return a + (p ? precioFinal(p) * n : 0);
+    return a + (p ? precioCarrito(p) * n : 0);
   }, 0);
+}
+function hayMayoreoEnCarrito(){
+  return lineasCarrito().some(({p}) => aplicaMayoreo(p));
 }
 function lineasCarrito(){
   return Object.entries(CARRITO).map(([id, n]) => {
@@ -1639,17 +1686,34 @@ function verCarrito(){
     abrirHoja('Tu carrito', `<div class="vacio"><strong>Tu carrito está vacío</strong>Agregá productos del catálogo para hacer tu pedido.</div>`);
     return;
   }
+  // La pista "te faltan N para mayoreo" va una sola vez por producto, aunque
+  // en el carrito haya varios tonos de él.
+  const pistasDadas = new Set();
+  const pista = (p) => {
+    const clave = claveGrupo(p);
+    if (!tieneMayoreo(p) || aplicaMayoreo(p) || pistasDadas.has(clave)) return '';
+    pistasDadas.add(clave);
+    const falta = CONFIG.MINIMO_MAYOREO - unidadesMayoreoEnCarrito(clave);
+    return `<div class="lc-pista">Agregá ${falta} más de este producto (cualquier tono) y pagás ${colones(p.precioMayorista)} c/u</div>`;
+  };
   const html = `
-    ${lineas.map(({p, n}) => `
+    ${lineas.map(({p, n}) => {
+      const mayor = aplicaMayoreo(p);
+      const etiqueta = mayor
+        ? ` <span class="tag-mayoreo">MAYOREO</span><span class="lc-antes">${colones(precioFinal(p))}</span>`
+        : (Number(p.descuento) > 0 ? ` <span class="tag-descuento">-${Number(p.descuento)}%</span>` : '');
+      return `
       <div class="linea-carrito">
         <div class="mini">${tarjetaFoto(p, 150)}</div>
         <div>
-          <div class="lc-nombre">${esc(p.nombre)}</div>
-          <div class="lc-precio">${n} × ${colones(precioFinal(p))}${Number(p.descuento) > 0 ? ` <span class="tag-descuento">-${Number(p.descuento)}%</span>` : ''}</div>
+          <div class="lc-nombre">${esc(p.nombre)}${p.tono ? ` <span style="font-weight:400">· ${esc(p.tono)}</span>` : ''}</div>
+          <div class="lc-precio">${n} × ${colones(precioCarrito(p))}${etiqueta}</div>
+          ${pista(p)}
           <button class="lc-quitar" type="button" data-quitar="${esc(p.id)}">Quitar</button>
         </div>
-        <div class="lc-total">${colones(precioFinal(p) * n)}</div>
-      </div>`).join('')}
+        <div class="lc-total">${colones(precioCarrito(p) * n)}</div>
+      </div>`;
+    }).join('')}
     <div class="resumen">
       <div class="r-fila"><span>Productos</span><span>${colones(subtotal())}</span></div>
       <div class="r-fila"><span>Envío</span><span>Se calcula en el siguiente paso</span></div>
@@ -1802,6 +1866,13 @@ function refrescarTotales(){
       : `<b>Acá no se paga nada.</b> Armamos tu pedido, te escribimos por WhatsApp
          desde el ${esc(CONFIG.WHATSAPP_VISIBLE)} para confirmar el total, y ahí coordinamos
          el pago por <b>SINPE Móvil</b>.`;
+    // Al por mayor no hay pagos en partes: se paga completo antes del envío,
+    // o al recibirlo si se retira en persona.
+    if (hayMayoreoEnCarrito()) {
+      aviso.innerHTML += e.modo === 'retiro'
+        ? `<br><br><b>Compra al por mayor:</b> se paga completa al retirar (podés revisar los productos ahí mismo).`
+        : `<br><br><b>Compra al por mayor:</b> se paga completa antes del envío.`;
+    }
   }
 }
 
@@ -1874,8 +1945,8 @@ function armarPedido(){
   const e = envioActual();
   const items = lineasCarrito().map(({p, n}) => ({
     id: p.id, nombre: p.nombre, marca: p.marca || '', tono: p.tono || '',
-    cantidad: n, precioUnitario: precioFinal(p),
-    subtotal: precioFinal(p) * n
+    cantidad: n, precioUnitario: precioCarrito(p),
+    subtotal: precioCarrito(p) * n
   }));
   const envio = e.indefinido ? 0 : e.monto;
 
@@ -1921,6 +1992,14 @@ async function enviarPedido(ev){
       const d = await r.json();
       if (!d || !d.ok) throw new Error(d && d.error ? d.error : 'no se pudo guardar');
       numero = d.numero || null;
+      // Los montos que valen son los del servidor (recalcula precios, mayoreo
+      // y envío). Si por algo no coinciden con los del carrito, la clienta ve
+      // en la confirmación el total que de verdad se le va a cobrar.
+      if (typeof d.total === 'number') {
+        pedido.total = d.total;
+        if (typeof d.envio === 'number') pedido.envio = d.envio;
+        pedido.subtotal = typeof d.subtotal === 'number' ? d.subtotal : d.total - pedido.envio;
+      }
       // El SINPE lo manda el servidor recién ahora, con el pedido ya guardado
       // — nunca vive escrito fijo en esta página.
       pedido.sinpe = Array.isArray(d.sinpe) ? d.sinpe : [];
