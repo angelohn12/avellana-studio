@@ -60,8 +60,14 @@ const CONFIG = {
   // Endpoint del Apps Script (el mismo del dashboard)
   API: 'https://script.google.com/macros/s/AKfycbxQVdDsH_Qgg9MnRgb0rDyzYPkvRESEi2FGD-ENHeT9L7CMbZl_xTaVxDs0wfNe3tflMg/exec',
 
+  // Los dos números desde los que les escribimos a las clientas (Anyelo y
+  // Belén). Hay que nombrar los DOS en todos lados: una clienta pensó que su
+  // pedido no había entrado porque la página decía que le iba a escribir el
+  // 7018 5274 y le escribieron desde el 6161 3486.
   WHATSAPP: '50670185274',          // sin espacios ni guiones, con el 506
   WHATSAPP_VISIBLE: '7018 5274',
+  WHATSAPP_2: '50661613486',
+  WHATSAPP_2_VISIBLE: '6161 3486',
 
   RETIRO: 'San José, Goicoechea, Calle Blancos, Barrio Montelimar, avenida 43, frente a la Escuela de Natación Montelimar',
 
@@ -662,6 +668,12 @@ fieldset{border:0;padding:0;margin:0 0 18px}
   padding:13px 15px;margin:18px 0 0;font-size:12.5px;line-height:1.6;color:var(--tinta-2);
 }
 .aviso b{font-weight:600;color:var(--tinta)}
+/* Error al mandar un pedido: queda fijo en el formulario (el brindis de
+   abajo se va solo a los 2 segundos y se podía perder) */
+.aviso.error{background:#FBE3E6;border-left-color:#A5323F;color:#5a1d24}
+.aviso.ok{background:#E8F4EA;border-left-color:var(--salvia)}
+.wa-dos{display:grid;grid-template-columns:1fr 1fr;gap:8px;margin-top:4px}
+.wa-dos .btn-grande{font-size:12px;letter-spacing:.04em}
 
 /* ── SINPE en la pantalla de confirmación ──── */
 .sinpe-caja{
@@ -859,8 +871,8 @@ details[open] summary::after{content:"−"}
         <ol>
           <li>Elegí tus productos y agregalos al carrito.</li>
           <li>Confirmá el pedido con tu nombre y WhatsApp. <b>Todavía no pagás nada.</b></li>
-          <li>Te escribimos por WhatsApp cuando el pedido esté armado, con el monto final.</li>
-          <li>Pagás por SINPE Móvil y nos mandás el comprobante.</li>
+          <li>Te escribimos por WhatsApp desde el <b class="numerosWhats"></b> (cualquiera de los dos es nuestro), con el monto final.</li>
+          <li>Pagás por SINPE Móvil y nos mandás el comprobante. Si retirás en nuestro punto, también podés pagar en efectivo al retirar.</li>
           <li>Coordinamos la entrega o el envío.</li>
         </ol>
       </div>
@@ -869,7 +881,7 @@ details[open] summary::after{content:"−"}
     <details>
       <summary>Formas de pago</summary>
       <div class="detalle">
-        <p>Recibimos <b>SINPE Móvil</b> únicamente.</p>
+        <p>Recibimos <b>SINPE Móvil</b>. Si retirás en nuestro punto, también podés pagar en <b>efectivo</b> al retirar.</p>
         <p>El número para el SINPE te lo mostramos apenas confirmás tu pedido — así podés pagar de una vez, sin esperar a que te escribamos. <b>Nunca lo mostramos antes de que hagas un pedido real</b>, y tampoco te vamos a pedir datos de tarjeta ni de cuenta bancaria por acá.</p>
       </div>
     </details>
@@ -1047,6 +1059,24 @@ function mayoreoHtml(p, conTonos){
     ? `<s class="mayoreo-antes">${colones(p.precioMayoristaBase)}</s> ` : '';
   const tag = antes ? ` <span class="tag-descuento">-${pct}%</span>` : '';
   return `<div class="prod-mayoreo">Al por mayor ${antes}<b>${colones(p.precioMayorista)}</b>${tag} c/u desde ${CONFIG.MINIMO_MAYOREO}${conTonos ? ' <span>· podés combinar tonos</span>' : ''}</div>`;
+}
+
+// "7018 5274 o el 6161 3486" — para los textos de "te escribimos desde…"
+const numerosWhatsapp = () => CONFIG.WHATSAPP_VISIBLE + ' o el ' + CONFIG.WHATSAPP_2_VISIBLE;
+
+// Teléfono de la clienta en 8 dígitos. Acepta que lo escriba con +506 o
+// 506 adelante (antes eso se rechazaba con "Escribí un número de 8 dígitos").
+function telefonoLimpio(valor){
+  let t = String(valor || '').replace(/\D/g, '');
+  if (t.length === 11 && t.startsWith('506')) t = t.slice(3);
+  return t;
+}
+
+// Para buscar sin que importen las tildes ni los apóstrofes: así "loreal"
+// encuentra "L'Oréal" y "acido" encuentra "ácido".
+function sinTildes(t){
+  return String(t || '').normalize('NFD').replace(/[̀-ͯ]/g, '')
+    .replace(/['’`´]/g, '').toLowerCase();
 }
 
 function esc(t){
@@ -1329,7 +1359,7 @@ function actualizarFiltrosActivos(){
 }
 
 function productosVisibles(){
-  const q = BUSQUEDA.trim().toLowerCase();
+  const q = sinTildes(BUSQUEDA.trim());
   const rango = RANGOS_PRECIO.find(r => r.id === PRECIO);
   return PRODUCTOS.filter(p => {
     if (CATEGORIA !== 'Todo' && p.categoria !== CATEGORIA) return false;
@@ -1340,8 +1370,8 @@ function productosVisibles(){
       if (rango.max != null && precio >= rango.max) return false;
     }
     if (!q) return true;
-    return [p.nombre, p.marca, p.categoria, p.tono, p.descripcion]
-      .filter(Boolean).join(' ').toLowerCase().includes(q);
+    return sinTildes([p.nombre, p.marca, p.categoria, p.tono, p.descripcion]
+      .filter(Boolean).join(' ')).includes(q);
   });
 }
 
@@ -1825,7 +1855,7 @@ function verCheckout(){
 
       <div class="aviso" id="avisoFormaPago">
         <b>Acá no se paga nada.</b> Armamos tu pedido, te escribimos por WhatsApp
-        desde el ${esc(CONFIG.WHATSAPP_VISIBLE)} para confirmar el total, y ahí coordinamos el pago.
+        desde el <b>${esc(numerosWhatsapp())}</b> para confirmar el total, y ahí coordinamos el pago.
       </div>
 
       <button class="btn-grande" type="submit" id="btnConfirmar">Confirmar pedido</button>
@@ -1868,10 +1898,10 @@ function refrescarTotales(){
   if (aviso) {
     aviso.innerHTML = e.modo === 'retiro'
       ? `<b>Acá no se paga nada.</b> Armamos tu pedido, te escribimos por WhatsApp
-         desde el ${esc(CONFIG.WHATSAPP_VISIBLE)} para confirmar el total, y ahí coordinás
+         desde el <b>${esc(numerosWhatsapp())}</b> para confirmar el total, y ahí coordinás
          el pago en <b>efectivo o SINPE Móvil</b> al retirar.`
       : `<b>Acá no se paga nada.</b> Armamos tu pedido, te escribimos por WhatsApp
-         desde el ${esc(CONFIG.WHATSAPP_VISIBLE)} para confirmar el total, y ahí coordinamos
+         desde el <b>${esc(numerosWhatsapp())}</b> para confirmar el total, y ahí coordinamos
          el pago por <b>SINPE Móvil</b>.`;
     // Al por mayor no hay pagos en partes: se paga completo antes del envío,
     // o al recibirlo si se retira en persona.
@@ -1918,7 +1948,7 @@ function validar(){
   marcarError('nombre', nombre.length < 2);
   if (nombre.length < 2) fallos.push('nombre');
 
-  const tel = $('#telefono').value.replace(/\D/g, '');
+  const tel = telefonoLimpio($('#telefono').value);
   const telOk = tel.length === 8;
   marcarError('telefono', !telOk);
   if (!telOk) fallos.push('telefono');
@@ -1963,7 +1993,7 @@ function armarPedido(){
                 : e.modo === 'expres' ? 'Mensajería Uber Flash (a cotizar)'
                 : (e.dentroGAM ? 'Correos · dentro del GAM' : 'Correos · fuera del GAM'),
     nombre:    $('#nombre').value.trim(),
-    telefono:  $('#telefono').value.replace(/\D/g, ''),
+    telefono:  telefonoLimpio($('#telefono').value),
     correo:    $('#correo').value.trim(),
     provincia: e.modo === 'correos' ? ($('#provincia')?.value || '') : '',
     canton:    e.modo === 'correos' ? ($('#canton')?.value || '') : '',
@@ -1974,6 +2004,76 @@ function armarPedido(){
     envio,
     total: subtotal() + envio
   };
+}
+
+// Manda un pedido o encargo al servidor, reintentando si la respuesta no
+// llega bien. Por qué: el pedido puede quedar GUARDADO aunque la respuesta
+// no le llegue a la clienta (Google a veces devuelve una página de error en
+// vez de la respuesta, o la señal del celular se corta mientras el servidor
+// todavía está mandando el correo). Pasó en la vida real: le salió "No se
+// pudo enviar", lo mandó otra vez, y llegaron dos pedidos iguales.
+// Reintentar es seguro: el servidor reconoce el mismo pedido repetido
+// (misma clienta, mismos productos, menos de 30 min) y devuelve el número
+// del primero en vez de crear otro; con los encargos, ignora los repetidos.
+// Si el servidor SÍ respondió y dijo que no (ej. "un producto ya no está
+// disponible"), no se reintenta: se le muestra ese motivo a la clienta.
+async function enviarAlServidor(cuerpo, alReintentar){
+  const INTENTOS = 3;
+  let ultimoError = null;
+  for (let intento = 1; intento <= INTENTOS; intento++){
+    if (intento > 1){
+      if (alReintentar) alReintentar(intento);
+      await new Promise(r => setTimeout(r, 1500 * (intento - 1)));
+    }
+    const controlador = new AbortController();
+    const corte = setTimeout(() => controlador.abort(), 45000); // Apps Script a veces tarda ~25 s
+    try {
+      const r = await fetch(CONFIG.API, {
+        method:'POST',
+        headers:{ 'Content-Type':'text/plain;charset=utf-8' },
+        body: JSON.stringify(cuerpo),
+        signal: controlador.signal
+      });
+      const texto = await r.text();
+      let d;
+      try { d = JSON.parse(texto); } catch { throw new Error('respuesta no válida del servidor'); }
+      if (d && d.ok) return d;
+      const e = new Error((d && d.error) || 'no se pudo guardar');
+      e.delServidor = true;
+      throw e;
+    } catch (err) {
+      if (err.delServidor) throw err;
+      ultimoError = err;
+    } finally {
+      clearTimeout(corte);
+    }
+  }
+  throw ultimoError || new Error('sin conexión');
+}
+
+// Mensaje de error que QUEDA en el formulario (el brindis de abajo se va
+// solo a los 2 segundos y la clienta podía no leerlo).
+function mostrarErrorEnvio(form, mensaje){
+  if (!form) return;
+  let caja = form.querySelector('.aviso.error');
+  if (!caja){
+    caja = document.createElement('div');
+    caja.className = 'aviso error';
+    caja.setAttribute('role', 'alert');
+    const boton = form.querySelector('button[type="submit"]');
+    form.insertBefore(caja, boton);
+  }
+  caja.innerHTML = mensaje;
+  caja.scrollIntoView({ behavior:'smooth', block:'center' });
+}
+
+function mensajeErrorEnvio(err, queEs){
+  const contacto = `escribinos al <b>${esc(CONFIG.WHATSAPP_VISIBLE)}</b> o al <b>${esc(CONFIG.WHATSAPP_2_VISIBLE)}</b>`;
+  if (err && err.delServidor){
+    return `<b>No se pudo hacer ${queEs}:</b> ${esc(err.message)}. Revisalo y probá de nuevo, o ${contacto}.`;
+  }
+  return `<b>No pudimos confirmar ${queEs} por un problema de conexión.</b> Tocá el botón otra vez:
+    si ya había entrado, no se duplica. Si sigue fallando, ${contacto}.`;
 }
 
 async function enviarPedido(ev){
@@ -1991,14 +2091,10 @@ async function enviarPedido(ev){
 
   if (!MODO_DEMO){
     try {
-      const r = await fetch(CONFIG.API, {
-        method:'POST',
-        headers:{ 'Content-Type':'text/plain;charset=utf-8' },
-        body: JSON.stringify({ accion:'crear_pedido', pedido })
-      });
-      const d = await r.json();
-      if (!d || !d.ok) throw new Error(d && d.error ? d.error : 'no se pudo guardar');
+      const d = await enviarAlServidor({ accion:'crear_pedido', pedido },
+        () => { btn.textContent = 'Seguimos intentando, no cierres esta página…'; });
       numero = d.numero || null;
+      pedido.repetido = !!d.repetido;
       // Los montos que valen son los del servidor (recalcula precios, mayoreo
       // y envío). Si por algo no coinciden con los del carrito, la clienta ve
       // en la confirmación el total que de verdad se le va a cobrar.
@@ -2014,7 +2110,7 @@ async function enviarPedido(ev){
       ENVIANDO = false;
       btn.disabled = false;
       btn.textContent = 'Confirmar pedido';
-      brindis('No se pudo enviar. Probá de nuevo o escribinos por WhatsApp.');
+      mostrarErrorEnvio($('#formPedido'), mensajeErrorEnvio(err, 'tu pedido'));
       return;
     }
   }
@@ -2036,7 +2132,9 @@ async function enviarPedido(ev){
 
 function verConfirmacion(numero, pedido){
   const fecha = new Date().toLocaleDateString('es-CR', { day:'numeric', month:'long', year:'numeric' });
-  const texto = encodeURIComponent(`¡Hola! Acabo de hacer el pedido ${numero} en la tienda 💛`);
+  // Sin emoji: el corazón se rompía al abrir el link de WhatsApp (salía un símbolo raro).
+  const texto = encodeURIComponent(`¡Hola! Acabo de hacer el pedido ${numero} en la tienda Avellana Studio.`);
+  const esRetiro = pedido.entrega === 'retiro';
   const html = `
     <div class="listo">
       <div class="marca-ok">
@@ -2045,11 +2143,15 @@ function verConfirmacion(numero, pedido){
       <h3>Pedido recibido</h3>
       <div class="num">${esc(numero)} · ${esc(fecha)}</div>
 
+      ${pedido.repetido ? `<div class="aviso ok" style="margin:0 0 14px"><b>Tu pedido ya había entrado</b> — no se duplicó. Es el mismo ${esc(numero)}.</div>` : ''}
+
       <div class="pasos">
         <div class="paso"><i>1</i><p><b>Ya quedó guardado.</b> Revisamos que todo esté en stock.</p></div>
-        <div class="paso"><i>2</i><p><b>Pagás por SINPE Móvil</b> el monto exacto de abajo${pedido.entrega === 'expres' ? ' (el envío se cotiza aparte)' : ''} y nos mandás el comprobante por WhatsApp.</p></div>
-        <div class="paso"><i>3</i><p><b>Te confirmamos</b> en horario de ${esc(CONFIG.HORA_ATENCION)}. Si pagaste fuera de ese horario no perdés nada esperando: tu pedido ya está guardado, apenas abramos lo revisamos.</p></div>
-        <div class="paso"><i>4</i><p><b>${pedido.entrega === 'retiro' ? 'Coordinamos el retiro' : 'Lo enviamos'}</b>${pedido.entrega === 'correos' ? ' y te pasamos el número de guía' : ''}.</p></div>
+        <div class="paso"><i>2</i><p><b>Te escribimos por WhatsApp</b> desde el <b>${esc(numerosWhatsapp())}</b> (cualquiera de los dos es nuestro), en horario de ${esc(CONFIG.HORA_ATENCION)}. Si pediste fuera de ese horario no perdés nada esperando: tu pedido ya está guardado.</p></div>
+        <div class="paso"><i>3</i><p>${esRetiro
+          ? `<b>Pagás al retirar</b>, en efectivo o SINPE Móvil. Si preferís adelantar el pago por SINPE, abajo están los números.`
+          : `<b>Pagás por SINPE Móvil</b> el monto exacto de abajo${pedido.entrega === 'expres' ? ' (el envío se cotiza aparte)' : ''} y nos mandás el comprobante por WhatsApp.`}</p></div>
+        <div class="paso"><i>4</i><p><b>${esRetiro ? 'Coordinamos el retiro' : 'Lo enviamos'}</b>${pedido.entrega === 'correos' ? ' y te pasamos el número de guía' : ''}.</p></div>
       </div>
 
       <div class="resumen">
@@ -2073,8 +2175,13 @@ function verConfirmacion(numero, pedido){
 
       ${MODO_DEMO ? `<div class="aviso"><b>Vista de prueba.</b> Este pedido no se guardó en ningún lado — la tienda todavía no está conectada.</div>` : ''}
 
-      <a class="btn-grande" style="display:block;text-align:center;text-decoration:none"
-         href="https://wa.me/${esc(CONFIG.WHATSAPP)}?text=${texto}" target="_blank" rel="noopener">Escribirnos por WhatsApp</a>
+      <p style="margin:18px 0 8px;font-size:12.5px;color:var(--tinta-2);text-align:center">¿Querés escribirnos vos? Cualquiera de los dos números:</p>
+      <div class="wa-dos">
+        <a class="btn-grande" style="display:block;text-align:center;text-decoration:none"
+           href="https://wa.me/${esc(CONFIG.WHATSAPP)}?text=${texto}" target="_blank" rel="noopener">WhatsApp ${esc(CONFIG.WHATSAPP_VISIBLE)}</a>
+        <a class="btn-grande" style="display:block;text-align:center;text-decoration:none"
+           href="https://wa.me/${esc(CONFIG.WHATSAPP_2)}?text=${texto}" target="_blank" rel="noopener">WhatsApp ${esc(CONFIG.WHATSAPP_2_VISIBLE)}</a>
+      </div>
       <button class="btn-suave" type="button" id="seguirComprando">Volver a la tienda</button>
     </div>`;
   abrirHoja('Pedido confirmado', html);
@@ -2209,7 +2316,7 @@ function verCheckoutEncargo(){
       </div>
 
       <div class="aviso" id="avisoFormaPago">
-        <b>Acá no se paga nada.</b> Te escribimos por WhatsApp
+        <b>Acá no se paga nada.</b> Te escribimos por WhatsApp desde el <b>${esc(numerosWhatsapp())}</b>
         para confirmar precio y tiempo de entrega de cada producto antes de pedirte nada.
       </div>
 
@@ -2226,7 +2333,7 @@ function validarEncargo(){
   marcarError('enNombre', nombre.length < 2);
   if (nombre.length < 2) fallos.push('enNombre');
 
-  const tel = $('#enTelefono').value.replace(/\D/g, '');
+  const tel = telefonoLimpio($('#enTelefono').value);
   const telOk = tel.length === 8;
   marcarError('enTelefono', !telOk);
   if (!telOk) fallos.push('enTelefono');
@@ -2250,23 +2357,18 @@ async function enviarSolicitudEncargo(ev){
   btn.textContent = 'Enviando…';
 
   const nombre = $('#enNombre').value.trim();
-  const telefono = $('#enTelefono').value.replace(/\D/g, '');
+  const telefono = telefonoLimpio($('#enTelefono').value);
   const productos = ENCARGOS.slice();
 
   if (!MODO_DEMO){
     try {
-      const r = await fetch(CONFIG.API, {
-        method:'POST',
-        headers:{ 'Content-Type':'text/plain;charset=utf-8' },
-        body: JSON.stringify({ accion:'crear_solicitud_lote', solicitud:{ productos, nombre, telefono } })
-      });
-      const d = await r.json();
-      if (!d || !d.ok) throw new Error(d && d.error ? d.error : 'no se pudo guardar');
+      await enviarAlServidor({ accion:'crear_solicitud_lote', solicitud:{ productos, nombre, telefono } },
+        () => { btn.textContent = 'Seguimos intentando…'; });
     } catch (err) {
       ENVIANDO = false;
       btn.disabled = false;
       btn.textContent = 'Confirmar encargo';
-      brindis('No se pudo enviar. Probá de nuevo o escribinos por WhatsApp.');
+      mostrarErrorEnvio($('#formEncargos'), mensajeErrorEnvio(err, 'tu encargo'));
       return;
     }
   }
@@ -2288,7 +2390,7 @@ function verConfirmacionEncargo(productos){
 
       <div class="pasos">
         <div class="paso"><i>1</i><p><b>Ya quedó guardado.</b> Revisamos precio y tiempo de entrega de cada producto.</p></div>
-        <div class="paso"><i>2</i><p><b>Te escribimos por WhatsApp</b> en horario de ${esc(CONFIG.HORA_ATENCION)} para confirmarte todo.</p></div>
+        <div class="paso"><i>2</i><p><b>Te escribimos por WhatsApp</b> desde el <b>${esc(numerosWhatsapp())}</b> (cualquiera de los dos es nuestro), en horario de ${esc(CONFIG.HORA_ATENCION)}, para confirmarte todo.</p></div>
         <div class="paso"><i>3</i><p><b>Ahí coordinamos</b> el adelanto y el tiempo de entrega.</p></div>
       </div>
 
@@ -2401,7 +2503,8 @@ const DEMO = [
 
 /* ── arranque ───────────────────────── */
 $('#pieRetiro').textContent = CONFIG.RETIRO + '.';
-$('#pieWhats').textContent  = 'WhatsApp ' + CONFIG.WHATSAPP_VISIBLE;
+$('#pieWhats').textContent  = 'WhatsApp ' + CONFIG.WHATSAPP_VISIBLE + ' · ' + CONFIG.WHATSAPP_2_VISIBLE;
+$$('.numerosWhats').forEach(el => { el.textContent = numerosWhatsapp(); });
 $('#pieEncargoDias').textContent = CONFIG.ENCARGO_DIAS_MIN + ' a ' + CONFIG.ENCARGO_DIAS_MAX;
 $('#pieEncargoPct').textContent  = CONFIG.ENCARGO_ADELANTO_PCT;
 cargarCatalogo();
