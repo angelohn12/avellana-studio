@@ -432,6 +432,8 @@ header{
 .prod-mayoreo{font-size:11.5px;color:var(--salvia);margin-top:3px;line-height:1.35;font-variant-numeric:tabular-nums}
 .prod-mayoreo b{font-weight:700}
 .prod-mayoreo span{color:var(--tinta-3)}
+.prod-mayoreo .mayoreo-antes{color:var(--tinta-3);font-weight:400}
+.prod-mayoreo .tag-descuento{margin-left:4px;color:#FFF}
 .tag-mayoreo{
   display:inline-flex;align-items:center;font-family:"DM Mono",monospace;font-size:9.5px;font-weight:600;
   letter-spacing:.06em;background:var(--salvia);color:#FFF;padding:2px 6px;border-radius:3px;
@@ -1039,7 +1041,12 @@ const topeDe = (p) => Math.min(topeMaximo(p), Number(p.stock) || 0);
 
 function mayoreoHtml(p, conTonos){
   if (!tieneMayoreo(p)) return '';
-  return `<div class="prod-mayoreo">Al por mayor <b>${colones(p.precioMayorista)}</b> c/u desde ${CONFIG.MINIMO_MAYOREO}${conTonos ? ' <span>· podés combinar tonos</span>' : ''}</div>`;
+  // Si el mayorista tiene descuento: el de antes tachado + el final + -X%
+  const pct = Number(p.descuentoMayorista) || 0;
+  const antes = pct > 0 && Number(p.precioMayoristaBase) > Number(p.precioMayorista)
+    ? `<s class="mayoreo-antes">${colones(p.precioMayoristaBase)}</s> ` : '';
+  const tag = antes ? ` <span class="tag-descuento">-${pct}%</span>` : '';
+  return `<div class="prod-mayoreo">Al por mayor ${antes}<b>${colones(p.precioMayorista)}</b>${tag} c/u desde ${CONFIG.MINIMO_MAYOREO}${conTonos ? ' <span>· podés combinar tonos</span>' : ''}</div>`;
 }
 
 function esc(t){
