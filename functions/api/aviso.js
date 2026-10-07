@@ -16,6 +16,7 @@ const PANEL_URL = 'https://belleza-panel.pages.dev/';
 
 export async function onRequest(context) {
   const { request } = context;
+  if (request.method === 'GET') return new Response('puente-ok', { headers: { 'content-type': 'text/plain' } });
   if (request.method !== 'POST') return json({ ok: false, error: 'method not allowed' }, 405);
 
   let d;
