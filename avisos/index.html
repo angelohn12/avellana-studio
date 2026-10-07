@@ -1,0 +1,218 @@
+<!doctype html>
+<html lang="es">
+<head>
+<meta charset="utf-8">
+<meta name="viewport" content="width=device-width, initial-scale=1, viewport-fit=cover">
+<title>Avellana Avisos</title>
+<meta name="robots" content="noindex, nofollow">
+<meta name="theme-color" content="#FFFFFF">
+<meta name="color-scheme" content="light">
+<meta name="apple-mobile-web-app-capable" content="yes">
+<meta name="apple-mobile-web-app-title" content="Avisos">
+<meta name="apple-mobile-web-app-status-bar-style" content="default">
+<link rel="manifest" href="manifest.webmanifest">
+<link rel="icon" href="/favicon.png" type="image/png" sizes="32x32">
+<link rel="apple-touch-icon" href="/apple-touch-icon.png">
+<link rel="preconnect" href="https://fonts.googleapis.com">
+<link rel="preconnect" href="https://fonts.gstatic.com" crossorigin>
+<link rel="stylesheet" href="https://fonts.googleapis.com/css2?family=Playfair+Display:wght@600&family=Poppins:wght@400;500;600&display=swap">
+<style>
+  :root {
+    --coral: #D24558;
+    --salvia: #61A07D;
+    --tinta: #0F0F0F;
+    --gris: #6B6762;
+    --linea: #E2E0DC;
+    --hueso: #F7F6F4;
+    --fondo: #FFFFFF;
+  }
+  * { box-sizing: border-box; }
+  html, body { margin: 0; background: var(--fondo); color: var(--tinta); }
+  body {
+    font-family: 'Poppins', -apple-system, 'Segoe UI', Roboto, sans-serif;
+    font-size: 16px; line-height: 1.55;
+    min-height: 100vh;
+    padding: max(28px, env(safe-area-inset-top)) 20px max(28px, env(safe-area-inset-bottom));
+  }
+  main { max-width: 420px; margin: 0 auto; }
+  .marca { font-family: 'Playfair Display', Georgia, serif; font-size: 30px; font-weight: 600; letter-spacing: -.01em; margin: 8px 0 2px; }
+  .marca span { color: var(--coral); }
+  .sub { color: var(--gris); font-size: 14px; margin: 0 0 28px; }
+  h2 { font-size: 18px; font-weight: 600; margin: 0 0 8px; }
+  p { margin: 0 0 14px; }
+  ol { margin: 0 0 18px; padding-left: 22px; }
+  ol li { margin-bottom: 8px; }
+  .caja { border: 1px solid var(--linea); border-radius: 2px; padding: 20px; background: var(--fondo); }
+  label { display: block; font-size: 14px; font-weight: 500; margin-bottom: 6px; }
+  input {
+    width: 100%; font: inherit; font-size: 28px; letter-spacing: .35em; text-align: center;
+    font-variant-numeric: tabular-nums;
+    padding: 12px 8px; border: 1px solid var(--linea); border-radius: 2px; background: var(--hueso); color: var(--tinta);
+  }
+  input:focus { outline: 2px solid var(--coral); outline-offset: 1px; background: var(--fondo); }
+  button {
+    width: 100%; margin-top: 14px; font: inherit; font-weight: 600; font-size: 16px;
+    padding: 14px; border: 0; border-radius: 2px; background: var(--coral); color: #fff; cursor: pointer;
+  }
+  button:disabled { opacity: .55; cursor: default; }
+  button.secundario { background: transparent; color: var(--tinta); border: 1px solid var(--linea); font-weight: 500; }
+  .error { color: #A5323F; font-size: 14px; margin-top: 12px; min-height: 1em; }
+  .ayuda { color: var(--gris); font-size: 13px; margin-top: 16px; }
+  .listo { text-align: center; }
+  .listo .marca-ok {
+    width: 56px; height: 56px; border-radius: 50%; margin: 4px auto 14px;
+    display: grid; place-items: center; background: #E8F4EA; color: var(--salvia);
+  }
+  .oculto { display: none; }
+</style>
+</head>
+<body>
+<main>
+  <div class="marca">Avellana <span>Avisos</span></div>
+  <p class="sub">Notificaciones de pedidos nuevos, solo para Avellana Studio.</p>
+
+  <!-- 1. En iPhone, los avisos solo funcionan con la app instalada -->
+  <section id="vistaInstalar" class="caja oculto">
+    <h2>Primero instalá la app</h2>
+    <p>En iPhone, las notificaciones solo funcionan desde el ícono de la pantalla de inicio.</p>
+    <ol>
+      <li>Tocá el botón <b>Compartir</b> (el cuadrito con la flecha hacia arriba).</li>
+      <li>Elegí <b>Agregar a pantalla de inicio</b> y tocá <b>Agregar</b>.</li>
+      <li>Cerrá esta página y abrí <b>Avisos</b> desde tu pantalla de inicio.</li>
+    </ol>
+  </section>
+
+  <!-- 2. Navegador sin notificaciones -->
+  <section id="vistaSinSoporte" class="caja oculto">
+    <h2>Este navegador no permite avisos</h2>
+    <p>Abrí la app desde el ícono <b>Avisos</b> de tu pantalla de inicio. Si no lo tenés, abrí esta página en Safari o Chrome y agregala a la pantalla de inicio.</p>
+  </section>
+
+  <!-- 3. Conectar este celular -->
+  <section id="vistaConectar" class="caja oculto">
+    <h2>Conectar este celular</h2>
+    <p>En el panel de Avellana andá a <b>Configuración → Avisos al celular</b> y tocá <b>Conectar un celular</b>. Escribí acá el código que te sale.</p>
+    <label for="codigo">Código de 6 números</label>
+    <input id="codigo" inputmode="numeric" autocomplete="one-time-code" maxlength="6" placeholder="······">
+    <button id="btnActivar" type="button">Activar avisos</button>
+    <div id="error" class="error" role="alert"></div>
+  </section>
+
+  <!-- 4. Listo -->
+  <section id="vistaListo" class="caja listo oculto">
+    <div class="marca-ok" aria-hidden="true">
+      <svg width="28" height="28" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2.5" stroke-linecap="round" stroke-linejoin="round"><path d="M20 6 9 17l-5-5"/></svg>
+    </div>
+    <h2>Avisos activados</h2>
+    <p id="textoListo">Te va a llegar una notificación con cada pedido o encargo nuevo.</p>
+    <p class="ayuda">Podés cerrar la app: los avisos llegan igual. Para probar, tocá <b>Mandar aviso de prueba</b> en el panel.</p>
+    <button id="btnReconectar" class="secundario" type="button">Conectar de nuevo</button>
+  </section>
+</main>
+
+<script>
+// Mismo Apps Script que usa la tienda.
+const API = 'https://script.google.com/macros/s/AKfycbxQVdDsH_Qgg9MnRgb0rDyzYPkvRESEi2FGD-ENHeT9L7CMbZl_xTaVxDs0wfNe3tflMg/exec';
+const GUARDADO = 'avellana_avisos';
+
+const $ = id => document.getElementById(id);
+const esIOS = /iPhone|iPad|iPod/.test(navigator.userAgent) || (navigator.platform === 'MacIntel' && navigator.maxTouchPoints > 1);
+const instalada = window.navigator.standalone === true || matchMedia('(display-mode: standalone)').matches;
+const hayPush = 'serviceWorker' in navigator && 'PushManager' in window && 'Notification' in window;
+
+function mostrar(id) {
+  ['vistaInstalar', 'vistaSinSoporte', 'vistaConectar', 'vistaListo'].forEach(v => $(v).classList.toggle('oculto', v !== id));
+}
+
+function leerGuardado() {
+  try { return JSON.parse(localStorage.getItem(GUARDADO) || 'null'); } catch (err) { return null; }
+}
+
+async function api(cuerpo) {
+  const r = await fetch(API, {
+    method: 'POST',
+    headers: { 'Content-Type': 'text/plain;charset=utf-8' },
+    body: JSON.stringify(cuerpo)
+  });
+  return r.json();
+}
+
+const aB64 = buf => btoa(String.fromCharCode(...new Uint8Array(buf))).replace(/\+/g, '-').replace(/\//g, '_').replace(/=+$/, '');
+const deB64 = s => {
+  const n = s.replace(/-/g, '+').replace(/_/g, '/');
+  return Uint8Array.from(atob(n + '==='.slice((n.length + 3) % 4)), c => c.charCodeAt(0));
+};
+
+let registro = null;
+
+async function arrancar() {
+  if (esIOS && !instalada) return mostrar('vistaInstalar');
+  if (!hayPush) return mostrar('vistaSinSoporte');
+  registro = await navigator.serviceWorker.register('sw.js');
+  const guardado = leerGuardado();
+  const sub = await registro.pushManager.getSubscription().catch(() => null);
+  if (guardado && sub && Notification.permission === 'granted') {
+    $('textoListo').textContent = 'Este celular (' + guardado.nombre + ') recibe una notificación con cada pedido o encargo nuevo.';
+    return mostrar('vistaListo');
+  }
+  mostrar('vistaConectar');
+}
+
+async function activar() {
+  const error = $('error');
+  error.textContent = '';
+  const codigo = $('codigo').value.replace(/\D/g, '');
+  if (codigo.length !== 6) { error.textContent = 'Escribí los 6 números que te muestra el panel.'; return; }
+
+  const boton = $('btnActivar');
+  boton.disabled = true;
+  boton.textContent = 'Activando…';
+  try {
+    // El permiso se pide primero: iPhone solo lo muestra si viene directo del toque.
+    const permiso = await Notification.requestPermission();
+    if (permiso !== 'granted') {
+      throw new Error('Sin el permiso no te pueden llegar los avisos. Activalo en Configuración del iPhone → Notificaciones → Avisos, y probá de nuevo.');
+    }
+    if (!registro) registro = await navigator.serviceWorker.register('sw.js');
+    await navigator.serviceWorker.ready;
+
+    // La llave pública con que el servidor firma los avisos. La primera vez
+    // no existe todavía: la app crea el par y se lo pasa al servidor junto
+    // con el código.
+    const info = await api({ accion: 'avisos_publica' });
+    let publica = info && info.publica;
+    let llaves = null;
+    if (!publica) {
+      const par = await crypto.subtle.generateKey({ name: 'ECDSA', namedCurve: 'P-256' }, true, ['sign', 'verify']);
+      const jwk = await crypto.subtle.exportKey('jwk', par.privateKey);
+      publica = aB64(await crypto.subtle.exportKey('raw', par.publicKey));
+      llaves = { publica, jwk: { x: jwk.x, y: jwk.y, d: jwk.d } };
+    }
+
+    // Siempre una suscripción nueva, hecha con la llave actual.
+    const vieja = await registro.pushManager.getSubscription();
+    if (vieja) await vieja.unsubscribe();
+    const sub = await registro.pushManager.subscribe({ userVisibleOnly: true, applicationServerKey: deB64(publica) });
+    const s = sub.toJSON();
+
+    const res = await api({ accion: 'avisos_vincular', codigo, suscripcion: { endpoint: s.endpoint, keys: s.keys }, llaves });
+    if (!res || !res.ok) throw new Error((res && res.error) || 'No se pudo conectar. Probá de nuevo.');
+
+    localStorage.setItem(GUARDADO, JSON.stringify({ nombre: res.nombre, fecha: Date.now() }));
+    $('textoListo').textContent = 'Este celular (' + res.nombre + ') recibe una notificación con cada pedido o encargo nuevo.';
+    mostrar('vistaListo');
+  } catch (err) {
+    error.textContent = err && err.message ? err.message : 'No se pudo conectar. Probá de nuevo.';
+  } finally {
+    boton.disabled = false;
+    boton.textContent = 'Activar avisos';
+  }
+}
+
+$('btnActivar').addEventListener('click', activar);
+$('codigo').addEventListener('keydown', e => { if (e.key === 'Enter') activar(); });
+$('btnReconectar').addEventListener('click', () => { localStorage.removeItem(GUARDADO); $('codigo').value = ''; mostrar('vistaConectar'); });
+arrancar().catch(() => mostrar('vistaSinSoporte'));
+</script>
+</body>
+</html>
