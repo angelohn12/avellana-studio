@@ -447,6 +447,13 @@ header{
 }
 .lc-antes{color:var(--tinta-3);text-decoration:line-through;margin-left:6px}
 .lc-pista{font-size:11.5px;color:var(--salvia);margin-top:3px;line-height:1.35}
+/* Aviso arriba del carrito / lista de encargos cuando ya aplica el mayoreo */
+.aviso-mayoreo{
+  display:flex;gap:10px;align-items:flex-start;background:#EEF5EF;color:#24523A;
+  border-radius:10px;padding:11px 13px;font-size:13px;line-height:1.45;margin-bottom:6px;
+}
+.aviso-mayoreo b{font-weight:700}
+.aviso-mayoreo .am-icono{flex:0 0 auto;font-weight:700}
 
 /* Tarjeta e nombre de producto también abren la ficha de detalle */
 .prod-img[data-ver],.prod-nombre[data-ver]{cursor:pointer}
@@ -616,6 +623,12 @@ header{
   padding:12px 0;border-bottom:1px solid var(--linea-suave);
 }
 .linea-encargo .lc-nombre{flex:1}
+/* Encargo de un producto del catálogo: con cantidad y precio estimado */
+.linea-encargo.con-precio{display:grid;grid-template-columns:1fr auto;align-items:start}
+.linea-encargo .le-cant{display:flex;align-items:center;gap:10px;margin-top:7px}
+.linea-encargo .le-cant .paso-cant{margin:0;padding:1px;gap:4px;border-color:#CFCAC3}
+.linea-encargo .le-cant .paso-cant button{width:30px;height:28px;font-size:14px}
+.linea-encargo .le-cant .paso-cant span{min-width:18px;text-align:center}
 .lc-quitar{font-size:11.5px;color:var(--coral);text-decoration:underline;margin-top:3px}
 .lc-total{font-size:14px;font-weight:600;font-variant-numeric:tabular-nums;text-align:right;white-space:nowrap}
 
@@ -1036,7 +1049,9 @@ const precioHtml = (p) => {
    todos sus tonos. Es la misma regla que aplica el servidor al guardar el
    pedido: el servidor recalcula siempre, esto es solo para mostrarlo. */
 const claveGrupo = (p) => (p.marca || '').trim().toLowerCase() + '|' + (p.nombre || '').trim().toLowerCase();
-const tieneMayoreo = (p) => Number(p?.precioMayorista) > 0 && p.modalidad !== 'encargo';
+// Por encargo también: el precio mayorista se ve en la tarjeta y aplica en la
+// lista de encargos (el carrito igual solo lleva productos con stock).
+const tieneMayoreo = (p) => Number(p?.precioMayorista) > 0;
 
 function unidadesMayoreoEnCarrito(clave){
   return Object.entries(CARRITO).reduce((a, [id, n]) => {
@@ -1093,10 +1108,17 @@ function guardarCarrito(){
   try { localStorage.setItem(LLAVE_CARRITO, JSON.stringify(CARRITO)); } catch {}
 }
 
+// Cada encargo es { texto, id, cantidad }: id es el del producto del catálogo
+// (null si la clienta lo escribió a mano). Las listas viejas guardaban solo
+// el texto; se convierten al leerlas.
 function cargarEncargos(){
   try {
     const v = JSON.parse(localStorage.getItem(LLAVE_ENCARGOS));
-    return Array.isArray(v) ? v : [];
+    if (!Array.isArray(v)) return [];
+    return v.map(e => typeof e === 'string'
+      ? { texto: e, id: null, cantidad: 1 }
+      : { texto: String(e.texto || ''), id: e.id ?? null, cantidad: Math.max(1, Math.floor(Number(e.cantidad) || 1)) })
+      .filter(e => e.texto.length >= 2);
   } catch { return []; }
 }
 function guardarEncargos(){
@@ -1466,7 +1488,7 @@ function pintarGrilla(reanimar = false){
       // agotó el stock — la clienta no tiene por qué distinguir el motivo,
       // en los dos casos la solución es la misma: pedirlo por encargo.
       const descripcion = (p.marca ? p.marca + ' ' : '') + p.nombre + (p.tono ? ', tono ' + p.tono : '');
-      control = `<button class="btn-avisar" type="button" data-encargo="${esc(descripcion)}">Pedir por encargo</button>`;
+      control = `<button class="btn-avisar" type="button" data-encargo="${esc(descripcion)}" data-encargo-id="${esc(p.id)}">Pedir por encargo</button>`;
     } else if (enCarrito > 0){
       control = `<div class="paso-cant">
           <button type="button" data-menos="${esc(p.id)}" aria-label="Quitar una unidad">−</button>
@@ -1492,7 +1514,7 @@ function pintarGrilla(reanimar = false){
         <div class="prod-nombre" data-ver="${esc(p.id)}" role="button" tabindex="0">${esc(p.nombre)}</div>
         ${selector}
         <div class="prod-precio">${precioHtml(p)}</div>
-        ${est.hay ? mayoreoHtml(p, false) : ''}
+        ${mayoreoHtml(p, false)}
         <span class="etiqueta ${est.clase}">${est.texto}</span>
         ${control}
       </div>
@@ -1527,7 +1549,7 @@ function htmlDetalleProducto(p){
   let control;
   if (!est.hay){
     const descripcion = (p.marca ? p.marca + ' ' : '') + p.nombre + (p.tono ? ', tono ' + p.tono : '');
-    control = `<button class="btn-avisar" type="button" data-encargo="${esc(descripcion)}">Pedir por encargo</button>`;
+    control = `<button class="btn-avisar" type="button" data-encargo="${esc(descripcion)}" data-encargo-id="${esc(p.id)}">Pedir por encargo</button>`;
   } else if (enCarrito > 0){
     control = `<div class="paso-cant">
         <button type="button" data-menos="${esc(p.id)}" aria-label="Quitar una unidad">−</button>
@@ -1561,7 +1583,7 @@ function htmlDetalleProducto(p){
     ${(p.marca || (grupo.variantes.length <= 1 && p.tono)) ? `<div class="prod-marca">${[p.marca, grupo.variantes.length <= 1 ? p.tono : null].filter(Boolean).join(' · ')}</div>` : ''}
     ${selectorTono}
     <div class="prod-precio">${precioHtml(p)}</div>
-    ${est.hay ? mayoreoHtml(p, grupo.variantes.length > 1) : ''}
+    ${mayoreoHtml(p, grupo.variantes.length > 1)}
     <span class="etiqueta ${est.clase}">${est.texto}</span>
     ${p.medida ? `<div class="detalle-medida">${esc(p.medida)}</div>` : ''}
     ${p.descripcion ? `<p class="detalle-descripcion">${esc(p.descripcion)}</p>` : ''}
@@ -1734,6 +1756,7 @@ function verCarrito(){
     return `<div class="lc-pista">Agregá ${falta} más de este producto (cualquier tono) y pagás ${colones(p.precioMayorista)} c/u</div>`;
   };
   const html = `
+    ${avisoMayoreoHtml(lineas.map(({ p, n }) => ({ p, n, mayor: aplicaMayoreo(p) })))}
     ${lineas.map(({p, n}) => {
       const mayor = aplicaMayoreo(p);
       const etiqueta = mayor
@@ -2206,7 +2229,43 @@ async function copiarSinpe(numero, boton){
    productos desde distintas partes de la tienda y mandarlos todos juntos
    en un solo formulario al final, en vez de repetir nombre y WhatsApp
    cada vez. */
-function totalEncargos(){ return ENCARGOS.length; }
+function totalEncargos(){ return ENCARGOS.reduce((a, e) => a + e.cantidad, 0); }
+
+const productoDeEncargo = (e) => e.id == null ? null : PRODUCTOS.find(q => String(q.id) === String(e.id)) || null;
+
+// Mismo criterio que el carrito: unidades del mismo producto (sumando tonos)
+// dentro de la lista de encargos.
+function unidadesMayoreoEnEncargos(clave){
+  return ENCARGOS.reduce((a, e) => {
+    const x = productoDeEncargo(e);
+    return a + (x && tieneMayoreo(x) && claveGrupo(x) === clave ? e.cantidad : 0);
+  }, 0);
+}
+const aplicaMayoreoEncargo = (p) => tieneMayoreo(p) && unidadesMayoreoEnEncargos(claveGrupo(p)) >= CONFIG.MINIMO_MAYOREO;
+const precioEncargo = (p) => aplicaMayoreoEncargo(p) ? Number(p.precioMayorista) : precioFinal(p);
+
+// Texto que se guarda en Solicitudes: el producto, cuántos, y el precio que
+// la clienta vio (estimado: se confirma por WhatsApp).
+function textoEncargoParaEnviar(e){
+  const p = productoDeEncargo(e);
+  if (!p) return e.cantidad > 1 ? `${e.texto} × ${e.cantidad}` : e.texto;
+  const precio = precioEncargo(p);
+  if (!(precio > 0)) return e.cantidad > 1 ? `${e.texto} × ${e.cantidad}` : e.texto;
+  const tipo = aplicaMayoreoEncargo(p) ? 'precio mayorista' : 'precio';
+  return `${e.texto} × ${e.cantidad} — ${tipo} ${colones(precio)} c/u (total ${colones(precio * e.cantidad)})`;
+}
+
+// Aviso visible cuando ya aplica el precio mayorista: cuánto se ahorra
+function avisoMayoreoHtml(lineas){
+  let ahorro = 0, aplica = false;
+  lineas.forEach(({ p, n, mayor }) => {
+    if (!mayor) return;
+    aplica = true;
+    ahorro += (precioFinal(p) - Number(p.precioMayorista)) * n;
+  });
+  if (!aplica) return '';
+  return `<div class="aviso-mayoreo"><span class="am-icono">✓</span><span><b>Precio mayorista aplicado.</b>${ahorro > 0 ? ` Ahorrás ${colones(ahorro)} en este pedido.` : ''}</span></div>`;
+}
 
 function actualizarBadgeEncargos(){
   const n = totalEncargos();
@@ -2222,12 +2281,22 @@ function actualizarBadgeEncargos(){
 
 // texto ya viene armado (marca + nombre + tono) desde la ficha del
 // producto o la tarjeta — se agrega directo, sin abrir ningún formulario.
-function agregarEncargo(texto){
+function agregarEncargo(texto, id){
   texto = String(texto || '').trim();
   if (texto.length < 2) return;
-  const yaEsta = ENCARGOS.some(t => t.toLowerCase() === texto.toLowerCase());
-  if (yaEsta){ brindis('Ese ya está en tu lista de encargos'); return; }
-  ENCARGOS.push(texto);
+  const tieneId = id !== undefined && id !== null && id !== '';
+  const ya = ENCARGOS.find(e => tieneId ? String(e.id) === String(id) : (e.id == null && e.texto.toLowerCase() === texto.toLowerCase()));
+  if (ya){
+    // Un producto del catálogo pedido otra vez suma una unidad
+    if (!tieneId){ brindis('Ese ya está en tu lista de encargos'); return; }
+    if (ya.cantidad >= CONFIG.MAX_POR_PRODUCTO_MAYOREO){ brindis('Llegaste al máximo de ese producto'); return; }
+    ya.cantidad += 1;
+    guardarEncargos();
+    actualizarBadgeEncargos();
+    brindis(`Ahora tenés ${ya.cantidad} de ese en tu lista de encargos 📦`);
+    return;
+  }
+  ENCARGOS.push({ texto, id: tieneId ? id : null, cantidad: 1 });
   guardarEncargos();
   actualizarBadgeEncargos();
   brindis('Agregado a tu lista de encargos 📦');
@@ -2235,6 +2304,17 @@ function agregarEncargo(texto){
 
 function quitarEncargo(i){
   ENCARGOS.splice(i, 1);
+  guardarEncargos();
+  actualizarBadgeEncargos();
+  verEncargos();
+}
+
+function cambiarCantidadEncargo(i, delta){
+  const e = ENCARGOS[i];
+  if (!e) return;
+  const nueva = e.cantidad + delta;
+  if (nueva < 1) return quitarEncargo(i);
+  e.cantidad = Math.min(nueva, CONFIG.MAX_POR_PRODUCTO_MAYOREO);
   guardarEncargos();
   actualizarBadgeEncargos();
   verEncargos();
@@ -2277,12 +2357,61 @@ function verEncargos(){
       <button class="btn-suave" type="button" style="margin-top:14px" data-encargo-libre>Pedir algo por encargo</button>`);
     return;
   }
+  // La pista "te faltan N para mayoreo" va una sola vez por producto
+  const pistasDadas = new Set();
+  const pista = (p) => {
+    const clave = claveGrupo(p);
+    if (!tieneMayoreo(p) || aplicaMayoreoEncargo(p) || pistasDadas.has(clave)) return '';
+    pistasDadas.add(clave);
+    const falta = CONFIG.MINIMO_MAYOREO - unidadesMayoreoEnEncargos(clave);
+    return `<div class="lc-pista">Agregá ${falta} más de este producto (cualquier tono) y pagás ${colones(p.precioMayorista)} c/u</div>`;
+  };
+  let estimado = 0, sinPrecio = 0;
+  const conPrecio = [];
+  const filas = ENCARGOS.map((e, i) => {
+    const p = productoDeEncargo(e);
+    const precio = p ? precioEncargo(p) : 0;
+    const pasos = `<div class="paso-cant">
+        <button type="button" data-encargo-menos="${i}" aria-label="Quitar una unidad">−</button>
+        <span>${e.cantidad}</span>
+        <button type="button" data-encargo-mas="${i}" aria-label="Agregar una unidad" ${e.cantidad >= CONFIG.MAX_POR_PRODUCTO_MAYOREO ? 'disabled' : ''}>+</button>
+      </div>`;
+    if (!p || !(precio > 0)){
+      sinPrecio += 1;
+      return `
+      <div class="linea-encargo con-precio">
+        <div>
+          <div class="lc-nombre">${esc(e.texto)}</div>
+          <div class="lc-precio">Precio por confirmar</div>
+          <div class="le-cant">${pasos}<button class="lc-quitar" type="button" data-quitar-encargo="${i}">Quitar</button></div>
+        </div>
+        <div class="lc-total"></div>
+      </div>`;
+    }
+    const mayor = aplicaMayoreoEncargo(p);
+    conPrecio.push({ p, n: e.cantidad, mayor });
+    estimado += precio * e.cantidad;
+    const etiqueta = mayor
+      ? ` <span class="tag-mayoreo">MAYOREO</span><span class="lc-antes">${colones(precioFinal(p))}</span>`
+      : (Number(p.descuento) > 0 ? ` <span class="tag-descuento">-${Number(p.descuento)}%</span>` : '');
+    return `
+      <div class="linea-encargo con-precio">
+        <div>
+          <div class="lc-nombre">${esc(e.texto)}</div>
+          <div class="lc-precio">${e.cantidad} × ${colones(precio)}${etiqueta}</div>
+          ${pista(p)}
+          <div class="le-cant">${pasos}<button class="lc-quitar" type="button" data-quitar-encargo="${i}">Quitar</button></div>
+        </div>
+        <div class="lc-total">${colones(precio * e.cantidad)}</div>
+      </div>`;
+  }).join('');
   const html = `
-    ${ENCARGOS.map((texto, i) => `
-      <div class="linea-encargo">
-        <div class="lc-nombre">${esc(texto)}</div>
-        <button class="lc-quitar" type="button" data-quitar-encargo="${i}">Quitar</button>
-      </div>`).join('')}
+    ${avisoMayoreoHtml(conPrecio)}
+    ${filas}
+    ${estimado > 0 ? `<div class="resumen">
+      <div class="r-fila"><span>Total estimado</span><span>${colones(estimado)}</span></div>
+      ${sinPrecio ? `<div class="r-fila"><span>Con precio por confirmar</span><span>${sinPrecio}</span></div>` : ''}
+    </div>` : ''}
     <button class="btn-grande" type="button" id="irEncargos">Continuar</button>
     <button class="btn-suave" type="button" data-encargo-libre>Seguir agregando</button>`;
   abrirHoja('Tu lista de encargos', html);
@@ -2312,7 +2441,7 @@ function verCheckoutEncargo(){
       </div>
 
       <div class="resumen">
-        <div class="r-fila"><span>Productos por encargo</span><span>${ENCARGOS.length}</span></div>
+        <div class="r-fila"><span>Productos por encargo</span><span>${totalEncargos()}</span></div>
       </div>
 
       <div class="aviso" id="avisoFormaPago">
@@ -2358,7 +2487,7 @@ async function enviarSolicitudEncargo(ev){
 
   const nombre = $('#enNombre').value.trim();
   const telefono = telefonoLimpio($('#enTelefono').value);
-  const productos = ENCARGOS.slice();
+  const productos = ENCARGOS.map(textoEncargoParaEnviar);
 
   if (!MODO_DEMO){
     try {
@@ -2405,7 +2534,7 @@ function verConfirmacionEncargo(productos){
    EVENTOS
    ══════════════════════════════════════════════════════════════ */
 document.addEventListener('click', (ev) => {
-  const t = ev.target.closest('[data-agregar],[data-mas],[data-menos],[data-quitar],[data-encargo],[data-encargo-libre],[data-quitar-encargo],[data-tono-id],[data-cat],[data-copiar],[data-ver],#irCheckout,#irEncargos,#seguirComprando,#btnCarrito,#btnVerCarrito,#btnEncargos,#btnBarraEncargos,#btnCerrar,#btnLimpiarFiltros,#verMasProductos');
+  const t = ev.target.closest('[data-agregar],[data-mas],[data-menos],[data-quitar],[data-encargo],[data-encargo-libre],[data-quitar-encargo],[data-encargo-mas],[data-encargo-menos],[data-tono-id],[data-cat],[data-copiar],[data-ver],#irCheckout,#irEncargos,#seguirComprando,#btnCarrito,#btnVerCarrito,#btnEncargos,#btnBarraEncargos,#btnCerrar,#btnLimpiarFiltros,#verMasProductos');
   if (!t) return;
 
   if (t.id === 'verMasProductos'){
@@ -2420,9 +2549,11 @@ document.addEventListener('click', (ev) => {
   // Con producto ya identificado (viene de una ficha/tarjeta) se agrega
   // directo a la lista; el botón genérico (sin texto) abre el formulario
   // para escribirlo a mano.
-  if (t.dataset.encargo !== undefined) return t.dataset.encargo ? agregarEncargo(t.dataset.encargo) : pedirEncargoLibre();
+  if (t.dataset.encargo !== undefined) return t.dataset.encargo ? agregarEncargo(t.dataset.encargo, t.dataset.encargoId) : pedirEncargoLibre();
   if (t.dataset.encargoLibre !== undefined) return pedirEncargoLibre();
   if (t.dataset.quitarEncargo !== undefined) return quitarEncargo(Number(t.dataset.quitarEncargo));
+  if (t.dataset.encargoMas !== undefined)   return cambiarCantidadEncargo(Number(t.dataset.encargoMas), 1);
+  if (t.dataset.encargoMenos !== undefined) return cambiarCantidadEncargo(Number(t.dataset.encargoMenos), -1);
   if (t.dataset.tonoId)  return elegirTono(t.dataset.tonoGrupo, t.dataset.tonoId);
   if (t.dataset.ver)     return verProducto(t.dataset.ver);
 
