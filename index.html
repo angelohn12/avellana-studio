@@ -245,6 +245,12 @@ header{
   padding:9px 16px;font-size:10.5px;font-weight:500;
   letter-spacing:.11em;text-transform:uppercase;line-height:1.5;
 }
+@media (max-width:640px){
+  .franja-mayoreo{display:block}
+  .franja-sep{display:none}
+}
+/* Producto sin precio mayorista puesto todavía: igual se avisa que existe */
+.prod-mayoreo a{color:inherit;text-decoration:underline;text-underline-offset:2px}
 
 /* ── hero: callado. La foto del producto es la que habla ── */
 .hero{padding:38px 0 30px;border-bottom:1px solid var(--linea)}
@@ -817,7 +823,7 @@ details[open] summary::after{content:"−"}
 
 <div id="bandaDemo" class="banda-demo oculto"></div>
 
-<div class="franja">Envíos a todo el país · Retiro gratis en San José</div>
+<div class="franja">Envíos a todo el país · Retiro gratis en San José<span class="franja-mayoreo"><span class="franja-sep"> · </span>Al por mayor desde 3 unidades</span></div>
 
 <header>
   <div class="wrap barra">
@@ -1066,8 +1072,18 @@ const precioCarrito = (p) => aplicaMayoreo(p) ? Number(p.precioMayorista) : prec
 const topeMaximo = (p) => tieneMayoreo(p) ? CONFIG.MAX_POR_PRODUCTO_MAYOREO : CONFIG.MAX_POR_PRODUCTO;
 const topeDe = (p) => Math.min(topeMaximo(p), Number(p.stock) || 0);
 
+// Link a WhatsApp con el producto ya escrito, para consultar el precio al por mayor
+function linkConsultaMayoreo(p){
+  const producto = [p.marca, p.nombre].filter(Boolean).join(' ');
+  const texto = `Hola, quiero consultar el precio al por mayor de ${producto} (desde ${CONFIG.MINIMO_MAYOREO} unidades).`;
+  return `https://wa.me/${CONFIG.WHATSAPP}?text=${encodeURIComponent(texto)}`;
+}
+
 function mayoreoHtml(p, conTonos){
-  if (!tieneMayoreo(p)) return '';
+  // Todavía sin precio mayorista puesto: igual se avisa que se vende al por mayor
+  if (!tieneMayoreo(p)){
+    return `<div class="prod-mayoreo">Al por mayor desde ${CONFIG.MINIMO_MAYOREO} · <a href="${esc(linkConsultaMayoreo(p))}" target="_blank" rel="noopener">consultá el precio</a></div>`;
+  }
   // Si el mayorista tiene descuento: el de antes tachado + el final + -X%
   const pct = Number(p.descuentoMayorista) || 0;
   const antes = pct > 0 && Number(p.precioMayoristaBase) > Number(p.precioMayorista)
