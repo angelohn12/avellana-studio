@@ -249,8 +249,6 @@ header{
   .franja-mayoreo{display:block}
   .franja-sep{display:none}
 }
-/* Producto sin precio mayorista puesto todavía: igual se avisa que existe */
-.prod-mayoreo a{color:inherit;text-decoration:underline;text-underline-offset:2px}
 
 /* ── hero: callado. La foto del producto es la que habla ── */
 .hero{padding:38px 0 30px;border-bottom:1px solid var(--linea)}
@@ -1072,18 +1070,10 @@ const precioCarrito = (p) => aplicaMayoreo(p) ? Number(p.precioMayorista) : prec
 const topeMaximo = (p) => tieneMayoreo(p) ? CONFIG.MAX_POR_PRODUCTO_MAYOREO : CONFIG.MAX_POR_PRODUCTO;
 const topeDe = (p) => Math.min(topeMaximo(p), Number(p.stock) || 0);
 
-// Link a WhatsApp con el producto ya escrito, para consultar el precio al por mayor
-function linkConsultaMayoreo(p){
-  const producto = [p.marca, p.nombre].filter(Boolean).join(' ');
-  const texto = `Hola, quiero consultar el precio al por mayor de ${producto} (desde ${CONFIG.MINIMO_MAYOREO} unidades).`;
-  return `https://wa.me/${CONFIG.WHATSAPP}?text=${encodeURIComponent(texto)}`;
-}
-
+// Sin precio mayorista puesto no se muestra nada: la franja de arriba ya
+// avisa que se vende al por mayor, y el precio se pone desde el panel.
 function mayoreoHtml(p, conTonos){
-  // Todavía sin precio mayorista puesto: igual se avisa que se vende al por mayor
-  if (!tieneMayoreo(p)){
-    return `<div class="prod-mayoreo">Al por mayor desde ${CONFIG.MINIMO_MAYOREO} · <a href="${esc(linkConsultaMayoreo(p))}" target="_blank" rel="noopener">consultá el precio</a></div>`;
-  }
+  if (!tieneMayoreo(p)) return '';
   // Si el mayorista tiene descuento: el de antes tachado + el final + -X%
   const pct = Number(p.descuentoMayorista) || 0;
   const antes = pct > 0 && Number(p.precioMayoristaBase) > Number(p.precioMayorista)
