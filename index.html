@@ -940,7 +940,7 @@ details[open] summary::after{content:"−"}
       <summary>Tus datos</summary>
       <div class="detalle">
         <p><b>No guardamos nada hasta que confirmés tu pedido.</b> Mientras ves productos y armás tu carrito no se registra nada en ningún lado — el carrito vive solo en tu dispositivo.</p>
-        <p>Al confirmar pedimos únicamente tu nombre, tu WhatsApp y —solo si elegís envío— tu dirección. El correo electrónico es opcional. <b>Usamos estos datos únicamente para coordinar y entregar tu pedido.</b></p>
+        <p>Al confirmar pedimos únicamente tu nombre, tu WhatsApp y —solo si elegís envío— tu dirección. <b>Usamos estos datos únicamente para coordinar y entregar tu pedido.</b></p>
         <p>No hay cuentas ni contraseñas. No usamos cookies de rastreo ni publicidad. No compartimos tu información con nadie, y no te vamos a escribir para venderte nada que no hayás pedido.</p>
       </div>
     </details>
@@ -1868,11 +1868,6 @@ function verCheckout(){
             <input type="tel" id="telefono" name="telefono" inputmode="numeric" autocomplete="tel" placeholder="8888 8888">
             <span class="error oculto" data-error="telefono">Escribí un número de 8 dígitos</span>
           </div>
-          <div class="campo ancho">
-            <label for="correo">Correo <span class="op">— opcional</span></label>
-            <input type="email" id="correo" name="correo" autocomplete="email" placeholder="Solo si querés copia por correo">
-            <span class="error oculto" data-error="correo">Revisá el correo, parece incompleto</span>
-          </div>
         </div>
       </div>
 
@@ -1982,11 +1977,6 @@ function validar(){
   marcarError('telefono', !telOk);
   if (!telOk) fallos.push('telefono');
 
-  const correo = $('#correo').value.trim();
-  const correoOk = !correo || /^[^\s@]+@[^\s@]+\.[^\s@]{2,}$/.test(correo);
-  marcarError('correo', !correoOk);
-  if (!correoOk) fallos.push('correo');
-
   if (e.modo === 'correos'){
     const prov = $('#provincia').value;
     const cant = $('#canton').value;
@@ -2023,7 +2013,6 @@ function armarPedido(){
                 : (e.dentroGAM ? 'Correos · dentro del GAM' : 'Correos · fuera del GAM'),
     nombre:    $('#nombre').value.trim(),
     telefono:  telefonoLimpio($('#telefono').value),
-    correo:    $('#correo').value.trim(),
     provincia: e.modo === 'correos' ? ($('#provincia')?.value || '') : '',
     canton:    e.modo === 'correos' ? ($('#canton')?.value || '') : '',
     distrito:  e.modo === 'correos' ? ($('#distrito')?.value.trim() || '') : '',
