@@ -77,6 +77,7 @@ const CONFIG = {
   POCAS_UNIDADES: 3,                // muestra "Pocas unidades" con esto o menos
   MAX_POR_PRODUCTO: 3,              // tope de unidades del mismo producto por pedido
   MAX_POR_PRODUCTO_MAYOREO: 60,     // tope para productos con precio mayorista (igual que el servidor)
+  MAX_LINEAS_CAJA: 40,              // tonos distintos por caja (el servidor acepta hasta 40 líneas)
   MINIMO_MAYOREO: 3,                // unidades del mismo producto (sumando tonos) para precio
                                     // mayorista — se reemplaza por el que manda el servidor
 
@@ -548,11 +549,11 @@ header{
   100%{transform:translateY(0)}
 }
 .fila-barra{
-  max-width:1080px;margin:0 auto;display:flex;gap:9px;
+  max-width:1080px;margin:0 auto;display:flex;flex-wrap:wrap;gap:9px;
   padding:13px 14px calc(13px + env(safe-area-inset-bottom));
 }
 .barra-abajo .interior{
-  flex:1;min-width:0;background:var(--coral);color:#FFF;
+  flex:1 1 150px;min-width:0;background:var(--coral);color:#FFF;
   border-radius:var(--radio-chico);
   padding:15px 16px;display:flex;align-items:center;gap:10px;
   font-size:13px;font-weight:600;letter-spacing:.01em;
@@ -574,6 +575,10 @@ header{
   background:var(--crema);color:var(--cafe);border:1.5px solid var(--linea);
 }
 .barra-abajo .interior.interior-encargos:hover{background:#FBF0E6;border-color:var(--coral);color:var(--coral)}
+@media(max-width:420px){
+  .barra-abajo.varios .interior{padding:13px 12px;gap:8px}
+  .barra-abajo.varios .interior .flecha{display:none}
+}
 
 /* ── panel / hoja ───────────────────── */
 .velo{
@@ -635,6 +640,93 @@ header{
 .linea-encargo .le-cant .paso-cant span{min-width:18px;text-align:center}
 .lc-quitar{font-size:11.5px;color:var(--coral);text-decoration:underline;margin-top:3px}
 .lc-total{font-size:14px;font-weight:600;font-variant-numeric:tabular-nums;text-align:right;white-space:nowrap}
+
+/* ── armá tu caja ───────────────────── */
+.hero-caja{
+  margin-top:20px;display:inline-flex;align-items:center;gap:9px;
+  padding:14px 20px;border-radius:var(--radio-chico);background:var(--tinta);color:#FFF;
+  font-size:11px;font-weight:500;letter-spacing:.12em;text-transform:uppercase;
+  transition:background .16s var(--curva), transform .13s var(--curva);
+}
+.hero-caja:hover{background:var(--coral)}
+.hero-caja:active{transform:scale(.97)}
+.hero-caja-nota{display:block;margin-top:9px;font-size:11.5px;color:var(--tinta-3);line-height:1.5}
+.cj-intro{font-size:12.5px;line-height:1.55;color:var(--tinta-2);margin:0 0 10px}
+.cj-intro b{color:var(--tinta);font-weight:600}
+.cj-garantia{
+  display:flex;gap:9px;align-items:flex-start;background:#EEF5EF;color:#24523A;
+  border-radius:10px;padding:8px 12px;font-size:12.5px;line-height:1.45;margin-bottom:12px;
+}
+.cj-garantia > span:first-child{flex:0 0 auto;font-weight:700}
+.cj-garantia b{font-weight:700}
+.cj-filtros{display:grid;grid-template-columns:1fr 1fr;gap:8px;margin-bottom:10px}
+.cj-filtros input{
+  width:100%;padding:12px 13px;border-radius:var(--radio-chico);border:1px solid var(--linea);
+  background:var(--papel);font-weight:300;transition:border-color .16s var(--curva);
+}
+.cj-filtros input:focus{border-color:var(--tinta)}
+.cj-filtros .select-filtro{flex:0 0 auto;width:100%;min-width:0;padding-left:10px}
+.cj-filtros input{min-width:0}
+.cj-solo{
+  display:flex;gap:11px;align-items:flex-start;border:1px solid var(--linea);
+  border-radius:var(--radio-chico);padding:12px 13px;margin-bottom:6px;cursor:pointer;
+  transition:border-color .16s var(--curva);
+}
+.cj-solo:hover{border-color:var(--tinta-3)}
+.cj-solo:has(input:checked){border-color:var(--tinta);box-shadow:inset 0 0 0 1px var(--tinta)}
+.cj-solo input{margin:2px 0 0;accent-color:var(--coral);width:16px;height:16px;flex:0 0 auto}
+.cj-solo b{display:block;font-size:13px;font-weight:500;color:var(--tinta)}
+.cj-solo small{display:block;font-size:11.5px;line-height:1.45;color:var(--tinta-3);margin-top:2px}
+.cj-fam{border-bottom:1px solid var(--linea-suave)}
+.cj-cab{
+  display:grid;grid-template-columns:56px 1fr auto;gap:12px;align-items:center;
+  width:100%;text-align:left;padding:12px 0;background:none;border:0;cursor:pointer;
+}
+.cj-cab .mini{width:56px;height:56px;border-radius:10px;overflow:hidden;background:var(--linea-suave)}
+.cj-cab .mini img{width:100%;height:100%;object-fit:cover}
+.cj-cab .mini .sin-foto{font-size:11px}
+.cj-info{min-width:0}
+.cj-sub{font-size:11.5px;color:var(--tinta-3);margin-top:1px}
+.cj-precio{font-size:12px;color:var(--salvia);font-weight:600;margin-top:2px;font-variant-numeric:tabular-nums}
+.cj-info .etiqueta{margin:5px 0 0}
+.cj-der{display:flex;align-items:center;gap:8px}
+.cj-cuenta{
+  display:inline-flex;align-items:center;justify-content:center;min-width:24px;height:20px;padding:0 6px;
+  border-radius:var(--radio-chico);font-size:11px;font-weight:600;font-variant-numeric:tabular-nums;color:#FFF;
+}
+.cj-lista{background:var(--salvia)}
+.cj-falta{background:var(--coral)}
+.cj-flecha{font-size:17px;color:var(--tinta-3);width:16px;text-align:center;line-height:1}
+.cj-tonos{padding:0 0 12px}
+.cj-pista{font-size:11.5px;color:var(--coral);line-height:1.4;margin:0 0 6px}
+.cj-tono{
+  display:flex;align-items:center;justify-content:space-between;gap:10px;
+  padding:8px 0;border-top:1px solid var(--linea-suave);
+}
+.cj-tono-txt{min-width:0}
+.cj-tono-nombre{font-size:13px;color:var(--tinta);line-height:1.35}
+.cj-ya,.cj-enc,.cj-parcial{display:block;font-size:11px;margin-top:1px}
+.cj-ya{color:var(--tinta-3)}
+.cj-enc,.cj-parcial{color:var(--coral)}
+.cj-tono .paso-cant{padding:1px;gap:2px;border-color:#CFCAC3;flex:0 0 auto}
+.cj-tono .paso-cant button{width:32px;height:30px;font-size:14px}
+.cj-tono .paso-cant span{min-width:22px;text-align:center}
+.cj-vacio{text-align:center;padding:34px 12px;color:var(--tinta-2);font-size:13px;line-height:1.6}
+.cj-vacio .btn-suave{margin-top:14px}
+.cj-pie{
+  position:sticky;bottom:0;z-index:1;background:var(--papel);border-top:1px solid var(--linea);
+  margin:16px -22px -28px;padding:14px 22px calc(16px + env(safe-area-inset-bottom));
+  box-shadow:0 -8px 20px rgba(30,16,8,.06);
+}
+.cj-total{display:flex;justify-content:space-between;align-items:baseline;gap:12px;font-size:13px;color:var(--tinta-2);font-variant-numeric:tabular-nums}
+.cj-total b{font-size:17px;color:var(--tinta);font-weight:600}
+.cj-estado{display:block;font-size:12px;line-height:1.45;color:var(--tinta-2);margin-top:5px}
+.cj-estado.cj-alerta{color:var(--coral)}
+.cj-estado.cj-bien{color:#24523A}
+.cj-pie .btn-grande{margin-top:9px;padding:13px 0}
+.cj-pie .lc-quitar{margin:0 0 0 2px}
+.cj-lista-enc{margin:0 0 12px;padding-left:18px;font-size:13px;line-height:1.7;color:var(--tinta-2)}
+.cj-lista-enc b{color:var(--tinta)}
 
 /* ── formulario ─────────────────────── */
 .grupo{margin-bottom:18px}
@@ -827,6 +919,10 @@ details[open] summary::after{content:"−"}
   <div class="wrap barra">
     <div class="marca">Avellana Studio<small>Costa Rica</small></div>
     <div class="acciones-header">
+      <button class="btn-carrito btn-encargos oculto" id="btnCaja" type="button">
+        <svg width="15" height="15" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2" stroke-linecap="round" stroke-linejoin="round" aria-hidden="true"><path d="M21 8 12 3 3 8l9 5 9-5Z"/><path d="M3 8v8l9 5 9-5V8"/><path d="M12 13v8"/></svg>
+        Mi caja <span class="n" id="numCaja">0</span>
+      </button>
       <button class="btn-carrito btn-encargos oculto" id="btnEncargos" type="button">
         <svg width="15" height="15" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2" stroke-linecap="round" stroke-linejoin="round" aria-hidden="true"><path d="M21 8v13H3V8"/><path d="M1 3h22v5H1z"/><path d="M10 12h4"/></svg>
         Encargos <span class="n" id="numEncargos">0</span>
@@ -845,6 +941,8 @@ details[open] summary::after{content:"−"}
       <p class="hero-eyebrow">Belleza que florece · Costa Rica</p>
       <h1>Maquillaje y skincare, <em>traído para vos</em></h1>
       <p>Elegí lo tuyo, confirmá el pedido y coordinamos por WhatsApp. Sin cuentas, sin pagar en línea.</p>
+      <button class="hero-caja" type="button" data-caja-abrir>Armá tu caja al por mayor</button>
+      <span class="hero-caja-nota">Elegí tus productos, de a 3 o más de cada uno. Todo nuevo, sellado y original.</span>
       <div class="hero-trust">
         <span>Envío a todo el país</span>
         <span>Retiro en Calle Blancos, San José</span>
@@ -914,6 +1012,17 @@ details[open] summary::after{content:"−"}
     </details>
 
     <details>
+      <summary>Cajas al por mayor</summary>
+      <div class="detalle">
+        <p>Armá tu propia caja con los productos que quieras. <b>Cada producto lleva mínimo <span id="pieCajaMin"></span></b> (podés combinar tonos del mismo producto) y todo se cobra a precio mayorista. Con 1 o 2 de un producto no aplica el precio mayorista.</p>
+        <p>Todos nuestros productos son <b>nuevos, sellados y originales</b>.</p>
+        <p>Lo que tenemos en mano sale de inmediato. Lo que no, lo mandamos a traer y tarda de <span id="pieCajaDias"></span> días hábiles: antes de confirmar te avisamos qué productos van por encargo, y podés elegir «Solo entrega inmediata».</p>
+        <p>Hacés el pedido acá, te escribimos por WhatsApp y coordinamos el pago. <b>No enviamos una caja sin el pago completo.</b></p>
+        <button class="btn-suave" type="button" style="margin-top:4px" data-caja-abrir>Armar mi caja</button>
+      </div>
+    </details>
+
+    <details>
       <summary>Pedidos por encargo</summary>
       <div class="detalle">
         <p>Algunos productos los traemos por encargo. Si lo que buscás no aparece en el catálogo o está agotado, pedilo por encargo y te decimos si podemos conseguirlo, cuánto costaría y en cuánto tiempo llega.</p>
@@ -969,6 +1078,14 @@ details[open] summary::after{content:"−"}
       </span>
       <svg class="flecha" width="15" height="15" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2" stroke-linecap="round" stroke-linejoin="round" aria-hidden="true"><path d="M9 18l6-6-6-6"/></svg>
     </button>
+    <button class="interior interior-encargos oculto" id="btnBarraCaja" type="button">
+      <svg width="17" height="17" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2" stroke-linecap="round" stroke-linejoin="round" aria-hidden="true"><path d="M21 8 12 3 3 8l9 5 9-5Z"/><path d="M3 8v8l9 5 9-5V8"/><path d="M12 13v8"/></svg>
+      <span class="textos">
+        <span class="etiqueta" id="barraCajaTexto">Tu caja</span>
+        <span class="monto" id="barraCajaTotal">₡0</span>
+      </span>
+      <svg class="flecha" width="15" height="15" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2" stroke-linecap="round" stroke-linejoin="round" aria-hidden="true"><path d="M9 18l6-6-6-6"/></svg>
+    </button>
     <button class="interior" id="btnVerCarrito" type="button">
       <svg width="17" height="17" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2" stroke-linecap="round" stroke-linejoin="round" aria-hidden="true"><path d="M6 2 3 6v14a2 2 0 0 0 2 2h14a2 2 0 0 0 2-2V6l-3-4Z"/><path d="M3 6h18"/><path d="M16 10a4 4 0 0 1-8 0"/></svg>
       <span class="textos">
@@ -998,9 +1115,15 @@ details[open] summary::after{content:"−"}
    ══════════════════════════════════════════════════════════════ */
 const LLAVE_CARRITO = 'avellana_carrito_v1';
 const LLAVE_ENCARGOS = 'avellana_encargos_v1';
+const LLAVE_CAJA = 'avellana_caja_v1';
 let PRODUCTOS = [];
 let CARRITO   = cargarCarrito();
 let ENCARGOS  = cargarEncargos(); // lista de texto libre — "carrito" de productos por encargo
+let CAJA      = cargarCaja();     // { idProducto: cantidad } — la caja al por mayor que está armando
+let CAJA_SOLO_YA = false;         // "Solo entrega inmediata" en el armador
+let CAJA_BUSQUEDA = '', CAJA_MARCA = 'Todas';
+let CAJA_ABIERTAS = new Set();    // productos con los tonos desplegados en el armador
+let MODO_PEDIDO = 'carrito';      // el checkout sirve para el carrito y para la caja
 let CATEGORIA = 'Todo';
 let BUSQUEDA  = '';
 let MARCA  = 'Todas';
@@ -1233,6 +1356,7 @@ async function cargarCatalogo(){
     PRODUCTOS = d.productos.filter(estaPublicado);
     if (!PRODUCTOS.length) throw new Error('catálogo vacío');
     if (Number(d.minimoMayorista) >= 2) CONFIG.MINIMO_MAYOREO = Number(d.minimoMayorista);
+    $('#pieCajaMin').textContent = CONFIG.MINIMO_MAYOREO;
   } catch (e) {
     // En producción, nunca mostrar "Vista de prueba" — solo avisar que hay un problema
     // técnico y pedir que recarguen. El catálogo de ejemplo es solo para desarrollo.
@@ -1243,6 +1367,7 @@ async function cargarCatalogo(){
     banda.classList.remove('oculto');
   }
   limpiarCarritoFantasma();
+  limpiarCajaFantasma();
   pintarHeroFotos();
   pintarFiltros();
   $('#cargando').classList.add('oculto');
@@ -1250,6 +1375,7 @@ async function cargarCatalogo(){
   pintarGrilla(true);
   actualizarBarra();
   actualizarBadgeEncargos();
+  actualizarBadgeCaja();
 }
 
 // Quita del carrito productos que ya no existen o quedaron sin stock
@@ -1594,6 +1720,7 @@ function htmlDetalleProducto(p){
     ${p.medida ? `<div class="detalle-medida">${esc(p.medida)}</div>` : ''}
     ${p.descripcion ? `<p class="detalle-descripcion">${esc(p.descripcion)}</p>` : ''}
     <div class="detalle-control">${control}</div>
+    ${tieneMayoreo(p) ? `<button class="btn-suave" type="button" data-caja-con="${esc(p.id)}">Armar una caja con este producto</button>` : ''}
   </div>`;
 }
 
@@ -1669,7 +1796,7 @@ function lineasCarrito(){
 
 // Recuerda el último conteo mostrado, para saber si hay que hacer el
 // "pulso" (alguien sumó algo) o dejarlo quieto (solo se repintó la página).
-let ultimoUnidadesBarra = 0, ultimoEncargosBarra = 0;
+let ultimoUnidadesBarra = 0, ultimoEncargosBarra = 0, ultimoCajaBarra = 0;
 
 function pulsarBoton(el){
   if (!el) return;
@@ -1685,19 +1812,23 @@ function pulsarBoton(el){
 function actualizarBarra(){
   const u = totalUnidades();
   const nEnc = totalEncargos();
+  const nCaja = unidadesCaja();
   $('#numCarrito').textContent = u;
 
   const barra = $('#barraAbajo');
   const btnEnc = $('#btnBarraEncargos');
   const btnCar = $('#btnVerCarrito');
+  const btnCaja = $('#btnBarraCaja');
   const estabaOculta = barra.classList.contains('oculto');
 
-  if (!u && !nEnc){
+  if (!u && !nEnc && !nCaja){
     barra.classList.add('oculto');
-    ultimoUnidadesBarra = 0; ultimoEncargosBarra = 0;
+    ultimoUnidadesBarra = 0; ultimoEncargosBarra = 0; ultimoCajaBarra = 0;
     return;
   }
   barra.classList.remove('oculto');
+  // Con dos o tres botones a la vez en un celular angosto se quitan las flechas para que quepan los textos
+  barra.classList.toggle('varios', [u, nEnc, nCaja].filter(Boolean).length >= 2);
   if (estabaOculta){
     barra.classList.remove('apareciendo');
     void barra.offsetWidth;
@@ -1710,6 +1841,13 @@ function actualizarBarra(){
     if (nEnc > ultimoEncargosBarra) pulsarBoton(btnEnc);
   }
 
+  btnCaja.classList.toggle('oculto', !nCaja);
+  if (nCaja){
+    $('#barraCajaTexto').textContent = `Tu caja · ${nCaja}`;
+    $('#barraCajaTotal').textContent = colones(totalCaja());
+    if (nCaja > ultimoCajaBarra) pulsarBoton(btnCaja);
+  }
+
   btnCar.classList.toggle('oculto', !u);
   if (u){
     $('#barraTexto').textContent = `Carrito · ${u} ${u === 1 ? 'producto' : 'productos'}`;
@@ -1717,7 +1855,7 @@ function actualizarBarra(){
     if (u > ultimoUnidadesBarra) pulsarBoton(btnCar);
   }
 
-  ultimoUnidadesBarra = u; ultimoEncargosBarra = nEnc;
+  ultimoUnidadesBarra = u; ultimoEncargosBarra = nEnc; ultimoCajaBarra = nCaja;
 }
 
 /* ══════════════════════════════════════════════════════════════
@@ -1788,6 +1926,14 @@ function verCarrito(){
     <button class="btn-suave" type="button" id="seguirComprando">Seguir viendo productos</button>`;
   abrirHoja('Tu carrito', html);
 }
+
+/* El checkout sirve para el carrito normal y para la caja al por mayor: lo
+   único que cambia es de dónde salen las líneas, el precio y los textos. */
+const enModoCaja = () => MODO_PEDIDO === 'caja';
+const lineasPedido = () => enModoCaja() ? lineasCaja() : lineasCarrito();
+const precioPedido = (p) => enModoCaja() ? Number(p.precioMayorista) : precioCarrito(p);
+const unidadesPedido = () => enModoCaja() ? unidadesCaja() : totalUnidades();
+const subtotalPedido = () => enModoCaja() ? totalCaja() : subtotal();
 
 function verCheckout(){
   const provincias = Object.keys(CANTONES);
@@ -1872,9 +2018,9 @@ function verCheckout(){
       </div>
 
       <div class="resumen">
-        <div class="r-fila"><span>Productos (${totalUnidades()})</span><span>${colones(subtotal())}</span></div>
+        <div class="r-fila"><span>${enModoCaja() ? 'Caja' : 'Productos'} (${unidadesPedido()})</span><span>${colones(subtotalPedido())}</span></div>
         <div class="r-fila"><span id="etiquetaEnvio">Envío</span><span id="montoEnvio">Gratis</span></div>
-        <div class="r-fila grande"><span>Total</span><span id="montoTotal">${colones(subtotal())}</span></div>
+        <div class="r-fila grande"><span>Total</span><span id="montoTotal">${colones(subtotalPedido())}</span></div>
       </div>
 
       <div class="aviso" id="avisoFormaPago">
@@ -1882,10 +2028,10 @@ function verCheckout(){
         desde el <b>${esc(numerosWhatsapp())}</b> para confirmar el total, y ahí coordinamos el pago.
       </div>
 
-      <button class="btn-grande" type="submit" id="btnConfirmar">Confirmar pedido</button>
+      <button class="btn-grande" type="submit" id="btnConfirmar">${enModoCaja() ? 'Confirmar caja' : 'Confirmar pedido'}</button>
       <p class="nota-datos">Usamos estos datos únicamente para coordinar y entregar tu pedido.</p>
     </form>`;
-  abrirHoja('Tu pedido', html);
+  abrirHoja(enModoCaja() ? 'Tu caja' : 'Tu pedido', html);
   prepararFormulario();
 }
 
@@ -1909,7 +2055,7 @@ function refrescarTotales(){
   const e = envioActual();
   $('#etiquetaEnvio').textContent = e.etiqueta;
   $('#montoEnvio').textContent    = e.texto;
-  $('#montoTotal').textContent    = colones(subtotal() + (e.indefinido ? 0 : e.monto));
+  $('#montoTotal').textContent    = colones(subtotalPedido() + (e.indefinido ? 0 : e.monto));
   // Solo Correos necesita dirección en la página — Uber Flash se coordina
   // aparte por WhatsApp (le preguntamos ahí si lo pide ella o lo pedimos
   // nosotros, y en ese caso la dirección se da por ese medio).
@@ -1927,9 +2073,17 @@ function refrescarTotales(){
       : `<b>Acá no se paga nada.</b> Armamos tu pedido, te escribimos por WhatsApp
          desde el <b>${esc(numerosWhatsapp())}</b> para confirmar el total, y ahí coordinamos
          el pago por <b>SINPE Móvil</b>.`;
-    // Al por mayor no hay pagos en partes: se paga completo antes del envío,
-    // o al recibirlo si se retira en persona.
-    if (hayMayoreoEnCarrito()) {
+    if (enModoCaja()) {
+      // Una caja nunca sale (ni se pide lo que va por encargo) sin el pago completo
+      const enc = piezasPorEncargo();
+      aviso.innerHTML = `<b>Acá no se paga nada.</b> Armamos tu caja, te escribimos por WhatsApp
+         desde el <b>${esc(numerosWhatsapp())}</b> para confirmar el total y coordinar el pago
+         ${e.modo === 'retiro' ? '(efectivo o SINPE Móvil)' : 'por <b>SINPE Móvil</b>'}.
+         <b>No enviamos una caja sin el pago completo.</b>` +
+        (enc ? `<br><br><b>${enc} ${enc === 1 ? 'pieza va' : 'piezas van'} por encargo:</b> tardan de ${CONFIG.ENCARGO_DIAS_MIN} a ${CONFIG.ENCARGO_DIAS_MAX} días hábiles en llegar.` : '');
+    } else if (hayMayoreoEnCarrito()) {
+      // Al por mayor no hay pagos en partes: se paga completo antes del envío,
+      // o al recibirlo si se retira en persona.
       aviso.innerHTML += e.modo === 'retiro'
         ? `<br><br><b>Compra al por mayor:</b> se paga completa al retirar (podés revisar los productos ahí mismo).`
         : `<br><br><b>Compra al por mayor:</b> se paga completa antes del envío.`;
@@ -1999,10 +2153,10 @@ function validar(){
 
 function armarPedido(){
   const e = envioActual();
-  const items = lineasCarrito().map(({p, n}) => ({
+  const items = lineasPedido().map(({p, n}) => ({
     id: p.id, nombre: p.nombre, marca: p.marca || '', tono: p.tono || '',
-    cantidad: n, precioUnitario: precioCarrito(p),
-    subtotal: precioCarrito(p) * n
+    cantidad: n, precioUnitario: precioPedido(p),
+    subtotal: precioPedido(p) * n
   }));
   const envio = e.indefinido ? 0 : e.monto;
 
@@ -2018,9 +2172,11 @@ function armarPedido(){
     distrito:  e.modo === 'correos' ? ($('#distrito')?.value.trim() || '') : '',
     direccion: e.modo === 'correos' ? ($('#direccion')?.value.trim() || '') : '',
     items,
-    subtotal: subtotal(),
+    caja: enModoCaja(),
+    porEncargo: enModoCaja() ? piezasPorEncargo() : 0,
+    subtotal: subtotalPedido(),
     envio,
-    total: subtotal() + envio
+    total: subtotalPedido() + envio
   };
 }
 
@@ -2113,6 +2269,8 @@ async function enviarPedido(ev){
         () => { btn.textContent = 'Seguimos intentando, no cierres esta página…'; });
       numero = d.numero || null;
       pedido.repetido = !!d.repetido;
+      // Lo que cuenta es lo que dice el servidor: cuántas piezas quedaron por encargo
+      if (pedido.caja) pedido.porEncargo = Number(d.porEncargo) || 0;
       // Los montos que valen son los del servidor (recalcula precios, mayoreo
       // y envío). Si por algo no coinciden con los del carrito, la clienta ve
       // en la confirmación el total que de verdad se le va a cobrar.
@@ -2127,8 +2285,8 @@ async function enviarPedido(ev){
     } catch (err) {
       ENVIANDO = false;
       btn.disabled = false;
-      btn.textContent = 'Confirmar pedido';
-      mostrarErrorEnvio($('#formPedido'), mensajeErrorEnvio(err, 'tu pedido'));
+      btn.textContent = pedido.caja ? 'Confirmar caja' : 'Confirmar pedido';
+      mostrarErrorEnvio($('#formPedido'), mensajeErrorEnvio(err, pedido.caja ? 'tu caja' : 'tu pedido'));
       return;
     }
   }
@@ -2140,10 +2298,16 @@ async function enviarPedido(ev){
     pedido.sinpe = [{ nombre: 'Vista de prueba', numero: '0000 0000' }];
   }
 
-  CARRITO = {};
-  guardarCarrito();
-  pintarGrilla();
-  actualizarBarra();
+  if (pedido.caja){
+    CAJA = {};
+    guardarCaja();
+    actualizarBadgeCaja();
+  } else {
+    CARRITO = {};
+    guardarCarrito();
+    pintarGrilla();
+    actualizarBarra();
+  }
   ENVIANDO = false;
   verConfirmacion(numero, pedido);
 }
@@ -2151,25 +2315,33 @@ async function enviarPedido(ev){
 function verConfirmacion(numero, pedido){
   const fecha = new Date().toLocaleDateString('es-CR', { day:'numeric', month:'long', year:'numeric' });
   // Sin emoji: el corazón se rompía al abrir el link de WhatsApp (salía un símbolo raro).
-  const texto = encodeURIComponent(`¡Hola! Acabo de hacer el pedido ${numero} en la tienda Avellana Studio.`);
+  const texto = encodeURIComponent(`¡Hola! Acabo de hacer ${pedido.caja ? 'la caja' : 'el pedido'} ${numero} en la tienda Avellana Studio.`);
   const esRetiro = pedido.entrega === 'retiro';
+  const esCaja = !!pedido.caja;
+  const enc = esCaja ? (Number(pedido.porEncargo) || 0) : 0;
+  const pasoPago = esCaja
+    ? `<b>Pagás por SINPE Móvil</b> el monto exacto de abajo${pedido.entrega === 'expres' ? ' (el envío se cotiza aparte)' : ''} y nos mandás el comprobante por WhatsApp. <b>No enviamos una caja sin el pago completo.</b>`
+    : esRetiro
+      ? `<b>Pagás al retirar</b>, en efectivo o SINPE Móvil. Si preferís adelantar el pago por SINPE, abajo están los números.`
+      : `<b>Pagás por SINPE Móvil</b> el monto exacto de abajo${pedido.entrega === 'expres' ? ' (el envío se cotiza aparte)' : ''} y nos mandás el comprobante por WhatsApp.`;
+  const pasoEntrega = esCaja && enc
+    ? `<b>${enc} ${enc === 1 ? 'pieza va' : 'piezas van'} por encargo</b>: ${enc === 1 ? 'la pedimos' : 'las pedimos'} apenas esté el pago y tardan de ${CONFIG.ENCARGO_DIAS_MIN} a ${CONFIG.ENCARGO_DIAS_MAX} días hábiles en llegar. Te avisamos por WhatsApp para coordinar ${esRetiro ? 'el retiro' : 'el envío'}.`
+    : `<b>${esRetiro ? 'Coordinamos el retiro' : 'Lo enviamos'}</b>${pedido.entrega === 'correos' ? ' y te pasamos el número de guía' : ''}.`;
   const html = `
     <div class="listo">
       <div class="marca-ok">
         <svg width="30" height="30" viewBox="0 0 24 24" fill="none" stroke="#3F7A57" stroke-width="2.4" stroke-linecap="round" stroke-linejoin="round" aria-hidden="true"><polyline points="4 12.5 9.5 18 20 6.5"/></svg>
       </div>
-      <h3>Pedido recibido</h3>
+      <h3>${esCaja ? 'Caja recibida' : 'Pedido recibido'}</h3>
       <div class="num">${esc(numero)} · ${esc(fecha)}</div>
 
-      ${pedido.repetido ? `<div class="aviso ok" style="margin:0 0 14px"><b>Tu pedido ya había entrado</b> — no se duplicó. Es el mismo ${esc(numero)}.</div>` : ''}
+      ${pedido.repetido ? `<div class="aviso ok" style="margin:0 0 14px"><b>${esCaja ? 'Tu caja ya había entrado' : 'Tu pedido ya había entrado'}</b> — no se duplicó. Es el mismo ${esc(numero)}.</div>` : ''}
 
       <div class="pasos">
-        <div class="paso"><i>1</i><p><b>Ya quedó guardado.</b> Revisamos que todo esté en stock.</p></div>
-        <div class="paso"><i>2</i><p><b>Te escribimos por WhatsApp</b> desde el <b>${esc(numerosWhatsapp())}</b> (cualquiera de los dos es nuestro), en horario de ${esc(CONFIG.HORA_ATENCION)}. Si pediste fuera de ese horario no perdés nada esperando: tu pedido ya está guardado.</p></div>
-        <div class="paso"><i>3</i><p>${esRetiro
-          ? `<b>Pagás al retirar</b>, en efectivo o SINPE Móvil. Si preferís adelantar el pago por SINPE, abajo están los números.`
-          : `<b>Pagás por SINPE Móvil</b> el monto exacto de abajo${pedido.entrega === 'expres' ? ' (el envío se cotiza aparte)' : ''} y nos mandás el comprobante por WhatsApp.`}</p></div>
-        <div class="paso"><i>4</i><p><b>${esRetiro ? 'Coordinamos el retiro' : 'Lo enviamos'}</b>${pedido.entrega === 'correos' ? ' y te pasamos el número de guía' : ''}.</p></div>
+        <div class="paso"><i>1</i><p>${esCaja ? '<b>Ya quedó guardada.</b> Revisamos tu caja producto por producto.' : '<b>Ya quedó guardado.</b> Revisamos que todo esté en stock.'}</p></div>
+        <div class="paso"><i>2</i><p><b>Te escribimos por WhatsApp</b> desde el <b>${esc(numerosWhatsapp())}</b> (cualquiera de los dos es nuestro), en horario de ${esc(CONFIG.HORA_ATENCION)}. Si pediste fuera de ese horario no perdés nada esperando: tu ${esCaja ? 'caja' : 'pedido'} ya está guardad${esCaja ? 'a' : 'o'}.</p></div>
+        <div class="paso"><i>3</i><p>${pasoPago}</p></div>
+        <div class="paso"><i>4</i><p>${pasoEntrega}</p></div>
       </div>
 
       <div class="resumen">
@@ -2202,7 +2374,7 @@ function verConfirmacion(numero, pedido){
       </div>
       <button class="btn-suave" type="button" id="seguirComprando">Volver a la tienda</button>
     </div>`;
-  abrirHoja('Pedido confirmado', html);
+  abrirHoja(esCaja ? 'Caja confirmada' : 'Pedido confirmado', html);
 }
 
 // Copiar el número de SINPE con un toque — evita errores de tipeo al pasarlo a mano.
@@ -2526,11 +2698,370 @@ function verConfirmacionEncargo(productos){
 }
 
 /* ══════════════════════════════════════════════════════════════
+   ARMÁ TU CAJA — compra al por mayor de los productos que ella elige
+   Cada producto de la caja lleva CONFIG.MINIMO_MAYOREO o más (los tonos del
+   mismo producto suman) y todo va a precio mayorista: con 1 o 2 de un
+   producto no hay precio mayorista, así que no se acepta. Lo que no está en
+   stock se pide por encargo (20 a 25 días hábiles) y se le avisa ANTES de
+   confirmar. El servidor vuelve a revisar todo; esto es solo para mostrarlo.
+   ══════════════════════════════════════════════════════════════ */
+function cargarCaja(){
+  try {
+    const v = JSON.parse(localStorage.getItem(LLAVE_CAJA));
+    if (!v || typeof v !== 'object' || Array.isArray(v)) return {};
+    const limpio = {};
+    Object.entries(v).forEach(([id, n]) => {
+      n = Math.floor(Number(n) || 0);
+      if (n > 0) limpio[id] = n;
+    });
+    return limpio;
+  } catch { return {}; }
+}
+function guardarCaja(){
+  try { localStorage.setItem(LLAVE_CAJA, JSON.stringify(CAJA)); } catch {}
+}
+
+// Unidades que hay en mano ya (por encargo nunca hay, aunque la hoja tenga un número)
+const stockLibre = (p) => p.modalidad === 'encargo' ? 0 : Math.max(0, Number(p.stock) || 0);
+// Cuántas piezas de esa línea hay que mandar a traer
+const faltanDe = (p, n) => Math.max(0, n - stockLibre(p));
+// Solo entran a una caja los productos que tienen precio mayorista
+const productosDeCaja = () => PRODUCTOS.filter(tieneMayoreo);
+const topeTono = (p) => CAJA_SOLO_YA ? Math.min(CONFIG.MAX_POR_PRODUCTO_MAYOREO, stockLibre(p)) : CONFIG.MAX_POR_PRODUCTO_MAYOREO;
+
+function lineasCaja(){
+  return Object.entries(CAJA).map(([id, n]) => {
+    const p = PRODUCTOS.find(x => String(x.id) === String(id));
+    return p && tieneMayoreo(p) ? { p, n } : null;
+  }).filter(Boolean);
+}
+const unidadesCaja = () => lineasCaja().reduce((a, { n }) => a + n, 0);
+const totalCaja = () => lineasCaja().reduce((a, { p, n }) => a + Number(p.precioMayorista) * n, 0);
+const unidadesCajaDe = (clave) => lineasCaja().reduce((a, { p, n }) => a + (claveGrupo(p) === clave ? n : 0), 0);
+const piezasPorEncargo = () => lineasCaja().reduce((a, { p, n }) => a + faltanDe(p, n), 0);
+
+// Productos de la caja que todavía no llegan al mínimo
+function familiasIncompletas(){
+  const vistas = new Map();
+  lineasCaja().forEach(({ p }) => {
+    const c = claveGrupo(p);
+    if (!vistas.has(c)) vistas.set(c, { clave: c, nombre: p.nombre, n: unidadesCajaDe(c) });
+  });
+  return [...vistas.values()].filter(f => f.n < CONFIG.MINIMO_MAYOREO);
+}
+const cajaValida = () => lineasCaja().length > 0 && familiasIncompletas().length === 0;
+
+// Quita de la caja lo que ya no existe o ya no tiene precio mayorista
+function limpiarCajaFantasma(){
+  let cambio = false;
+  Object.keys(CAJA).forEach(id => {
+    const p = PRODUCTOS.find(x => String(x.id) === String(id));
+    if (!p || !tieneMayoreo(p)){ delete CAJA[id]; cambio = true; }
+  });
+  if (cambio) guardarCaja();
+}
+
+function actualizarBadgeCaja(){
+  const n = unidadesCaja();
+  const btn = $('#btnCaja');
+  if (btn){
+    $('#numCaja').textContent = n;
+    btn.classList.toggle('oculto', n === 0);
+  }
+  actualizarBarra();
+}
+
+// Los productos agrupados por marca + nombre (los tonos van adentro)
+function familiasDeCaja(){
+  const grupos = new Map();
+  productosDeCaja().forEach(p => {
+    const clave = claveGrupo(p);
+    if (!grupos.has(clave)) grupos.set(clave, { clave, marca: p.marca || '', nombre: p.nombre, categoria: p.categoria, variantes: [] });
+    grupos.get(clave).variantes.push(p);
+  });
+  const lista = [...grupos.values()];
+  lista.forEach(f => {
+    f.stock = f.variantes.reduce((a, v) => a + stockLibre(v), 0);
+    f.conFoto = f.variantes.find(v => v.foto) || f.variantes[0];
+    const precios = f.variantes.map(v => Number(v.precioMayorista));
+    f.min = Math.min(...precios);
+    f.max = Math.max(...precios);
+  });
+  // Primero lo que se puede llevar ya, después por marca
+  const min = CONFIG.MINIMO_MAYOREO;
+  return lista.sort((a, b) =>
+    (b.stock >= min) - (a.stock >= min) ||
+    a.marca.localeCompare(b.marca, 'es') || a.nombre.localeCompare(b.nombre, 'es'));
+}
+
+function familiasVisiblesCaja(){
+  const q = sinTildes(CAJA_BUSQUEDA.trim());
+  const min = CONFIG.MINIMO_MAYOREO;
+  return familiasDeCaja().filter(f => {
+    if (CAJA_MARCA !== 'Todas' && f.marca !== CAJA_MARCA) return false;
+    // "Solo entrega inmediata": únicamente los que alcanzan para el mínimo con lo que hay
+    // (o los que ya están en la caja, para que se puedan corregir)
+    if (CAJA_SOLO_YA && f.stock < min && unidadesCajaDe(f.clave) === 0) return false;
+    if (!q) return true;
+    return sinTildes([f.marca, f.nombre, f.categoria, ...f.variantes.map(v => v.tono)].filter(Boolean).join(' ')).includes(q);
+  });
+}
+
+function htmlTonoCaja(v){
+  const n = CAJA[v.id] || 0;
+  const libre = stockLibre(v);
+  const falta = faltanDe(v, n);
+  let nota;
+  if (n > 0 && falta > 0) nota = `<span class="cj-parcial">${libre > 0 ? libre + ' ya · ' : ''}${falta} por encargo</span>`;
+  else if (libre > 0) nota = `<span class="cj-ya">${libre} ${libre === 1 ? 'disponible' : 'disponibles'} ya</span>`;
+  else nota = '<span class="cj-enc">Por encargo</span>';
+  return `<div class="cj-tono">
+    <div class="cj-tono-txt"><div class="cj-tono-nombre">${esc(v.tono || 'Único')}</div>${nota}</div>
+    <div class="paso-cant">
+      <button type="button" data-caja-menos="${esc(v.id)}" aria-label="Quitar una unidad" ${n <= 0 ? 'disabled' : ''}>−</button>
+      <span>${n}</span>
+      <button type="button" data-caja-mas="${esc(v.id)}" aria-label="Agregar una unidad" ${n >= topeTono(v) ? 'disabled' : ''}>+</button>
+    </div>
+  </div>`;
+}
+
+function htmlFamiliaCaja(f, abrirSiempre){
+  const min = CONFIG.MINIMO_MAYOREO;
+  const unidades = unidadesCajaDe(f.clave);
+  const abierta = abrirSiempre || CAJA_ABIERTAS.has(f.clave);
+  const precio = f.min === f.max ? colones(f.min) : 'desde ' + colones(f.min);
+  const disp = f.stock >= min
+    ? '<span class="etiqueta e-ok">Entrega inmediata</span>'
+    : f.stock > 0
+      ? `<span class="etiqueta e-pocas">${f.stock} ${f.stock === 1 ? 'disponible' : 'disponibles'} ya · el resto por encargo</span>`
+      : '<span class="etiqueta e-encargo">Por encargo</span>';
+  const cuenta = unidades === 0 ? ''
+    : unidades >= min ? `<span class="cj-cuenta cj-lista">${unidades}</span>`
+    : `<span class="cj-cuenta cj-falta">${unidades}/${min}</span>`;
+  const tonos = f.variantes.filter(v => !CAJA_SOLO_YA || stockLibre(v) > 0 || (CAJA[v.id] || 0) > 0);
+  const cuerpo = abierta ? `<div class="cj-tonos">
+      ${unidades > 0 && unidades < min ? `<div class="cj-pista">Llevás ${unidades}: agregá ${min - unidades} más de este producto (cualquier tono) para el precio mayorista.</div>` : ''}
+      ${tonos.map(htmlTonoCaja).join('')}
+    </div>` : '';
+  return `<div class="cj-fam">
+    <button class="cj-cab" type="button" data-caja-fam="${esc(f.clave)}" aria-expanded="${abierta}">
+      <div class="mini">${tarjetaFoto(f.conFoto, 150)}</div>
+      <div class="cj-info">
+        <div class="lc-nombre">${esc(f.nombre)}</div>
+        <div class="cj-sub">${esc(f.marca)}${f.variantes.length > 1 ? ' · ' + f.variantes.length + ' tonos' : ''}</div>
+        <div class="cj-precio">${precio} c/u</div>
+        ${disp}
+      </div>
+      <div class="cj-der">${cuenta}<span class="cj-flecha" aria-hidden="true">${abierta ? '−' : '+'}</span></div>
+    </button>
+    ${cuerpo}
+  </div>`;
+}
+
+function htmlCajaVacia(){
+  const min = CONFIG.MINIMO_MAYOREO;
+  if (CAJA_SOLO_YA && !CAJA_BUSQUEDA.trim() && CAJA_MARCA === 'Todas'){
+    return `<div class="cj-vacio"><b>Ahora mismo no hay productos con ${min} o más unidades en mano.</b><br>
+      Podés armar tu caja por encargo: llega en ${CONFIG.ENCARGO_DIAS_MIN} a ${CONFIG.ENCARGO_DIAS_MAX} días hábiles.
+      <button class="btn-suave" type="button" data-caja-todo>Ver también los productos por encargo</button></div>`;
+  }
+  return `<div class="cj-vacio">No encontramos ese producto con precio al por mayor.${CAJA_SOLO_YA ? '<br>Tenés activado «Solo entrega inmediata».' : ''}</div>`;
+}
+
+function htmlPieCaja(){
+  const min = CONFIG.MINIMO_MAYOREO;
+  const u = unidadesCaja();
+  const productos = new Set(lineasCaja().map(({ p }) => claveGrupo(p))).size;
+  const incompletas = familiasIncompletas();
+  const enc = piezasPorEncargo();
+  let estado;
+  if (!u){
+    estado = `<span class="cj-estado">Elegí tus productos: cada uno lleva ${min} o más.</span>`;
+  } else if (incompletas.length){
+    const nombres = incompletas.slice(0, 2).map(f => `${esc(f.nombre)} (${f.n} de ${min})`).join(', ');
+    const resto = incompletas.length > 2 ? ` y ${incompletas.length - 2} más` : '';
+    estado = `<span class="cj-estado cj-alerta">Te falta completar: ${nombres}${resto}.</span>`;
+  } else if (enc){
+    estado = `<span class="cj-estado">${enc} ${enc === 1 ? 'pieza va' : 'piezas van'} por encargo (${CONFIG.ENCARGO_DIAS_MIN} a ${CONFIG.ENCARGO_DIAS_MAX} días hábiles). Te lo confirmamos antes de seguir.</span>`;
+  } else {
+    estado = '<span class="cj-estado cj-bien">Todo disponible: entrega inmediata.</span>';
+  }
+  return `
+    <div class="cj-total"><span>${productos} ${productos === 1 ? 'producto' : 'productos'} · ${u} ${u === 1 ? 'pieza' : 'piezas'}${u ? ' · <button class="lc-quitar" type="button" data-caja-vaciar>Vaciar</button>' : ''}</span><b>${colones(totalCaja())}</b></div>
+    ${estado}
+    <button class="btn-grande" type="button" data-caja-continuar ${cajaValida() ? '' : 'disabled'}>Continuar</button>`;
+}
+
+function pintarCaja(){
+  const lista = $('#cajaLista'), pie = $('#cajaPie');
+  if (!lista || !pie) return;
+  const familias = familiasVisiblesCaja();
+  // Si la búsqueda deja pocos productos, se muestran ya abiertos con sus tonos
+  const abrirSiempre = CAJA_BUSQUEDA.trim() !== '' && familias.length <= 3;
+  lista.innerHTML = familias.length ? familias.map(f => htmlFamiliaCaja(f, abrirSiempre)).join('') : htmlCajaVacia();
+  pie.innerHTML = htmlPieCaja();
+}
+
+let tCajaBusca;
+function verCaja(){
+  const min = CONFIG.MINIMO_MAYOREO;
+  CAJA_ABIERTAS = new Set(lineasCaja().map(({ p }) => claveGrupo(p)));
+  const marcas = [...new Set(productosDeCaja().map(p => p.marca).filter(Boolean))].sort((a, b) => a.localeCompare(b, 'es'));
+  if (CAJA_MARCA !== 'Todas' && !marcas.includes(CAJA_MARCA)) CAJA_MARCA = 'Todas';
+  abrirHoja('Armá tu caja', `
+    <p class="cj-intro">Cada producto lleva <b>mínimo ${min}</b> (podés combinar tonos del mismo producto) y todo va a <b>precio mayorista</b>.</p>
+    <div class="cj-garantia"><span>✓</span><span>Todo <b>nuevo, sellado y original</b>.</span></div>
+    <div class="cj-filtros">
+      <input type="search" id="cajaBuscar" placeholder="Buscar…" aria-label="Buscar productos para la caja" value="${esc(CAJA_BUSQUEDA)}">
+      <select class="select-filtro${CAJA_MARCA !== 'Todas' ? ' activo' : ''}" id="cajaMarca" aria-label="Filtrar por marca">
+        <option value="Todas">Todas las marcas</option>
+        ${marcas.map(m => `<option value="${esc(m)}"${m === CAJA_MARCA ? ' selected' : ''}>${esc(m)}</option>`).join('')}
+      </select>
+    </div>
+    <label class="cj-solo"><input type="checkbox" id="cajaSoloYa" ${CAJA_SOLO_YA ? 'checked' : ''}>
+      <span><b>Solo entrega inmediata</b><small>Lo que tenemos en mano. Lo demás va por encargo (${CONFIG.ENCARGO_DIAS_MIN} a ${CONFIG.ENCARGO_DIAS_MAX} días hábiles).</small></span></label>
+    <div id="cajaLista"></div>
+    <div class="cj-pie" id="cajaPie"></div>`);
+  $('#cajaBuscar').addEventListener('input', (ev) => {
+    clearTimeout(tCajaBusca);
+    tCajaBusca = setTimeout(() => { CAJA_BUSQUEDA = ev.target.value; pintarCaja(); }, 160);
+  });
+  $('#cajaMarca').addEventListener('change', (ev) => {
+    CAJA_MARCA = ev.target.value;
+    ev.target.classList.toggle('activo', CAJA_MARCA !== 'Todas');
+    pintarCaja();
+  });
+  $('#cajaSoloYa').addEventListener('change', (ev) => { CAJA_SOLO_YA = ev.target.checked; pintarCaja(); });
+  pintarCaja();
+}
+
+function alternarFamiliaCaja(clave){
+  if (CAJA_ABIERTAS.has(clave)) CAJA_ABIERTAS.delete(clave); else CAJA_ABIERTAS.add(clave);
+  pintarCaja();
+}
+
+function cambiarCaja(id, delta){
+  const p = PRODUCTOS.find(x => String(x.id) === String(id));
+  if (!p || !tieneMayoreo(p)) return;
+  const actual = CAJA[id] || 0;
+  const tope = topeTono(p);
+  // El servidor acepta hasta 40 líneas (producto + tono) por pedido
+  if (delta > 0 && actual === 0 && Object.keys(CAJA).length >= CONFIG.MAX_LINEAS_CAJA){
+    brindis(`Máximo ${CONFIG.MAX_LINEAS_CAJA} tonos distintos por caja`);
+    return;
+  }
+  const nuevo = Math.max(0, Math.min(tope, actual + delta));
+  if (nuevo === actual){
+    if (delta > 0) brindis(CAJA_SOLO_YA && stockLibre(p) <= actual ? 'No hay más de ese tono en mano' : `Máximo ${tope} por tono`);
+    return;
+  }
+  if (nuevo === 0) delete CAJA[id]; else CAJA[id] = nuevo;
+  guardarCaja();
+  pintarCaja();
+  actualizarBadgeCaja();
+}
+
+function vaciarCaja(){
+  if (!confirm('¿Vaciar toda la caja?')) return;
+  CAJA = {};
+  guardarCaja();
+  pintarCaja();
+  actualizarBadgeCaja();
+}
+
+// Desde la ficha de un producto: abre el armador con ese producto ya puesto (con el mínimo)
+function cajaConProducto(id){
+  const p = PRODUCTOS.find(x => String(x.id) === String(id));
+  if (!p || !tieneMayoreo(p)) return;
+  if (unidadesCajaDe(claveGrupo(p)) === 0){
+    if (stockLibre(p) < CONFIG.MINIMO_MAYOREO) CAJA_SOLO_YA = false;
+    CAJA[p.id] = CONFIG.MINIMO_MAYOREO;
+    guardarCaja();
+    actualizarBadgeCaja();
+  }
+  verCaja();
+}
+
+function cajaContinuar(){
+  if (!cajaValida()) return;
+  if (piezasPorEncargo() > 0) return verAvisoCaja();
+  irACheckoutCaja();
+}
+
+function irACheckoutCaja(){
+  MODO_PEDIDO = 'caja';
+  verCheckout();
+}
+
+// Si la caja trae piezas que hay que mandar a traer, se le dice ANTES de
+// pedirle sus datos, con la opción de quedarse solo con lo que hay en mano.
+function verAvisoCaja(){
+  const enc = piezasPorEncargo();
+  const total = unidadesCaja();
+  const ya = total - enc;
+  const detalle = lineasCaja().filter(({ p, n }) => faltanDe(p, n) > 0).map(({ p, n }) =>
+    `<li>${esc(p.nombre)}${p.tono ? ' · ' + esc(p.tono) : ''} <b>× ${faltanDe(p, n)}</b></li>`).join('');
+  abrirHoja('Antes de seguir', `
+    <div class="aviso" style="margin-top:0"><b>Los productos que seleccionaste no están todos disponibles ahora.</b>
+      Hay que mandarlos a traer, y tardan de <b>${CONFIG.ENCARGO_DIAS_MIN} a ${CONFIG.ENCARGO_DIAS_MAX} días hábiles</b> en llegar.</div>
+    <p class="rotulo" style="margin:20px 0 8px">Van por encargo (${enc} de ${total})</p>
+    <ul class="cj-lista-enc">${detalle}</ul>
+    ${ya > 0 ? `<p style="margin:0 0 6px;font-size:13px;color:var(--tinta-2)">Las otras ${ya} ${ya === 1 ? 'pieza la tenemos' : 'piezas las tenemos'} en mano.</p>` : ''}
+    <button class="btn-grande" type="button" data-caja-seguir>Pedir la caja completa</button>
+    <button class="btn-suave" type="button" data-caja-solo-ya>Dejar solo lo que hay ahora</button>
+    <button class="btn-suave" type="button" data-caja-editar>Volver a editar mi caja</button>`);
+}
+
+// Recorta cada línea a lo que hay en mano y saca los productos que así ya no
+// llegan al mínimo. No cambia de tono a nadie: lo que queda se ve en el armador.
+function cajaSoloLoQueHay(){
+  const nueva = {};
+  const porProducto = new Map();
+  lineasCaja().forEach(({ p, n }) => {
+    const c = claveGrupo(p);
+    if (!porProducto.has(c)) porProducto.set(c, []);
+    porProducto.get(c).push({ p, n: Math.min(n, stockLibre(p)) });
+  });
+  porProducto.forEach(lineas => {
+    const suma = lineas.reduce((a, l) => a + l.n, 0);
+    if (suma < CONFIG.MINIMO_MAYOREO) return;
+    lineas.forEach(l => { if (l.n > 0) nueva[l.p.id] = l.n; });
+  });
+  CAJA = nueva;
+  CAJA_SOLO_YA = true;
+  guardarCaja();
+  actualizarBadgeCaja();
+  verCaja();
+  brindis(unidadesCaja()
+    ? 'Dejamos solo lo que hay ahora. Revisá tu caja.'
+    : `Ninguno de tus productos tiene ${CONFIG.MINIMO_MAYOREO} en mano. Podés elegir otros.`);
+}
+
+/* ══════════════════════════════════════════════════════════════
    EVENTOS
    ══════════════════════════════════════════════════════════════ */
 document.addEventListener('click', (ev) => {
-  const t = ev.target.closest('[data-agregar],[data-mas],[data-menos],[data-quitar],[data-encargo],[data-encargo-libre],[data-quitar-encargo],[data-encargo-mas],[data-encargo-menos],[data-tono-id],[data-cat],[data-copiar],[data-ver],#irCheckout,#irEncargos,#seguirComprando,#btnCarrito,#btnVerCarrito,#btnEncargos,#btnBarraEncargos,#btnCerrar,#btnLimpiarFiltros,#verMasProductos');
+  const t = ev.target.closest('[data-agregar],[data-mas],[data-menos],[data-quitar],[data-encargo],[data-encargo-libre],[data-quitar-encargo],[data-encargo-mas],[data-encargo-menos],[data-tono-id],[data-cat],[data-copiar],[data-ver],[data-caja-mas],[data-caja-menos],[data-caja-fam],[data-caja-abrir],[data-caja-con],[data-caja-continuar],[data-caja-vaciar],[data-caja-seguir],[data-caja-solo-ya],[data-caja-editar],[data-caja-todo],#btnCaja,#btnBarraCaja,#irCheckout,#irEncargos,#seguirComprando,#btnCarrito,#btnVerCarrito,#btnEncargos,#btnBarraEncargos,#btnCerrar,#btnLimpiarFiltros,#verMasProductos');
   if (!t) return;
+
+  // Armá tu caja
+  if (t.dataset.cajaMas !== undefined)       return cambiarCaja(t.dataset.cajaMas, 1);
+  if (t.dataset.cajaMenos !== undefined)     return cambiarCaja(t.dataset.cajaMenos, -1);
+  if (t.dataset.cajaFam !== undefined)       return alternarFamiliaCaja(t.dataset.cajaFam);
+  if (t.dataset.cajaAbrir !== undefined)     return verCaja();
+  if (t.dataset.cajaCon !== undefined)       return cajaConProducto(t.dataset.cajaCon);
+  if (t.dataset.cajaContinuar !== undefined) return cajaContinuar();
+  if (t.dataset.cajaVaciar !== undefined)    return vaciarCaja();
+  if (t.dataset.cajaSeguir !== undefined)    return irACheckoutCaja();
+  if (t.dataset.cajaSoloYa !== undefined)    return cajaSoloLoQueHay();
+  if (t.dataset.cajaEditar !== undefined)    return verCaja();
+  if (t.dataset.cajaTodo !== undefined){
+    CAJA_SOLO_YA = false;
+    const marca = $('#cajaSoloYa');
+    if (marca) marca.checked = false;
+    return pintarCaja();
+  }
+  if (t.id === 'btnCaja' || t.id === 'btnBarraCaja') return verCaja();
 
   if (t.id === 'verMasProductos'){
     limiteGrilla += TANDA_GRILLA;
@@ -2574,7 +3105,7 @@ document.addEventListener('click', (ev) => {
     pintarGrilla(true);
     return;
   }
-  if (t.id === 'irCheckout')       return verCheckout();
+  if (t.id === 'irCheckout'){ MODO_PEDIDO = 'carrito'; return verCheckout(); }
   if (t.id === 'irEncargos')       return verCheckoutEncargo();
   if (t.id === 'seguirComprando')  return cerrarHoja();
   if (t.id === 'btnCarrito' || t.id === 'btnVerCarrito') return verCarrito();
@@ -2633,6 +3164,7 @@ $('#pieWhats').textContent  = 'WhatsApp ' + CONFIG.WHATSAPP_VISIBLE + ' · ' + C
 $$('.numerosWhats').forEach(el => { el.textContent = numerosWhatsapp(); });
 $('#pieEncargoDias').textContent = CONFIG.ENCARGO_DIAS_MIN + ' a ' + CONFIG.ENCARGO_DIAS_MAX;
 $('#pieEncargoPct').textContent  = CONFIG.ENCARGO_ADELANTO_PCT;
+$('#pieCajaDias').textContent = CONFIG.ENCARGO_DIAS_MIN + ' a ' + CONFIG.ENCARGO_DIAS_MAX;
 cargarCatalogo();
 </script>
 </body>
