@@ -687,7 +687,11 @@ header{
 .cj-cab .mini .sin-foto{font-size:11px}
 .cj-info{min-width:0}
 .cj-sub{font-size:11.5px;color:var(--tinta-3);margin-top:1px}
-.cj-precio{font-size:12px;color:var(--salvia);font-weight:600;margin-top:2px;font-variant-numeric:tabular-nums}
+.cj-precio{font-size:12px;color:var(--tinta);font-weight:600;margin-top:2px;font-variant-numeric:tabular-nums;transform-origin:left center}
+.cj-precio.may{color:var(--salvia)}
+.cj-gana{font-size:11px;color:var(--salvia);margin-top:1px;line-height:1.35}
+.cj-precio.pup{animation:pup .5s var(--curva)}
+@keyframes pup{0%{transform:scale(1)}35%{transform:scale(1.18)}100%{transform:scale(1)}}
 .cj-info .etiqueta{margin:5px 0 0}
 .cj-der{display:flex;align-items:center;gap:8px}
 .cj-cuenta{
@@ -1123,6 +1127,7 @@ let CAJA      = cargarCaja();     // { idProducto: cantidad } — la caja al por
 let CAJA_SOLO_YA = false;         // "Solo entrega inmediata" en el armador
 let CAJA_BUSQUEDA = '', CAJA_MARCA = 'Todas';
 let CAJA_ABIERTAS = new Set();    // productos con los tonos desplegados en el armador
+let CAJA_RECIEN = '';             // producto que acaba de llegar al mínimo (para el efecto del precio)
 let MODO_PEDIDO = 'carrito';      // el checkout sirve para el carrito y para la caja
 let CATEGORIA = 'Todo';
 let BUSQUEDA  = '';
@@ -2736,7 +2741,17 @@ function lineasCaja(){
   }).filter(Boolean);
 }
 const unidadesCaja = () => lineasCaja().reduce((a, { n }) => a + n, 0);
-const totalCaja = () => lineasCaja().reduce((a, { p, n }) => a + Number(p.precioMayorista) * n, 0);
+// Igual que en el carrito: mientras un producto no llegue al mínimo se cobra a su
+// precio normal; al llegar (sumando tonos) baja al mayorista. Una caja lista para
+// pedir tiene todos sus productos en el mínimo, así que su total es todo mayorista.
+function totalCaja(){
+  const lineas = lineasCaja();
+  const porProducto = {};
+  lineas.forEach(({ p, n }) => { const c = claveGrupo(p); porProducto[c] = (porProducto[c] || 0) + n; });
+  return lineas.reduce((a, { p, n }) =>
+    a + (porProducto[claveGrupo(p)] >= CONFIG.MINIMO_MAYOREO ? Number(p.precioMayorista) : precioFinal(p)) * n, 0);
+}
+const llegoAlMinimo = (p) => unidadesCajaDe(claveGrupo(p)) >= CONFIG.MINIMO_MAYOREO;
 const unidadesCajaDe = (clave) => lineasCaja().reduce((a, { p, n }) => a + (claveGrupo(p) === clave ? n : 0), 0);
 const piezasPorEncargo = () => lineasCaja().reduce((a, { p, n }) => a + faltanDe(p, n), 0);
 
@@ -2786,6 +2801,9 @@ function familiasDeCaja(){
     const precios = f.variantes.map(v => Number(v.precioMayorista));
     f.min = Math.min(...precios);
     f.max = Math.max(...precios);
+    const normales = f.variantes.map(v => precioFinal(v));
+    f.minN = Math.min(...normales);
+    f.maxN = Math.max(...normales);
   });
   // Primero lo que se puede llevar ya, después por marca
   const min = CONFIG.MINIMO_MAYOREO;
@@ -2829,7 +2847,12 @@ function htmlFamiliaCaja(f, abrirSiempre){
   const min = CONFIG.MINIMO_MAYOREO;
   const unidades = unidadesCajaDe(f.clave);
   const abierta = abrirSiempre || CAJA_ABIERTAS.has(f.clave);
-  const precio = f.min === f.max ? colones(f.min) : 'desde ' + colones(f.min);
+  const precioMay = f.min === f.max ? colones(f.min) : 'desde ' + colones(f.min);
+  const precioNormal = f.minN === f.maxN ? colones(f.minN) : 'desde ' + colones(f.minN);
+  // Hasta llegar al mínimo se ve el precio normal; al llegar aparece el mayorista
+  const bloquePrecio = unidades >= min
+    ? `<div class="cj-precio may${CAJA_RECIEN === f.clave ? ' pup' : ''}">${precioMay} c/u <span class="tag-mayoreo">MAYOREO</span><span class="lc-antes">${precioNormal}</span></div>`
+    : `<div class="cj-precio">${precioNormal} c/u</div><div class="cj-gana">Con ${min} o más: ${precioMay} c/u</div>`;
   const disp = f.stock >= min
     ? '<span class="etiqueta e-ok">Entrega inmediata</span>'
     : f.stock > 0
@@ -2849,7 +2872,7 @@ function htmlFamiliaCaja(f, abrirSiempre){
       <div class="cj-info">
         <div class="lc-nombre">${esc(f.nombre)}</div>
         <div class="cj-sub">${esc(f.marca)}${f.variantes.length > 1 ? ' · ' + f.variantes.length + ' tonos' : ''}</div>
-        <div class="cj-precio">${precio} c/u</div>
+        ${bloquePrecio}
         ${disp}
       </div>
       <div class="cj-der">${cuenta}<span class="cj-flecha" aria-hidden="true">${abierta ? '−' : '+'}</span></div>
@@ -2899,6 +2922,7 @@ function pintarCaja(){
   // Si la búsqueda deja pocos productos, se muestran ya abiertos con sus tonos
   const abrirSiempre = CAJA_BUSQUEDA.trim() !== '' && familias.length <= 3;
   lista.innerHTML = familias.length ? familias.map(f => htmlFamiliaCaja(f, abrirSiempre)).join('') : htmlCajaVacia();
+  CAJA_RECIEN = '';   // el efecto del precio se muestra una sola vez
   pie.innerHTML = htmlPieCaja();
 }
 
@@ -2909,7 +2933,7 @@ function verCaja(){
   const marcas = [...new Set(productosDeCaja().map(p => p.marca).filter(Boolean))].sort((a, b) => a.localeCompare(b, 'es'));
   if (CAJA_MARCA !== 'Todas' && !marcas.includes(CAJA_MARCA)) CAJA_MARCA = 'Todas';
   abrirHoja('Armá tu caja', `
-    <p class="cj-intro">Cada producto lleva <b>mínimo ${min}</b> (podés combinar tonos del mismo producto) y todo va a <b>precio mayorista</b>.</p>
+    <p class="cj-intro">Cada producto lleva <b>mínimo ${min}</b> (podés combinar tonos del mismo producto). Al llegar a ${min}, ese producto baja a su <b>precio mayorista</b>.</p>
     <div class="cj-garantia"><span>✓</span><span>Todo <b>nuevo, sellado y original</b>.</span></div>
     <div class="cj-filtros">
       <input type="search" id="cajaBuscar" placeholder="Buscar…" aria-label="Buscar productos para la caja" value="${esc(CAJA_BUSQUEDA)}">
@@ -2950,6 +2974,7 @@ function cambiarCaja(id, delta){
     brindis(`Máximo ${CONFIG.MAX_LINEAS_CAJA} tonos distintos por caja`);
     return;
   }
+  const antesMayorista = llegoAlMinimo(p);
   const nuevo = Math.max(0, Math.min(tope, actual + delta));
   if (nuevo === actual){
     if (delta > 0) brindis(CAJA_SOLO_YA && stockLibre(p) <= actual ? 'No hay más de ese tono en mano' : `Máximo ${tope} por tono`);
@@ -2957,6 +2982,12 @@ function cambiarCaja(id, delta){
   }
   if (nuevo === 0) delete CAJA[id]; else CAJA[id] = nuevo;
   guardarCaja();
+  // Al llegar al mínimo, el precio de ese producto baja al mayorista con un pequeño "salto"
+  if (!antesMayorista && llegoAlMinimo(p)){
+    CAJA_RECIEN = claveGrupo(p);
+    const ahorro = (precioFinal(p) - Number(p.precioMayorista)) * unidadesCajaDe(CAJA_RECIEN);
+    brindis(ahorro > 0 ? `Precio mayorista aplicado. Ahorrás ${colones(ahorro)}` : 'Precio mayorista aplicado');
+  }
   pintarCaja();
   actualizarBadgeCaja();
 }
