@@ -3261,10 +3261,10 @@ function htmlMist(){
     ${entrega}
     <div class="resumen">
       <div class="r-fila"><span>${MIST.cantidad === 1 ? t.piezas + ' piezas' : MIST.cantidad + ' cajas · ' + (t.piezas * MIST.cantidad) + ' piezas'}</span><span>${colones(precioMist())}</span></div>
-      <div class="r-fila"><span>Valor en tienda de lo que te toque</span><span>${colones(t.valorMin * MIST.cantidad)} o más</span></div>
+      <div class="r-fila"><span>Valor en tienda del contenido</span><span>${colones(t.valorMin * MIST.cantidad)} o más</span></div>
     </div>
     <button class="btn-grande" type="button" data-mist-pedir>Pedir mi caja misteriosa</button>
-    <p class="nota-datos">Sin repetir productos. Se te revela al abrirla. El pago se coordina por WhatsApp y no armamos ni enviamos nada sin el pago completo.</p>`;
+    <p class="nota-datos">No se repiten productos y el contenido se revela al abrir la caja. El pago se coordina por WhatsApp y no armamos ni enviamos nada sin el pago completo.</p>`;
 }
 
 function verMisteriosa(){
