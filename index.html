@@ -666,6 +666,14 @@ header{
   background:var(--papel);font-weight:300;transition:border-color .16s var(--curva);
 }
 .cj-filtros input:focus{border-color:var(--tinta)}
+.cj-marcas{display:flex;flex-wrap:wrap;gap:6px;margin:0 0 10px}
+.cj-chip{font-size:11.5px;font-weight:500;color:var(--tinta-2);background:var(--papel);border:1px solid var(--linea);border-radius:var(--radio-chico);padding:7px 10px;line-height:1.2}
+.cj-chip small{color:var(--tinta-3);font-size:10.5px;margin-left:2px}
+.cj-chip:hover{border-color:var(--tinta-3)}
+.cj-chip[aria-pressed="true"]{background:var(--tinta);color:#FFF;border-color:var(--tinta)}
+.cj-chip[aria-pressed="true"] small{color:#DDD}
+.cj-chip-limpiar{color:var(--coral);border-color:var(--coral)}
+.cj-marcas-btn{text-align:left;cursor:pointer}
 .cj-filtros .select-filtro{flex:0 0 auto;width:100%;min-width:0;padding-left:10px}
 .cj-filtros input{min-width:0}
 .cj-solo{
@@ -1151,7 +1159,9 @@ let CARRITO   = cargarCarrito();
 let ENCARGOS  = cargarEncargos(); // lista de texto libre — "carrito" de productos por encargo
 let CAJA      = cargarCaja();     // { idProducto: cantidad } — la caja al por mayor que está armando
 let CAJA_SOLO_YA = false;         // "Solo entrega inmediata" en el armador
-let CAJA_BUSQUEDA = '', CAJA_MARCA = 'Todas';
+let CAJA_BUSQUEDA = '';
+let CAJA_MARCAS = new Set();      // marcas elegidas para filtrar el armador (vacío = todas)
+let CAJA_MARCAS_ABIERTO = false;  // si la lista de marcas está desplegada
 let CAJA_ABIERTAS = new Set();    // productos con los tonos desplegados en el armador
 let CAJA_RECIEN = '';             // producto que acaba de llegar al mínimo (para el efecto del precio)
 let MODO_PEDIDO = 'carrito';      // el checkout sirve para el carrito, la caja y la caja misteriosa
@@ -2894,7 +2904,7 @@ function familiasVisiblesCaja(){
   const q = sinTildes(CAJA_BUSQUEDA.trim());
   const min = CONFIG.MINIMO_MAYOREO;
   return familiasDeCaja().filter(f => {
-    if (CAJA_MARCA !== 'Todas' && f.marca !== CAJA_MARCA) return false;
+    if (CAJA_MARCAS.size && !CAJA_MARCAS.has(f.marca)) return false;
     // "Solo entrega inmediata": únicamente los que alcanzan para el mínimo con lo que hay
     // (o los que ya están en la caja, para que se puedan corregir)
     if (CAJA_SOLO_YA && f.stock < min && unidadesCajaDe(f.clave) === 0) return false;
@@ -2961,7 +2971,7 @@ function htmlFamiliaCaja(f, abrirSiempre){
 
 function htmlCajaVacia(){
   const min = CONFIG.MINIMO_MAYOREO;
-  if (CAJA_SOLO_YA && !CAJA_BUSQUEDA.trim() && CAJA_MARCA === 'Todas'){
+  if (CAJA_SOLO_YA && !CAJA_BUSQUEDA.trim() && !CAJA_MARCAS.size){
     return `<div class="cj-vacio"><b>Ahora mismo no hay productos con ${min} o más unidades en mano.</b><br>
       Podés armar tu caja por encargo: llega en ${CONFIG.ENCARGO_DIAS_MIN} a ${CONFIG.ENCARGO_DIAS_MAX} días hábiles.
       <button class="btn-suave" type="button" data-caja-todo>Ver también los productos por encargo</button></div>`;
@@ -2996,6 +3006,7 @@ function htmlPieCaja(){
 function pintarCaja(){
   const lista = $('#cajaLista'), pie = $('#cajaPie');
   if (!lista || !pie) return;
+  pintarMarcasCaja();
   const familias = familiasVisiblesCaja();
   // Si la búsqueda deja pocos productos, se muestran ya abiertos con sus tonos
   const abrirSiempre = CAJA_BUSQUEDA.trim() !== '' && familias.length <= 3;
@@ -3008,18 +3019,18 @@ let tCajaBusca;
 function verCaja(){
   const min = CONFIG.MINIMO_MAYOREO;
   CAJA_ABIERTAS = new Set(lineasCaja().map(({ p }) => claveGrupo(p)));
-  const marcas = [...new Set(productosDeCaja().map(p => p.marca).filter(Boolean))].sort((a, b) => a.localeCompare(b, 'es'));
-  if (CAJA_MARCA !== 'Todas' && !marcas.includes(CAJA_MARCA)) CAJA_MARCA = 'Todas';
+  CAJA_MARCAS_ABIERTO = false;
+  // (las marcas que ya no existen se sacan del filtro)
+  const marcasExisten = new Set(productosDeCaja().map(p => p.marca));
+  CAJA_MARCAS.forEach(m => { if (!marcasExisten.has(m)) CAJA_MARCAS.delete(m); });
   abrirHoja('Armá tu caja', `
     <p class="cj-intro">Cada producto lleva <b>mínimo ${min}</b> (podés combinar tonos del mismo producto). Al llegar a ${min}, ese producto baja a su <b>precio mayorista</b>.</p>
     <div class="cj-garantia"><span>✓</span><span>Todo <b>nuevo, sellado y original</b>.</span></div>
     <div class="cj-filtros">
       <input type="search" id="cajaBuscar" placeholder="Buscar…" aria-label="Buscar productos para la caja" value="${esc(CAJA_BUSQUEDA)}">
-      <select class="select-filtro${CAJA_MARCA !== 'Todas' ? ' activo' : ''}" id="cajaMarca" aria-label="Filtrar por marca">
-        <option value="Todas">Todas las marcas</option>
-        ${marcas.map(m => `<option value="${esc(m)}"${m === CAJA_MARCA ? ' selected' : ''}>${esc(m)}</option>`).join('')}
-      </select>
+      <button type="button" class="select-filtro cj-marcas-btn" id="cajaMarcasBtn" data-caja-marcas aria-expanded="false"></button>
     </div>
+    <div class="cj-marcas oculto" id="cajaMarcasPanel"></div>
     <label class="cj-solo"><input type="checkbox" id="cajaSoloYa" ${CAJA_SOLO_YA ? 'checked' : ''}>
       <span><b>Solo entrega inmediata</b><small>Lo que tenemos en mano. Lo demás va por encargo (${CONFIG.ENCARGO_DIAS_MIN} a ${CONFIG.ENCARGO_DIAS_MAX} días hábiles).</small></span></label>
     <div id="cajaLista"></div>
@@ -3028,12 +3039,33 @@ function verCaja(){
     clearTimeout(tCajaBusca);
     tCajaBusca = setTimeout(() => { CAJA_BUSQUEDA = ev.target.value; pintarCaja(); }, 160);
   });
-  $('#cajaMarca').addEventListener('change', (ev) => {
-    CAJA_MARCA = ev.target.value;
-    ev.target.classList.toggle('activo', CAJA_MARCA !== 'Todas');
-    pintarCaja();
-  });
   $('#cajaSoloYa').addEventListener('change', (ev) => { CAJA_SOLO_YA = ev.target.checked; pintarCaja(); });
+  pintarCaja();
+}
+
+// Marcas: una lista de botones (se puede elegir más de una) en vez de un menú del navegador,
+// que en algunos navegadores no mostraba las marcas.
+function pintarMarcasCaja(){
+  const btn = $('#cajaMarcasBtn'), panel = $('#cajaMarcasPanel');
+  if (!btn || !panel) return;
+  const cuantas = {};
+  familiasDeCaja().forEach(f => { if (f.marca) cuantas[f.marca] = (cuantas[f.marca] || 0) + 1; });
+  const marcas = Object.keys(cuantas).sort((a, b) => a.localeCompare(b, 'es'));
+  const n = CAJA_MARCAS.size;
+  btn.textContent = (n ? (n === 1 ? [...CAJA_MARCAS][0] : n + ' marcas') : 'Todas las marcas');
+  btn.classList.toggle('activo', n > 0);
+  btn.setAttribute('aria-expanded', String(CAJA_MARCAS_ABIERTO));
+  panel.classList.toggle('oculto', !CAJA_MARCAS_ABIERTO);
+  if (!CAJA_MARCAS_ABIERTO) return;
+  panel.innerHTML = (n ? '<button type="button" class="cj-chip cj-chip-limpiar" data-caja-marca="">Quitar filtro</button>' : '') +
+    marcas.map(m => '<button type="button" class="cj-chip" data-caja-marca="' + esc(m) + '" aria-pressed="' + CAJA_MARCAS.has(m) + '">' + esc(m) + ' <small>' + cuantas[m] + '</small></button>').join('');
+}
+
+function elegirMarcaCaja(marca){
+  if (!marca) CAJA_MARCAS.clear();
+  else if (CAJA_MARCAS.has(marca)) CAJA_MARCAS.delete(marca);
+  else CAJA_MARCAS.add(marca);
+  pintarMarcasCaja();
   pintarCaja();
 }
 
@@ -3230,7 +3262,7 @@ function pedirMist(){
    EVENTOS
    ══════════════════════════════════════════════════════════════ */
 document.addEventListener('click', (ev) => {
-  const t = ev.target.closest('[data-agregar],[data-mas],[data-menos],[data-quitar],[data-encargo],[data-encargo-libre],[data-quitar-encargo],[data-encargo-mas],[data-encargo-menos],[data-tono-id],[data-cat],[data-copiar],[data-ver],[data-caja-mas],[data-caja-menos],[data-caja-fam],[data-caja-abrir],[data-caja-con],[data-caja-continuar],[data-caja-vaciar],[data-caja-seguir],[data-caja-solo-ya],[data-caja-editar],[data-caja-todo],[data-mist-abrir],[data-mist-tam],[data-mist-entrega],[data-mist-mas],[data-mist-menos],[data-mist-pedir],#btnCaja,#btnBarraCaja,#irCheckout,#irEncargos,#seguirComprando,#btnCarrito,#btnVerCarrito,#btnEncargos,#btnBarraEncargos,#btnCerrar,#btnLimpiarFiltros,#verMasProductos');
+  const t = ev.target.closest('[data-agregar],[data-mas],[data-menos],[data-quitar],[data-encargo],[data-encargo-libre],[data-quitar-encargo],[data-encargo-mas],[data-encargo-menos],[data-tono-id],[data-cat],[data-copiar],[data-ver],[data-caja-marcas],[data-caja-marca],[data-caja-mas],[data-caja-menos],[data-caja-fam],[data-caja-abrir],[data-caja-con],[data-caja-continuar],[data-caja-vaciar],[data-caja-seguir],[data-caja-solo-ya],[data-caja-editar],[data-caja-todo],[data-mist-abrir],[data-mist-tam],[data-mist-entrega],[data-mist-mas],[data-mist-menos],[data-mist-pedir],#btnCaja,#btnBarraCaja,#irCheckout,#irEncargos,#seguirComprando,#btnCarrito,#btnVerCarrito,#btnEncargos,#btnBarraEncargos,#btnCerrar,#btnLimpiarFiltros,#verMasProductos');
   if (!t) return;
 
   // Caja misteriosa
@@ -3242,6 +3274,8 @@ document.addEventListener('click', (ev) => {
   if (t.dataset.mistPedir !== undefined)  return pedirMist();
 
   // Armá tu caja
+  if (t.dataset.cajaMarcas !== undefined){ CAJA_MARCAS_ABIERTO = !CAJA_MARCAS_ABIERTO; return pintarMarcasCaja(); }
+  if (t.dataset.cajaMarca !== undefined)  return elegirMarcaCaja(t.dataset.cajaMarca);
   if (t.dataset.cajaMas !== undefined)       return cambiarCaja(t.dataset.cajaMas, 1);
   if (t.dataset.cajaMenos !== undefined)     return cambiarCaja(t.dataset.cajaMenos, -1);
   if (t.dataset.cajaFam !== undefined)       return alternarFamiliaCaja(t.dataset.cajaFam);
