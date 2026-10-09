@@ -78,6 +78,7 @@ const CONFIG = {
   MAX_POR_PRODUCTO: 3,              // tope de unidades del mismo producto por pedido
   MAX_POR_PRODUCTO_MAYOREO: 60,     // tope para productos con precio mayorista (igual que el servidor)
   MAX_LINEAS_CAJA: 40,              // tonos distintos por caja (el servidor acepta hasta 40 líneas)
+  MAX_MISTERIOSAS: 3,               // cajas misteriosas por pedido (igual que el servidor)
   MINIMO_MAYOREO: 3,                // unidades del mismo producto (sumando tonos) para precio
                                     // mayorista — se reemplaza por el que manda el servidor
 
@@ -732,6 +733,12 @@ header{
 .cj-lista-enc{margin:0 0 12px;padding-left:18px;font-size:13px;line-height:1.7;color:var(--tinta-2)}
 .cj-lista-enc b{color:var(--tinta)}
 
+.mist-op .t1,.mist-op .t2{display:block}
+.mist-banner{border:1px solid var(--linea);background:var(--hueso);padding:26px 22px 24px;margin:26px 0 0}
+.mist-banner h2{font-weight:500;font-size:24px;letter-spacing:-.02em;margin:0 0 8px;color:var(--tinta)}
+.mist-banner p{margin:0;max-width:46ch;color:var(--tinta-2);font-size:14px}
+.mist-banner .hero-eyebrow{margin:0 0 10px}
+
 /* ── formulario ─────────────────────── */
 .grupo{margin-bottom:18px}
 .grupo > legend, .rotulo{
@@ -957,6 +964,14 @@ details[open] summary::after{content:"−"}
     <div class="hero-fotos" id="heroFotos"></div>
   </section>
 
+  <section class="mist-banner oculto" id="bloqueMist" aria-labelledby="mistTitulo">
+    <p class="hero-eyebrow" style="animation:none">Nuevo en Avellana</p>
+    <h2 id="mistTitulo">Caja misteriosa</h2>
+    <p>Vos elegís cuántas piezas. Nosotras elegimos la magia. Maquillaje nuevo, sellado y original, y siempre más barato que comprarlo suelto.</p>
+    <button class="hero-caja" type="button" data-mist-abrir>Quiero mi caja misteriosa</button>
+    <span class="hero-caja-nota" id="mistDesde"></span>
+  </section>
+
   <div class="buscador">
     <svg width="15" height="15" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2.2" stroke-linecap="round" aria-hidden="true"><circle cx="11" cy="11" r="7"/><path d="m20 20-3.6-3.6"/></svg>
     <input type="search" id="buscar" placeholder="Buscar un producto o marca…" aria-label="Buscar productos">
@@ -1012,6 +1027,17 @@ details[open] summary::after{content:"−"}
         <p><b>Correos de Costa Rica.</b> ₡3.000 dentro del Gran Área Metropolitana y ₡3.500 fuera del GAM. Entrega estimada de 2 a 3 días hábiles. Te pasamos el número de guía apenas lo despachamos.</p>
         <p><b>Mensajería Uber Flash.</b> El costo varía según tu ubicación. Por WhatsApp te preguntamos si preferís pedirlo vos misma o si lo pedimos nosotros — en ese caso te pedimos la dirección ahí mismo y te confirmamos el total.</p>
         <p>El envío se despacha una vez confirmado el pago.</p>
+      </div>
+    </details>
+
+    <details>
+      <summary>Caja misteriosa</summary>
+      <div class="detalle">
+        <p>Vos elegís <b>cuántas piezas</b> y el tamaño de tu caja. Nosotras escogemos los productos: la sorpresa se revela al abrirla.</p>
+        <p>Todo es <b>nuevo, sellado y original</b>, sin repetir productos. Cada tamaño tiene precio fijo y te decimos cuánto valdrían esas piezas compradas sueltas en la tienda: siempre pagás menos.</p>
+        <p>Si hay cajas listas, tu entrega es inmediata. Si no, la caja va por encargo y llega en <span id="pieMistDias"></span> días hábiles.</p>
+        <p>Hacés el pedido acá, te escribimos por WhatsApp y coordinamos el pago. <b>No armamos ni enviamos tu caja sin el pago completo.</b></p>
+        <button class="btn-suave" type="button" style="margin-top:4px" data-mist-abrir>Quiero mi caja misteriosa</button>
       </div>
     </details>
 
@@ -1128,7 +1154,9 @@ let CAJA_SOLO_YA = false;         // "Solo entrega inmediata" en el armador
 let CAJA_BUSQUEDA = '', CAJA_MARCA = 'Todas';
 let CAJA_ABIERTAS = new Set();    // productos con los tonos desplegados en el armador
 let CAJA_RECIEN = '';             // producto que acaba de llegar al mínimo (para el efecto del precio)
-let MODO_PEDIDO = 'carrito';      // el checkout sirve para el carrito y para la caja
+let MODO_PEDIDO = 'carrito';      // el checkout sirve para el carrito, la caja y la caja misteriosa
+let MISTERIOSA = null;            // { tamanos: [{ piezas, precio, valorMin, cupos }] } o null si no se ofrece
+let MIST = { piezas: 0, cantidad: 1, entrega: 'encargo' };   // lo que está eligiendo la clienta
 let CATEGORIA = 'Todo';
 let BUSQUEDA  = '';
 let MARCA  = 'Todas';
@@ -1362,6 +1390,7 @@ async function cargarCatalogo(){
     if (!PRODUCTOS.length) throw new Error('catálogo vacío');
     if (Number(d.minimoMayorista) >= 2) CONFIG.MINIMO_MAYOREO = Number(d.minimoMayorista);
     $('#pieCajaMin').textContent = CONFIG.MINIMO_MAYOREO;
+    MISTERIOSA = d.misteriosa && Array.isArray(d.misteriosa.tamanos) && d.misteriosa.tamanos.length ? d.misteriosa : null;
   } catch (e) {
     // En producción, nunca mostrar "Vista de prueba" — solo avisar que hay un problema
     // técnico y pedir que recarguen. El catálogo de ejemplo es solo para desarrollo.
@@ -1373,6 +1402,7 @@ async function cargarCatalogo(){
   }
   limpiarCarritoFantasma();
   limpiarCajaFantasma();
+  pintarBloqueMist();
   pintarHeroFotos();
   pintarFiltros();
   $('#cargando').classList.add('oculto');
@@ -1599,9 +1629,32 @@ function tarjetaFoto(p, ancho = 400){
 let limiteGrilla = 24;
 const TANDA_GRILLA = 24;
 
+// Lo que se puede comprar ya va PRIMERO (así nadie tiene que bajar para
+// encontrarlo ni siente que casi no hay productos), y tanto eso como el resto
+// se intercala por marca: la primera pantalla sale variada en vez de veinte
+// tarjetas seguidas de la misma marca.
+function ordenarGrupos(grupos){
+  const hayYa = (g) => g.variantes.some(v => estadoStock(v).hay);
+  const intercalar = (lista) => {
+    const porMarca = new Map();
+    lista.forEach(g => {
+      const m = (g.marca || '').trim().toLowerCase();
+      if (!porMarca.has(m)) porMarca.set(m, []);
+      porMarca.get(m).push(g);
+    });
+    const colas = [...porMarca.values()];
+    const salida = [];
+    for (let vuelta = 0; salida.length < lista.length; vuelta++){
+      colas.forEach(cola => { if (vuelta < cola.length) salida.push(cola[vuelta]); });
+    }
+    return salida;
+  };
+  return intercalar(grupos.filter(hayYa)).concat(intercalar(grupos.filter(g => !hayYa(g))));
+}
+
 function pintarGrilla(reanimar = false){
   if (reanimar) limiteGrilla = TANDA_GRILLA;
-  const todos = agruparProductos(productosVisibles());
+  const todos = ordenarGrupos(agruparProductos(productosVisibles()));
   const grupos = todos.slice(0, limiteGrilla);
   const g = $('#grilla');
 
@@ -1935,10 +1988,17 @@ function verCarrito(){
 /* El checkout sirve para el carrito normal y para la caja al por mayor: lo
    único que cambia es de dónde salen las líneas, el precio y los textos. */
 const enModoCaja = () => MODO_PEDIDO === 'caja';
-const lineasPedido = () => enModoCaja() ? lineasCaja() : lineasCarrito();
+const enModoMist = () => MODO_PEDIDO === 'misteriosa';
+const tamanoMist = () => (MISTERIOSA && MISTERIOSA.tamanos.find(t => t.piezas === MIST.piezas)) || null;
+const precioMist = () => { const t = tamanoMist(); return t ? t.precio * MIST.cantidad : 0; };
+const lineasPedido = () => enModoCaja() ? lineasCaja() : (enModoMist() ? [] : lineasCarrito());
 const precioPedido = (p) => enModoCaja() ? Number(p.precioMayorista) : precioCarrito(p);
-const unidadesPedido = () => enModoCaja() ? unidadesCaja() : totalUnidades();
-const subtotalPedido = () => enModoCaja() ? totalCaja() : subtotal();
+const unidadesPedido = () => enModoCaja() ? unidadesCaja() : (enModoMist() ? MIST.cantidad : totalUnidades());
+const subtotalPedido = () => enModoCaja() ? totalCaja() : (enModoMist() ? precioMist() : subtotal());
+// Textos del checkout según lo que se está pidiendo
+const tituloPedido = () => enModoCaja() ? 'Tu caja' : (enModoMist() ? 'Tu caja misteriosa' : 'Tu pedido');
+const botonPedido = () => enModoCaja() ? 'Confirmar caja' : (enModoMist() ? 'Confirmar caja misteriosa' : 'Confirmar pedido');
+const etiquetaResumen = () => enModoCaja() ? 'Caja' : (enModoMist() ? 'Caja misteriosa' : 'Productos');
 
 function verCheckout(){
   const provincias = Object.keys(CANTONES);
@@ -2023,7 +2083,7 @@ function verCheckout(){
       </div>
 
       <div class="resumen">
-        <div class="r-fila"><span>${enModoCaja() ? 'Caja' : 'Productos'} (${unidadesPedido()})</span><span>${colones(subtotalPedido())}</span></div>
+        <div class="r-fila"><span>${etiquetaResumen()} (${unidadesPedido()})</span><span>${colones(subtotalPedido())}</span></div>
         <div class="r-fila"><span id="etiquetaEnvio">Envío</span><span id="montoEnvio">Gratis</span></div>
         <div class="r-fila grande"><span>Total</span><span id="montoTotal">${colones(subtotalPedido())}</span></div>
       </div>
@@ -2033,10 +2093,10 @@ function verCheckout(){
         desde el <b>${esc(numerosWhatsapp())}</b> para confirmar el total, y ahí coordinamos el pago.
       </div>
 
-      <button class="btn-grande" type="submit" id="btnConfirmar">${enModoCaja() ? 'Confirmar caja' : 'Confirmar pedido'}</button>
+      <button class="btn-grande" type="submit" id="btnConfirmar">${botonPedido()}</button>
       <p class="nota-datos">Usamos estos datos únicamente para coordinar y entregar tu pedido.</p>
     </form>`;
-  abrirHoja(enModoCaja() ? 'Tu caja' : 'Tu pedido', html);
+  abrirHoja(tituloPedido(), html);
   prepararFormulario();
 }
 
@@ -2078,7 +2138,16 @@ function refrescarTotales(){
       : `<b>Acá no se paga nada.</b> Armamos tu pedido, te escribimos por WhatsApp
          desde el <b>${esc(numerosWhatsapp())}</b> para confirmar el total, y ahí coordinamos
          el pago por <b>SINPE Móvil</b>.`;
-    if (enModoCaja()) {
+    if (enModoMist()) {
+      // La misteriosa se arma después, con el pago hecho: nunca antes
+      const inmediata = MIST.entrega === 'inmediata';
+      aviso.innerHTML = `<b>Acá no se paga nada.</b> Anotamos tu caja misteriosa, te escribimos por WhatsApp
+         desde el <b>${esc(numerosWhatsapp())}</b> para confirmar el total y coordinar el pago
+         ${e.modo === 'retiro' ? '(efectivo o SINPE Móvil)' : 'por <b>SINPE Móvil</b>'}.
+         <b>No armamos ni enviamos tu caja sin el pago completo.</b>` +
+        (inmediata ? '<br><br><b>Entrega inmediata:</b> la tenemos lista, coordinamos apenas se pague.'
+          : `<br><br><b>Va por encargo:</b> llega en ${CONFIG.ENCARGO_DIAS_MIN} a ${CONFIG.ENCARGO_DIAS_MAX} días hábiles.`);
+    } else if (enModoCaja()) {
       // Una caja nunca sale (ni se pide lo que va por encargo) sin el pago completo
       const enc = piezasPorEncargo();
       aviso.innerHTML = `<b>Acá no se paga nada.</b> Armamos tu caja, te escribimos por WhatsApp
@@ -2178,6 +2247,7 @@ function armarPedido(){
     direccion: e.modo === 'correos' ? ($('#direccion')?.value.trim() || '') : '',
     items,
     caja: enModoCaja(),
+    misteriosa: enModoMist() ? { piezas: MIST.piezas, cantidad: MIST.cantidad, entrega: MIST.entrega } : undefined,
     porEncargo: enModoCaja() ? piezasPorEncargo() : 0,
     subtotal: subtotalPedido(),
     envio,
@@ -2276,6 +2346,7 @@ async function enviarPedido(ev){
       pedido.repetido = !!d.repetido;
       // Lo que cuenta es lo que dice el servidor: cuántas piezas quedaron por encargo
       if (pedido.caja) pedido.porEncargo = Number(d.porEncargo) || 0;
+      if (pedido.misteriosa) { pedido.piezas = Number(d.piezas) || 0; pedido.inmediata = !!d.inmediata; }
       // Los montos que valen son los del servidor (recalcula precios, mayoreo
       // y envío). Si por algo no coinciden con los del carrito, la clienta ve
       // en la confirmación el total que de verdad se le va a cobrar.
@@ -2290,8 +2361,8 @@ async function enviarPedido(ev){
     } catch (err) {
       ENVIANDO = false;
       btn.disabled = false;
-      btn.textContent = pedido.caja ? 'Confirmar caja' : 'Confirmar pedido';
-      mostrarErrorEnvio($('#formPedido'), mensajeErrorEnvio(err, pedido.caja ? 'tu caja' : 'tu pedido'));
+      btn.textContent = botonPedido();
+      mostrarErrorEnvio($('#formPedido'), mensajeErrorEnvio(err, (pedido.caja || pedido.misteriosa) ? 'tu caja' : 'tu pedido'));
       return;
     }
   }
@@ -2307,6 +2378,8 @@ async function enviarPedido(ev){
     CAJA = {};
     guardarCaja();
     actualizarBadgeCaja();
+  } else if (pedido.misteriosa){
+    MIST.cantidad = 1;   // el carrito y la caja armada no se tocan
   } else {
     CARRITO = {};
     guardarCarrito();
@@ -2320,37 +2393,42 @@ async function enviarPedido(ev){
 function verConfirmacion(numero, pedido){
   const fecha = new Date().toLocaleDateString('es-CR', { day:'numeric', month:'long', year:'numeric' });
   // Sin emoji: el corazón se rompía al abrir el link de WhatsApp (salía un símbolo raro).
-  const texto = encodeURIComponent(`¡Hola! Acabo de hacer ${pedido.caja ? 'la caja' : 'el pedido'} ${numero} en la tienda Avellana Studio.`);
+  const texto = encodeURIComponent(`¡Hola! Acabo de hacer ${pedido.misteriosa ? 'la caja misteriosa' : (pedido.caja ? 'la caja' : 'el pedido')} ${numero} en la tienda Avellana Studio.`);
   const esRetiro = pedido.entrega === 'retiro';
-  const esCaja = !!pedido.caja;
-  const enc = esCaja ? (Number(pedido.porEncargo) || 0) : 0;
+  const esMist = !!pedido.misteriosa;
+  const esCaja = !!pedido.caja || esMist;
+  const enc = pedido.caja ? (Number(pedido.porEncargo) || 0) : 0;
   const pasoPago = esCaja
-    ? `<b>Pagás por SINPE Móvil</b> el monto exacto de abajo${pedido.entrega === 'expres' ? ' (el envío se cotiza aparte)' : ''} y nos mandás el comprobante por WhatsApp. <b>No enviamos una caja sin el pago completo.</b>`
+    ?`<b>Pagás por SINPE Móvil</b> el monto exacto de abajo${pedido.entrega === 'expres' ? ' (el envío se cotiza aparte)' : ''} y nos mandás el comprobante por WhatsApp. <b>No enviamos una caja sin el pago completo.</b>`
     : esRetiro
       ? `<b>Pagás al retirar</b>, en efectivo o SINPE Móvil. Si preferís adelantar el pago por SINPE, abajo están los números.`
       : `<b>Pagás por SINPE Móvil</b> el monto exacto de abajo${pedido.entrega === 'expres' ? ' (el envío se cotiza aparte)' : ''} y nos mandás el comprobante por WhatsApp.`;
-  const pasoEntrega = esCaja && enc
-    ? `<b>${enc} ${enc === 1 ? 'pieza va' : 'piezas van'} por encargo</b>: ${enc === 1 ? 'la pedimos' : 'las pedimos'} apenas esté el pago y tardan de ${CONFIG.ENCARGO_DIAS_MIN} a ${CONFIG.ENCARGO_DIAS_MAX} días hábiles en llegar. Te avisamos por WhatsApp para coordinar ${esRetiro ? 'el retiro' : 'el envío'}.`
+  const pasoEntrega = esMist
+    ? (pedido.inmediata
+        ? `<b>Tu caja misteriosa sale de entrega inmediata:</b> la armamos apenas esté el pago y coordinamos ${esRetiro ? 'el retiro' : 'el envío'} por WhatsApp.`
+        : `<b>Tu caja misteriosa va por encargo:</b> llega en ${CONFIG.ENCARGO_DIAS_MIN} a ${CONFIG.ENCARGO_DIAS_MAX} días hábiles. Te avisamos por WhatsApp. La sorpresa se revela al abrirla.`)
+    : esCaja && enc
+    ?`<b>${enc} ${enc === 1 ? 'pieza va' : 'piezas van'} por encargo</b>: ${enc === 1 ? 'la pedimos' : 'las pedimos'} apenas esté el pago y tardan de ${CONFIG.ENCARGO_DIAS_MIN} a ${CONFIG.ENCARGO_DIAS_MAX} días hábiles en llegar. Te avisamos por WhatsApp para coordinar ${esRetiro ? 'el retiro' : 'el envío'}.`
     : `<b>${esRetiro ? 'Coordinamos el retiro' : 'Lo enviamos'}</b>${pedido.entrega === 'correos' ? ' y te pasamos el número de guía' : ''}.`;
   const html = `
     <div class="listo">
       <div class="marca-ok">
         <svg width="30" height="30" viewBox="0 0 24 24" fill="none" stroke="#3F7A57" stroke-width="2.4" stroke-linecap="round" stroke-linejoin="round" aria-hidden="true"><polyline points="4 12.5 9.5 18 20 6.5"/></svg>
       </div>
-      <h3>${esCaja ? 'Caja recibida' : 'Pedido recibido'}</h3>
+      <h3>${esMist ? 'Caja misteriosa recibida' : (esCaja ? 'Caja recibida' : 'Pedido recibido')}</h3>
       <div class="num">${esc(numero)} · ${esc(fecha)}</div>
 
       ${pedido.repetido ? `<div class="aviso ok" style="margin:0 0 14px"><b>${esCaja ? 'Tu caja ya había entrado' : 'Tu pedido ya había entrado'}</b> — no se duplicó. Es el mismo ${esc(numero)}.</div>` : ''}
 
       <div class="pasos">
-        <div class="paso"><i>1</i><p>${esCaja ? '<b>Ya quedó guardada.</b> Revisamos tu caja producto por producto.' : '<b>Ya quedó guardado.</b> Revisamos que todo esté en stock.'}</p></div>
+        <div class="paso"><i>1</i><p>${esMist ? '<b>Ya quedó guardada.</b> Vamos a escoger tus piezas: todo nuevo, sellado y original.' : (esCaja ? '<b>Ya quedó guardada.</b> Revisamos tu caja producto por producto.' : '<b>Ya quedó guardado.</b> Revisamos que todo esté en stock.')}</p></div>
         <div class="paso"><i>2</i><p><b>Te escribimos por WhatsApp</b> desde el <b>${esc(numerosWhatsapp())}</b> (cualquiera de los dos es nuestro), en horario de ${esc(CONFIG.HORA_ATENCION)}. Si pediste fuera de ese horario no perdés nada esperando: tu ${esCaja ? 'caja' : 'pedido'} ya está guardad${esCaja ? 'a' : 'o'}.</p></div>
         <div class="paso"><i>3</i><p>${pasoPago}</p></div>
         <div class="paso"><i>4</i><p>${pasoEntrega}</p></div>
       </div>
 
       <div class="resumen">
-        <div class="r-fila"><span>Productos</span><span>${colones(pedido.subtotal)}</span></div>
+        <div class="r-fila"><span>${esMist ? 'Caja misteriosa' : 'Productos'}</span><span>${colones(pedido.subtotal)}</span></div>
         <div class="r-fila"><span>${esc(pedido.entregaTexto)}</span><span>${pedido.entrega === 'expres' ? 'A confirmar' : (pedido.envio ? colones(pedido.envio) : 'Gratis')}</span></div>
         <div class="r-fila grande"><span>Total${pedido.entrega === 'expres' ? ' parcial' : ''}</span><span>${colones(pedido.total)}</span></div>
       </div>
@@ -2379,7 +2457,7 @@ function verConfirmacion(numero, pedido){
       </div>
       <button class="btn-suave" type="button" id="seguirComprando">Volver a la tienda</button>
     </div>`;
-  abrirHoja(esCaja ? 'Caja confirmada' : 'Pedido confirmado', html);
+  abrirHoja(esMist ? 'Caja misteriosa confirmada' : (esCaja ? 'Caja confirmada' : 'Pedido confirmado'), html);
 }
 
 // Copiar el número de SINPE con un toque — evita errores de tipeo al pasarlo a mano.
@@ -3069,11 +3147,99 @@ function cajaSoloLoQueHay(){
 }
 
 /* ══════════════════════════════════════════════════════════════
+   CAJA MISTERIOSA — la clienta elige cuántas piezas; nosotras escogemos cuáles
+   Cada tamaño tiene precio fijo y un "valor en tienda" prometido (lo que
+   sumarían esas mismas piezas compradas sueltas), siempre mayor que el precio.
+   Todo viene del servidor (catálogo.misteriosa); acá solo se muestra, y el
+   servidor vuelve a calcular el precio al recibir el pedido.
+   ══════════════════════════════════════════════════════════════ */
+function pintarBloqueMist(){
+  const bloque = $('#bloqueMist');
+  if (!bloque) return;
+  if (!MISTERIOSA){ bloque.classList.add('oculto'); return; }
+  const t = MISTERIOSA.tamanos;
+  const desde = Math.min(...t.map(x => x.precio));
+  $('#mistDesde').textContent = `Desde ${colones(desde)} · ${t[0].piezas === t[t.length - 1].piezas ? t[0].piezas : t[0].piezas + ' a ' + t[t.length - 1].piezas} piezas`;
+  bloque.classList.remove('oculto');
+}
+
+function htmlMist(){
+  const tams = MISTERIOSA.tamanos;
+  if (!tamanoMist()) MIST.piezas = (tams[Math.min(1, tams.length - 1)]).piezas;
+  const t = tamanoMist();
+  MIST.cantidad = Math.max(1, Math.min(CONFIG.MAX_MISTERIOSAS, MIST.cantidad));
+  if (MIST.entrega === 'inmediata' && !(t.cupos >= MIST.cantidad)) MIST.entrega = 'encargo';
+  const tarjetas = tams.map(x => `
+    <label class="opcion mist-op">
+      <input type="radio" name="mistTam" value="${x.piezas}" data-mist-tam="${x.piezas}" ${x.piezas === t.piezas ? 'checked' : ''}>
+      <span class="txt">
+        <span class="t1">${x.piezas} piezas</span>
+        <span class="t2">Valor en tienda ${colones(x.valorMin)} o más · ahorrás ${colones(x.valorMin - x.precio)} o más</span>
+      </span>
+      <span class="pr">${colones(x.precio)}</span>
+    </label>`).join('');
+  const hayInmediata = t.cupos >= MIST.cantidad;
+  const entrega = hayInmediata ? `
+    <div class="rotulo" style="margin-top:18px">¿Cuándo la querés?</div>
+    <label class="opcion mist-op">
+      <input type="radio" name="mistEntrega" data-mist-entrega="inmediata" ${MIST.entrega === 'inmediata' ? 'checked' : ''}>
+      <span class="txt"><span class="t1">Entrega inmediata</span><span class="t2">La tenemos lista. Quedan ${t.cupos}.</span></span>
+    </label>
+    <label class="opcion mist-op">
+      <input type="radio" name="mistEntrega" data-mist-entrega="encargo" ${MIST.entrega === 'encargo' ? 'checked' : ''}>
+      <span class="txt"><span class="t1">Por encargo</span><span class="t2">Llega en ${CONFIG.ENCARGO_DIAS_MIN} a ${CONFIG.ENCARGO_DIAS_MAX} días hábiles.</span></span>
+    </label>`
+    : `<div class="aviso" style="margin-top:14px"><b>Va por encargo:</b> llega en ${CONFIG.ENCARGO_DIAS_MIN} a ${CONFIG.ENCARGO_DIAS_MAX} días hábiles. Te avisamos por WhatsApp apenas esté lista.</div>`;
+  return `
+    <p class="cj-intro">Vos elegís cuántas piezas. Nosotras elegimos la magia. Maquillaje <b>nuevo, sellado y original</b>, siempre más barato que comprarlo suelto.</p>
+    <div class="rotulo">¿Cuántas piezas?</div>
+    ${tarjetas}
+    <div class="rotulo" style="margin-top:18px">¿Cuántas cajas?</div>
+    <div class="paso-cant" style="max-width:150px">
+      <button type="button" data-mist-menos aria-label="Una caja menos" ${MIST.cantidad <= 1 ? 'disabled' : ''}>−</button>
+      <span>${MIST.cantidad}</span>
+      <button type="button" data-mist-mas aria-label="Una caja más" ${MIST.cantidad >= CONFIG.MAX_MISTERIOSAS ? 'disabled' : ''}>+</button>
+    </div>
+    ${entrega}
+    <div class="resumen">
+      <div class="r-fila"><span>${MIST.cantidad === 1 ? t.piezas + ' piezas' : MIST.cantidad + ' cajas · ' + (t.piezas * MIST.cantidad) + ' piezas'}</span><span>${colones(precioMist())}</span></div>
+      <div class="r-fila"><span>Valor en tienda de lo que te toque</span><span>${colones(t.valorMin * MIST.cantidad)} o más</span></div>
+    </div>
+    <button class="btn-grande" type="button" data-mist-pedir>Pedir mi caja misteriosa</button>
+    <p class="nota-datos">Sin repetir productos. Se te revela al abrirla. El pago se coordina por WhatsApp y no armamos ni enviamos nada sin el pago completo.</p>`;
+}
+
+function verMisteriosa(){
+  if (!MISTERIOSA) return;
+  abrirHoja('Caja misteriosa', htmlMist());
+}
+
+// Repinta sin volver a abrir la hoja, para no perder el lugar donde se está bajando
+function repintarMist(){
+  const cuerpo = $('#hojaCuerpo');
+  if (cuerpo && cuerpo.querySelector('[data-mist-tam]')) cuerpo.innerHTML = htmlMist();
+}
+
+function pedirMist(){
+  if (!tamanoMist()) return;
+  MODO_PEDIDO = 'misteriosa';
+  verCheckout();
+}
+
+/* ══════════════════════════════════════════════════════════════
    EVENTOS
    ══════════════════════════════════════════════════════════════ */
 document.addEventListener('click', (ev) => {
-  const t = ev.target.closest('[data-agregar],[data-mas],[data-menos],[data-quitar],[data-encargo],[data-encargo-libre],[data-quitar-encargo],[data-encargo-mas],[data-encargo-menos],[data-tono-id],[data-cat],[data-copiar],[data-ver],[data-caja-mas],[data-caja-menos],[data-caja-fam],[data-caja-abrir],[data-caja-con],[data-caja-continuar],[data-caja-vaciar],[data-caja-seguir],[data-caja-solo-ya],[data-caja-editar],[data-caja-todo],#btnCaja,#btnBarraCaja,#irCheckout,#irEncargos,#seguirComprando,#btnCarrito,#btnVerCarrito,#btnEncargos,#btnBarraEncargos,#btnCerrar,#btnLimpiarFiltros,#verMasProductos');
+  const t = ev.target.closest('[data-agregar],[data-mas],[data-menos],[data-quitar],[data-encargo],[data-encargo-libre],[data-quitar-encargo],[data-encargo-mas],[data-encargo-menos],[data-tono-id],[data-cat],[data-copiar],[data-ver],[data-caja-mas],[data-caja-menos],[data-caja-fam],[data-caja-abrir],[data-caja-con],[data-caja-continuar],[data-caja-vaciar],[data-caja-seguir],[data-caja-solo-ya],[data-caja-editar],[data-caja-todo],[data-mist-abrir],[data-mist-tam],[data-mist-entrega],[data-mist-mas],[data-mist-menos],[data-mist-pedir],#btnCaja,#btnBarraCaja,#irCheckout,#irEncargos,#seguirComprando,#btnCarrito,#btnVerCarrito,#btnEncargos,#btnBarraEncargos,#btnCerrar,#btnLimpiarFiltros,#verMasProductos');
   if (!t) return;
+
+  // Caja misteriosa
+  if (t.dataset.mistAbrir !== undefined)  return verMisteriosa();
+  if (t.dataset.mistTam !== undefined){ MIST.piezas = Number(t.dataset.mistTam); return repintarMist(); }
+  if (t.dataset.mistEntrega !== undefined){ MIST.entrega = t.dataset.mistEntrega; return repintarMist(); }
+  if (t.dataset.mistMas !== undefined){ MIST.cantidad += 1; return repintarMist(); }
+  if (t.dataset.mistMenos !== undefined){ MIST.cantidad -= 1; return repintarMist(); }
+  if (t.dataset.mistPedir !== undefined)  return pedirMist();
 
   // Armá tu caja
   if (t.dataset.cajaMas !== undefined)       return cambiarCaja(t.dataset.cajaMas, 1);
@@ -3196,6 +3362,7 @@ $$('.numerosWhats').forEach(el => { el.textContent = numerosWhatsapp(); });
 $('#pieEncargoDias').textContent = CONFIG.ENCARGO_DIAS_MIN + ' a ' + CONFIG.ENCARGO_DIAS_MAX;
 $('#pieEncargoPct').textContent  = CONFIG.ENCARGO_ADELANTO_PCT;
 $('#pieCajaDias').textContent = CONFIG.ENCARGO_DIAS_MIN + ' a ' + CONFIG.ENCARGO_DIAS_MAX;
+$('#pieMistDias').textContent = CONFIG.ENCARGO_DIAS_MIN + ' a ' + CONFIG.ENCARGO_DIAS_MAX;
 cargarCatalogo();
 </script>
 </body>
