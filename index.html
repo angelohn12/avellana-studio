@@ -975,7 +975,7 @@ details[open] summary::after{content:"−"}
   <section class="mist-banner oculto" id="bloqueMist" aria-labelledby="mistTitulo">
     <p class="hero-eyebrow" style="animation:none">Nuevo en Avellana</p>
     <h2 id="mistTitulo">Caja misteriosa</h2>
-    <p>Vos elegís cuántas piezas. Nosotras elegimos la magia. Maquillaje nuevo, sellado y original, y siempre más barato que comprarlo suelto.</p>
+    <p>Vos elegís cuántas piezas. Nosotras elegimos la magia. Maquillaje nuevo, sellado y original, y siempre más barato que comprarlo al detalle.</p>
     <button class="hero-caja" type="button" data-mist-abrir>Quiero mi caja misteriosa</button>
     <span class="hero-caja-nota" id="mistDesde"></span>
   </section>
@@ -1042,7 +1042,7 @@ details[open] summary::after{content:"−"}
       <summary>Caja misteriosa</summary>
       <div class="detalle">
         <p>Vos elegís <b>cuántas piezas</b> y el tamaño de tu caja. Nosotras escogemos los productos: la sorpresa se revela al abrirla.</p>
-        <p>Todo es <b>nuevo, sellado y original</b>, sin repetir productos. Cada tamaño tiene precio fijo y te decimos cuánto valdrían esas piezas compradas sueltas en la tienda: siempre pagás menos.</p>
+        <p>Todo es <b>nuevo, sellado y original</b>, sin repetir productos. Cada tamaño tiene precio fijo y te decimos cuánto valdrían esas piezas compradas al detalle en la tienda: siempre pagás menos.</p>
         <p>Si hay cajas listas, tu entrega es inmediata. Si no, la caja va por encargo y llega en <span id="pieMistDias"></span> días hábiles.</p>
         <p>Hacés el pedido acá, te escribimos por WhatsApp y coordinamos el pago. <b>No armamos ni enviamos tu caja sin el pago completo.</b></p>
         <button class="btn-suave" type="button" style="margin-top:4px" data-mist-abrir>Quiero mi caja misteriosa</button>
@@ -3181,7 +3181,7 @@ function cajaSoloLoQueHay(){
 /* ══════════════════════════════════════════════════════════════
    CAJA MISTERIOSA — la clienta elige cuántas piezas; nosotras escogemos cuáles
    Cada tamaño tiene precio fijo y un "valor en tienda" prometido (lo que
-   sumarían esas mismas piezas compradas sueltas), siempre mayor que el precio.
+   sumarían esas mismas piezas compradas al detalle), siempre mayor que el precio.
    Todo viene del servidor (catálogo.misteriosa); acá solo se muestra, y el
    servidor vuelve a calcular el precio al recibir el pedido.
    ══════════════════════════════════════════════════════════════ */
@@ -3223,7 +3223,7 @@ function htmlMist(){
     </label>`
     : `<div class="aviso" style="margin-top:14px"><b>Va por encargo:</b> llega en ${CONFIG.ENCARGO_DIAS_MIN} a ${CONFIG.ENCARGO_DIAS_MAX} días hábiles. Te avisamos por WhatsApp apenas esté lista.</div>`;
   return `
-    <p class="cj-intro">Vos elegís cuántas piezas. Nosotras elegimos la magia. Maquillaje <b>nuevo, sellado y original</b>, siempre más barato que comprarlo suelto.</p>
+    <p class="cj-intro">Vos elegís cuántas piezas. Nosotras elegimos la magia. Maquillaje <b>nuevo, sellado y original</b>, siempre más barato que comprarlo al detalle.</p>
     <div class="rotulo">¿Cuántas piezas?</div>
     ${tarjetas}
     <div class="rotulo" style="margin-top:18px">¿Cuántas cajas?</div>
