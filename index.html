@@ -273,6 +273,7 @@ header{
 .barra-total .bt-monto{display:block;font-size:15px;font-weight:600;font-variant-numeric:tabular-nums;color:var(--tinta)}
 .barra-total .bt-nota{display:block;font-size:11px;color:var(--salvia-texto,#3F7A57);font-weight:500}
 .linea-confianza{margin:14px 0 0;font-size:12.5px;line-height:1.55;color:var(--tinta-2)}
+.nota-campo{display:block;margin-top:6px;font-size:12px;line-height:1.5;color:var(--tinta-3)}
 
 /* ── menú lateral (las tres rayas) ──── */
 .btn-menu{
@@ -1281,7 +1282,8 @@ details[open] summary::after{content:"−"}
       <summary>Tus datos</summary>
       <div class="detalle">
         <p><b>No guardamos nada hasta que confirmes tu pedido.</b> Mientras ves productos y armas tu carrito no se registra nada en ningún lado — el carrito vive solo en tu dispositivo.</p>
-        <p>Al confirmar pedimos únicamente tu nombre, tu WhatsApp y —solo si eliges envío— tu dirección. <b>Usamos estos datos únicamente para coordinar y entregar tu pedido.</b></p>
+        <p>Al confirmar pedimos únicamente tu nombre, tu WhatsApp y —solo si eliges envío— tu dirección. Si eliges <b>Correos de Costa Rica</b>, también tu número de cédula, porque Correos puede pedirla al entregar. <b>Usamos estos datos únicamente para coordinar y entregar tu pedido.</b></p>
+        <p><b>Tu cédula no queda guardada en nuestros registros:</b> la conservamos solo mientras preparamos tu envío y la borramos cuando lo despachamos.</p>
         <p>No hay cuentas ni contraseñas. No usamos cookies de rastreo ni publicidad. No compartimos tu información con nadie, y no te vamos a escribir para venderte nada que no hayas pedido.</p>
       </div>
     </details>
@@ -2381,6 +2383,12 @@ function verCheckout(){
             <textarea id="direccion" name="direccion" autocomplete="street-address" placeholder="Las señas que necesita quien entrega para llegar"></textarea>
             <span class="error oculto" data-error="direccion">Escribe tu dirección y señas</span>
           </div>
+          <div class="campo ancho">
+            <label for="cedula">Número de cédula</label>
+            <input type="text" id="cedula" name="cedula" inputmode="numeric" autocomplete="off" placeholder="Ej. 1 0234 0567">
+            <span class="error oculto" data-error="cedula">Escribe tu número de cédula (de 9 a 12 dígitos)</span>
+            <small class="nota-campo">Correos de Costa Rica puede pedirla al entregar tu envío. La usamos solo para eso y la borramos cuando despachamos tu pedido.</small>
+          </div>
         </div>
       </div>
 
@@ -2551,6 +2559,11 @@ function validar(){
     marcarError('distrito',  !dist);  if (!dist) fallos.push('distrito');
     marcarError('direccion', dir.length < 8, 'Escribe las señas con un poco más de detalle');
     if (dir.length < 8) fallos.push('direccion');
+    // Correos puede pedir la cédula según la sucursal: de 9 a 12 dígitos (con o sin guiones)
+    const ced = ($('#cedula').value || '').replace(/\D/g, '');
+    const cedOk = ced.length >= 9 && ced.length <= 12;
+    marcarError('cedula', !cedOk);
+    if (!cedOk) fallos.push('cedula');
   }
 
   if (fallos.length){
@@ -2581,6 +2594,7 @@ function armarPedido(){
     canton:    e.modo === 'correos' ? ($('#canton')?.value || '') : '',
     distrito:  e.modo === 'correos' ? ($('#distrito')?.value.trim() || '') : '',
     direccion: e.modo === 'correos' ? ($('#direccion')?.value.trim() || '') : '',
+    cedula:    e.modo === 'correos' ? (($('#cedula')?.value || '').replace(/\D/g, '')) : '',
     items,
     caja: enModoCaja(),
     misteriosa: enModoMist() ? { piezas: MIST.piezas, cantidad: MIST.cantidad, entrega: MIST.entrega } : undefined,
