@@ -2429,6 +2429,8 @@ function verConfirmacion(numero, pedido){
   const fecha = new Date().toLocaleDateString('es-CR', { day:'numeric', month:'long', year:'numeric' });
   // Sin emoji: el corazón se rompía al abrir el link de WhatsApp (salía un símbolo raro).
   const texto = encodeURIComponent(`¡Hola! Acabo de hacer ${pedido.misteriosa ? 'la caja misteriosa' : (pedido.caja ? 'la caja' : 'el pedido')} ${numero} en la tienda Avellana Studio.`);
+  // Mensaje para cuando ya pagó: lleva número, monto y avisa que adjunta el comprobante
+  const textoPago = encodeURIComponent(`¡Hola! Ya realicé el pago por SINPE Móvil ${pedido.misteriosa ? 'de la caja misteriosa' : (pedido.caja ? 'de la caja' : 'del pedido')} ${numero} por ${colones(pedido.total)}. Adjunto el comprobante.`);
   const esRetiro = pedido.entrega === 'retiro';
   const esMist = !!pedido.misteriosa;
   const esCaja = !!pedido.caja || esMist;
@@ -2478,18 +2480,19 @@ function verConfirmacion(numero, pedido){
             </div>
             <button type="button" class="sinpe-copiar" data-copiar="${esc(c.numero)}">Copiar</button>
           </div>`).join('')}
-        <p class="sinpe-nota">Después mandanos el comprobante por WhatsApp — así confirmamos más rápido.</p>
+        <p class="sinpe-nota"><b>Cuando hagas el pago, enviá el comprobante (la captura del SINPE) por WhatsApp</b> con el botón de abajo — así confirmamos más rápido.</p>
       </div>
 
       ${MODO_DEMO ? `<div class="aviso"><b>Vista de prueba.</b> Este pedido no se guardó en ningún lado — la tienda todavía no está conectada.</div>` : ''}
 
-      <p style="margin:18px 0 8px;font-size:12.5px;color:var(--tinta-2);text-align:center">¿Querés escribirnos vos? Cualquiera de los dos números:</p>
+      <p style="margin:18px 0 8px;font-size:12.5px;color:var(--tinta-2);text-align:center">¿Ya hiciste el pago? Enviá el comprobante a cualquiera de los dos números:</p>
       <div class="wa-dos">
         <a class="btn-grande" style="display:block;text-align:center;text-decoration:none"
-           href="https://wa.me/${esc(CONFIG.WHATSAPP)}?text=${texto}" target="_blank" rel="noopener">WhatsApp ${esc(CONFIG.WHATSAPP_VISIBLE)}</a>
+           href="https://wa.me/${esc(CONFIG.WHATSAPP)}?text=${textoPago}" target="_blank" rel="noopener">Enviar comprobante · ${esc(CONFIG.WHATSAPP_VISIBLE)}</a>
         <a class="btn-grande" style="display:block;text-align:center;text-decoration:none"
-           href="https://wa.me/${esc(CONFIG.WHATSAPP_2)}?text=${texto}" target="_blank" rel="noopener">WhatsApp ${esc(CONFIG.WHATSAPP_2_VISIBLE)}</a>
+           href="https://wa.me/${esc(CONFIG.WHATSAPP_2)}?text=${textoPago}" target="_blank" rel="noopener">Enviar comprobante · ${esc(CONFIG.WHATSAPP_2_VISIBLE)}</a>
       </div>
+      <p style="margin:10px 0 0;font-size:12px;color:var(--tinta-2);text-align:center">¿Solo tenés una consulta? <a href="https://wa.me/${esc(CONFIG.WHATSAPP)}?text=${texto}" target="_blank" rel="noopener">Escribinos por WhatsApp</a>.</p>
       <button class="btn-suave" type="button" id="seguirComprando">Volver a la tienda</button>
     </div>`;
   abrirHoja(esMist ? 'Caja misteriosa confirmada' : (esCaja ? 'Caja confirmada' : 'Pedido confirmado'), html);
