@@ -205,8 +205,10 @@ input,select,textarea{font-family:inherit;font-size:15px;color:var(--tinta)}
 .wrap{max-width:1080px;margin:0 auto;padding:0 18px}
 .oculto{display:none !important}
 .mist-previa .mist-banner.oculto{display:block !important}
-/* En celular la caja misteriosa vive en el menú lateral, no como banner antes de los productos */
-@media(max-width:759px){.mist-banner,.mist-previa .mist-banner.oculto{display:none !important}}
+/* La caja misteriosa vive en el menú lateral (celular y computadora), no como banner antes de los productos */
+.mist-banner,.mist-previa .mist-banner.oculto{display:none !important}
+/* "Armar caja al por mayor" en celular también vive en el menú lateral */
+@media(max-width:759px){.hero-mayoreo-bloque{display:none}}
 
 /* ── encabezado ─────────────────────── */
 header{
@@ -1098,7 +1100,7 @@ details[open] summary::after{content:"−"}
         <li><svg width="17" height="17" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2" stroke-linecap="round" stroke-linejoin="round" aria-hidden="true"><path d="M2 16l20-8-8 12-3-5-9 1Z"/></svg>Importados de EE. UU. por nosotros</li>
         <li><svg width="17" height="17" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2" stroke-linecap="round" stroke-linejoin="round" aria-hidden="true"><rect x="7" y="2" width="10" height="20" rx="2"/><path d="M11 18h2"/></svg>Pagas por SINPE Móvil</li>
       </ul>
-      <div style="margin-top:14px">
+      <div class="hero-mayoreo-bloque" style="margin-top:14px">
         <button class="hero-caja hero-caja-link" type="button" data-caja-abrir>Armar mi caja al por mayor</button>
         <span class="hero-caja-nota">Desde 3 unidades de cada producto.</span>
       </div>
