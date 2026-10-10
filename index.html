@@ -80,6 +80,8 @@ const CONFIG = {
 
   ENVIO_GAM: 3000,                  // Correos dentro del Gran Área Metropolitana
   ENVIO_FUERA: 3500,                // Correos fuera del GAM
+  ENVIO_GRATIS_DESDE: 30000,        // Correos gratis en compras AL DETALLE desde este monto (sin mayoreo, cajas
+                                    // ni caja misteriosa) — se reemplaza por el que manda el servidor
 
   POCAS_UNIDADES: 3,                // muestra "Pocas unidades" con esto o menos
   MAX_POR_PRODUCTO: 3,              // tope de unidades del mismo producto por pedido
@@ -203,6 +205,8 @@ input,select,textarea{font-family:inherit;font-size:15px;color:var(--tinta)}
 .wrap{max-width:1080px;margin:0 auto;padding:0 18px}
 .oculto{display:none !important}
 .mist-previa .mist-banner.oculto{display:block !important}
+/* En celular la caja misteriosa vive en el menú lateral, no como banner antes de los productos */
+@media(max-width:759px){.mist-banner,.mist-previa .mist-banner.oculto{display:none !important}}
 
 /* ── encabezado ─────────────────────── */
 header{
@@ -256,6 +260,58 @@ header{
   .acciones-header .btn-carrito svg{width:13px;height:13px}
 }
 
+/* ── confianza: portada y pedido ────── */
+.hero-confianza{
+  list-style:none;margin:14px 0 0;padding:11px 13px;border:1px solid var(--linea);
+  border-radius:var(--radio-chico);display:grid;gap:8px;max-width:340px;
+}
+.hero-confianza li{display:flex;align-items:center;gap:9px;font-size:13px;color:var(--tinta-2);line-height:1.35}
+.hero-confianza svg{flex:0 0 auto;color:var(--salvia-texto,#3F7A57)}
+.barra-total{margin-left:auto;margin-right:12px;text-align:right;line-height:1.25}
+.barra-total .bt-monto{display:block;font-size:15px;font-weight:600;font-variant-numeric:tabular-nums;color:var(--tinta)}
+.barra-total .bt-nota{display:block;font-size:11px;color:var(--salvia-texto,#3F7A57);font-weight:500}
+.linea-confianza{margin:14px 0 0;font-size:12.5px;line-height:1.55;color:var(--tinta-2)}
+
+/* ── menú lateral (las tres rayas) ──── */
+.btn-menu{
+  flex:0 0 auto;display:inline-flex;align-items:center;justify-content:center;
+  width:40px;height:40px;margin-left:-8px;border-radius:var(--radio-chico);color:var(--tinta);
+}
+.btn-menu:hover{color:var(--coral)}
+.barra-izq{display:flex;align-items:center;gap:6px;min-width:0}
+.menu-fondo{
+  position:fixed;inset:0;z-index:var(--z-hoja);background:rgba(15,15,15,.44);
+  opacity:0;pointer-events:none;transition:opacity .26s var(--curva);
+}
+.menu-fondo.abierto{opacity:1;pointer-events:auto}
+.menu-lateral{
+  position:fixed;top:0;bottom:0;left:0;z-index:calc(var(--z-hoja) + 1);
+  width:min(320px,86vw);background:var(--papel);overflow-y:auto;-webkit-overflow-scrolling:touch;
+  transform:translateX(-102%);transition:transform .3s var(--curva);
+  padding:18px 20px 28px;display:flex;flex-direction:column;visibility:hidden;
+  transition:transform .3s var(--curva), visibility 0s linear .3s;
+}
+.menu-lateral.abierto{transform:translateX(0);visibility:visible;transition:transform .3s var(--curva), visibility 0s}
+.menu-cab{display:flex;align-items:center;justify-content:space-between;margin-bottom:18px}
+.menu-cab .marca{font-size:18px}
+.menu-cerrar{width:40px;height:40px;margin-right:-10px;display:inline-flex;align-items:center;justify-content:center;color:var(--tinta-2)}
+.menu-grupo{margin:0 0 20px}
+.menu-rotulo{
+  font-family:"DM Mono","DM Mono Respaldo",monospace;font-size:10px;letter-spacing:.16em;
+  text-transform:uppercase;color:var(--tinta-3);margin:0 0 6px;
+}
+.menu-item{
+  display:flex;align-items:center;justify-content:space-between;gap:10px;width:100%;
+  padding:13px 2px;font-size:15px;color:var(--tinta);text-align:left;
+  border-bottom:1px solid var(--linea-suave);text-decoration:none;background:none;
+}
+.menu-item:hover{color:var(--coral)}
+.menu-item small{font-size:11.5px;color:var(--salvia-texto,#3F7A57);font-weight:500;white-space:nowrap}
+.menu-pie{margin-top:auto;padding-top:16px;border-top:1px solid var(--linea);font-size:13px;color:var(--tinta-2);line-height:1.9}
+.menu-pie a{color:var(--tinta-2);text-decoration:none}
+.menu-pie a:hover{color:var(--coral)}
+body.menu-abierto{overflow:hidden}
+
 /* ── franja de anuncio ──────────────── */
 .franja{
   background:var(--coral);color:#FFF;text-align:center;
@@ -263,7 +319,8 @@ header{
   letter-spacing:.11em;text-transform:uppercase;line-height:1.5;
 }
 @media (max-width:640px){
-  .franja-mayoreo{display:block}
+  .franja-gratis{display:block}
+  .franja-mayoreo{display:none} /* el mayoreo ya tiene su enlace en la portada: la franja queda en 2 líneas */
   .franja-sep{display:none}
 }
 
@@ -292,8 +349,17 @@ header{
 .hero-trust a:hover{text-decoration-color:var(--coral)}
 .hero-fotos{position:relative;aspect-ratio:4/5;display:none;max-width:360px;border-radius:20px;background:var(--hueso)}
 .hero.con-fotos .hero-fotos{display:block}
-/* En celular la foto de portada no va: empujaba el catálogo casi medio metro hacia abajo. */
-@media(max-width:759px){.hero.con-fotos{display:block}.hero.con-fotos .hero-fotos{display:none}}
+/* En celular la foto va ARRIBA, en un recuadro de proporción fija (así no empuja el catálogo
+   ni salta nada al cargar): quien llega del anuncio ve primero un producto, no solo texto. */
+@media(max-width:759px){
+  .hero{padding:18px 0 22px}
+  .hero.con-fotos{display:flex;flex-direction:column;gap:16px}
+  .hero.con-fotos .hero-fotos{display:block;order:-1;width:100%;max-width:none;aspect-ratio:5/4;border-radius:14px}
+  .hero-foto-marco{border-radius:14px;box-shadow:none;background:var(--hueso)}
+  .hero-foto-marco img{inset:10px;width:calc(100% - 20px);height:calc(100% - 20px);object-fit:contain}
+  .hero .hero-eyebrow{display:none}
+  .hero h1{max-width:none;font-size:22px}
+}
 .hero-foto-marco{
   position:absolute;inset:0;border-radius:20px;background:var(--crema);
   box-shadow:0 22px 44px -22px rgba(93,48,14,.4);
@@ -346,6 +412,19 @@ header{
 
 /* ── filtros de marca y precio ──────── */
 .filtros-extra{display:flex;flex-wrap:wrap;gap:8px;align-items:center;margin:14px 0 2px}
+/* Atajos por precio: a la vista, en una fila que se desliza en celular */
+.atajos-precio{
+  display:flex;gap:8px;overflow-x:auto;margin:14px 0 0;padding:2px 0 4px;
+  scrollbar-width:none;-webkit-overflow-scrolling:touch;
+}
+.atajos-precio::-webkit-scrollbar{display:none}
+.atajo-precio{
+  flex:0 0 auto;font-size:12.5px;font-weight:500;padding:9px 14px;border-radius:999px;
+  background:var(--hueso);color:var(--tinta-2);border:1px solid var(--linea);white-space:nowrap;
+  transition:background .16s var(--curva), color .16s var(--curva), border-color .16s var(--curva);
+}
+.atajo-precio:hover{border-color:var(--coral);color:var(--coral)}
+.atajo-precio[aria-pressed="true"]{background:var(--tinta);color:#FFF;border-color:var(--tinta)}
 .select-filtro{
   flex:1 1 130px;min-width:0;appearance:none;-webkit-appearance:none;
   border:1px solid var(--linea);border-radius:var(--radio-chico);
@@ -667,6 +746,18 @@ header{
   transition:background .16s var(--curva), transform .13s var(--curva);
 }
 .hero-caja:hover{background:var(--coral)}
+/* Botón principal de la portada: el único con el color de la marca */
+.hero-ver{background:var(--coral);text-decoration:none;justify-content:center}
+.hero-ver:hover{background:#B1334A}
+@media(max-width:759px){.hero-ver{display:flex;width:100%;padding:15px 20px;font-size:12px}}
+/* Caja al por mayor: acción secundaria, en forma de enlace */
+.hero-caja-link{
+  display:inline;margin:14px 0 0;padding:0;background:none;color:var(--tinta-2);
+  font-size:12.5px;font-weight:500;letter-spacing:0;text-transform:none;
+  text-decoration:underline;text-underline-offset:3px;
+}
+.hero-caja-link:hover{background:none;color:var(--coral)}
+#explorar{scroll-margin-top:76px}
 .hero-caja:active{transform:scale(.97)}
 .hero-caja-nota{display:block;margin-top:9px;font-size:11.5px;color:var(--tinta-3);line-height:1.5}
 #mistDesde:empty{min-height:17.25px}
@@ -764,6 +855,24 @@ header{
 .mist-banner h2{font-weight:500;font-size:24px;letter-spacing:-.02em;margin:0 0 8px;color:var(--tinta)}
 .mist-banner p{margin:0;max-width:46ch;color:var(--tinta-2);font-size:14px}
 .mist-banner .hero-eyebrow{margin:0 0 10px}
+
+/* ── más vendidos: solo aparece cuando hay ventas de verdad ── */
+.mas-vendidos{margin:30px 0 0}
+.mas-vendidos h2{font-weight:500;font-size:24px;letter-spacing:-.02em;margin:0 0 4px;color:var(--tinta)}
+.mas-vendidos .mv-sub{margin:0;color:var(--tinta-2);font-size:14px}
+.mas-vendidos .grilla{padding:18px 0 6px;row-gap:28px}
+.mas-vendidos .prod-cuerpo .btn-suave{margin-top:8px}
+
+/* ── quiénes somos ── */
+.quienes{border-top:1px solid var(--linea);margin-top:12px;padding:40px 0 34px}
+.quienes h2{font-weight:500;font-size:24px;letter-spacing:-.02em;margin:0 0 14px;color:var(--tinta)}
+.quienes p{margin:0 0 12px;max-width:62ch;color:var(--tinta-2);font-size:15px;line-height:1.65}
+.quienes .q-puntos{display:flex;flex-wrap:wrap;gap:8px 10px;margin:18px 0 20px;padding:0;list-style:none}
+.quienes .q-puntos li{
+  font-family:"DM Mono","DM Mono Respaldo",monospace;font-size:10px;letter-spacing:.07em;text-transform:uppercase;
+  color:var(--tinta-2);border:1px solid var(--linea);padding:7px 11px;
+}
+.envio-gratis{color:var(--salvia-texto,#3F7A57);font-weight:500}
 
 /* ── formulario ─────────────────────── */
 .grupo{margin-bottom:18px}
@@ -950,11 +1059,16 @@ details[open] summary::after{content:"−"}
 
 <div id="bandaDemo" class="banda-demo oculto"></div>
 
-<aside class="franja" aria-label="Avisos de la tienda">Envíos a todo el país · Retiro gratis en San José<span class="franja-mayoreo"><span class="franja-sep"> · </span>Al por mayor desde 3 unidades</span></aside>
+<aside class="franja" aria-label="Avisos de la tienda">Envíos a todo el país · Retiro gratis en San José<span class="franja-gratis"><span class="franja-sep"> · </span><span id="franjaGratis">Envío gratis por Correos desde ₡30.000</span></span><span class="franja-mayoreo"><span class="franja-sep"> · </span>Al por mayor desde 3 unidades</span></aside>
 
 <header>
   <div class="wrap barra">
-    <div class="marca">Avellana Studio<small>Costa Rica</small></div>
+    <div class="barra-izq">
+      <button class="btn-menu" id="btnMenu" type="button" aria-label="Abrir menú" aria-expanded="false" aria-controls="menuLateral">
+        <svg width="22" height="22" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2" stroke-linecap="round" aria-hidden="true"><path d="M4 7h16M4 12h16M4 17h16"/></svg>
+      </button>
+      <div class="marca">Avellana Studio<small>Costa Rica</small></div>
+    </div>
     <div class="acciones-header">
       <button class="btn-carrito btn-encargos oculto" id="btnCaja" type="button">
         <svg width="15" height="15" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2" stroke-linecap="round" stroke-linejoin="round" aria-hidden="true"><path d="M21 8 12 3 3 8l9 5 9-5Z"/><path d="M3 8v8l9 5 9-5V8"/><path d="M12 13v8"/></svg>
@@ -978,12 +1092,21 @@ details[open] summary::after{content:"−"}
       <p class="hero-eyebrow">Belleza que florece · Costa Rica</p>
       <h1>Maquillaje y skincare, <em>traído para ti</em></h1>
       <p>Elige lo tuyo, haz tu pedido y paga por SINPE Móvil.</p>
-      <button class="hero-caja" type="button" data-caja-abrir>Arma tu caja al por mayor</button>
-      <span class="hero-caja-nota">Desde 3 unidades de cada producto.</span>
+      <a class="hero-caja hero-ver" href="#explorar">Ver productos</a>
+      <ul class="hero-confianza" aria-label="Por qué comprar en Avellana">
+        <li><svg width="17" height="17" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2" stroke-linecap="round" stroke-linejoin="round" aria-hidden="true"><path d="M12 3 4 6v6c0 4.5 3.4 8 8 9 4.6-1 8-4.5 8-9V6l-8-3Z"/><path d="m9 12 2 2 4-4"/></svg>Productos originales y sellados</li>
+        <li><svg width="17" height="17" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2" stroke-linecap="round" stroke-linejoin="round" aria-hidden="true"><path d="M2 16l20-8-8 12-3-5-9 1Z"/></svg>Importados de EE. UU. por nosotros</li>
+        <li><svg width="17" height="17" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2" stroke-linecap="round" stroke-linejoin="round" aria-hidden="true"><rect x="7" y="2" width="10" height="20" rx="2"/><path d="M11 18h2"/></svg>Pagas por SINPE Móvil</li>
+      </ul>
+      <div style="margin-top:14px">
+        <button class="hero-caja hero-caja-link" type="button" data-caja-abrir>Armar mi caja al por mayor</button>
+        <span class="hero-caja-nota">Desde 3 unidades de cada producto.</span>
+      </div>
       <div class="hero-trust">
         <span><b>Entrega inmediata:</b> lo que tiene stock</span>
         <span><b>Por encargo:</b> <b id="heroEncargoDias" style="font-weight:inherit"></b> días hábiles</span>
         <a href="#infoTienda">¿Cómo funciona?</a>
+        <a href="#quienes">Quiénes somos</a>
       </div>
     </div>
     <div class="hero-fotos" id="heroFotos"></div>
@@ -997,10 +1120,18 @@ details[open] summary::after{content:"−"}
     <span class="hero-caja-nota" id="mistDesde"></span>
   </section>
 
-  <div class="buscador">
+  <section class="mas-vendidos oculto" id="bloqueMasVendidos" aria-labelledby="mvTitulo">
+    <h2 id="mvTitulo">Más vendidos</h2>
+    <p class="mv-sub">Lo que más están pidiendo nuestras clientas</p>
+    <div class="grilla" id="masVendidos"></div>
+  </section>
+
+  <div class="buscador" id="explorar">
     <svg width="15" height="15" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2.2" stroke-linecap="round" aria-hidden="true"><circle cx="11" cy="11" r="7"/><path d="m20 20-3.6-3.6"/></svg>
     <input type="search" id="buscar" placeholder="Buscar un producto o marca…" aria-label="Buscar productos">
   </div>
+
+  <div class="atajos-precio" id="atajosPrecio" role="group" aria-label="Atajos por precio"></div>
 
   <div class="filtros" id="filtros" role="group" aria-label="Filtrar por categoría"></div>
 
@@ -1019,6 +1150,49 @@ details[open] summary::after{content:"−"}
 
   <div class="grilla oculto" id="grilla" tabindex="-1"></div>
 </main>
+
+<div class="menu-fondo" id="menuFondo"></div>
+<nav class="menu-lateral" id="menuLateral" aria-label="Menú de la tienda">
+  <div class="menu-cab">
+    <div class="marca">Avellana Studio</div>
+    <button class="menu-cerrar" id="btnMenuCerrar" type="button" aria-label="Cerrar menú">
+      <svg width="20" height="20" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2" stroke-linecap="round" aria-hidden="true"><path d="M6 6l12 12M18 6 6 18"/></svg>
+    </button>
+  </div>
+  <div class="menu-grupo">
+    <p class="menu-rotulo">Comprar</p>
+    <a class="menu-item" href="#explorar">Ver productos</a>
+    <button class="menu-item oculto" id="menuMist" type="button" data-mist-abrir>Caja misteriosa <small id="menuMistDesde"></small></button>
+    <button class="menu-item" type="button" data-caja-abrir>Armar caja al por mayor</button>
+    <button class="menu-item" type="button" data-encargo="">Pedir por encargo</button>
+  </div>
+  <div class="menu-grupo">
+    <p class="menu-rotulo">Ayuda</p>
+    <a class="menu-item" href="#infoTienda" data-info="Cómo comprar">Cómo comprar</a>
+    <a class="menu-item" href="#infoTienda" data-info="Envíos y entregas">Envíos y formas de pago</a>
+    <a class="menu-item" href="#quienes">Quiénes somos</a>
+  </div>
+  <div class="menu-pie">
+    <a id="menuWhats" href="#" target="_blank" rel="noopener">WhatsApp <span id="menuWhatsNum"></span></a><br>
+    <a href="https://instagram.com/avellana.sstudio" target="_blank" rel="noopener">@avellana.sstudio</a>
+  </div>
+</nav>
+
+<section class="quienes" id="quienes" aria-labelledby="quienesTitulo">
+  <div class="wrap">
+    <h2 id="quienesTitulo">Quiénes somos</h2>
+    <p>Somos <b>Anyelo y Belén</b>, estudiantes universitarios y apasionados por los negocios. Creamos Avellana Studio para ofrecer maquillaje de calidad a un precio justo en Costa Rica, con un servicio al cliente cercano y responsable.</p>
+    <p>Importamos nuestros productos desde Estados Unidos: todos son nuevos, sellados y originales.</p>
+    <p>Así trabajamos: te escribimos por WhatsApp para confirmar tu pedido, pagas por SINPE Móvil (o en efectivo si retiras), verificamos tu pago y te lo enviamos por Correos de Costa Rica, por mensajería privada (Uber Flash u otras apps de entrega, con costo a cotizar) o lo retiras en nuestro punto.</p>
+    <p>Si tu producto llega dañado o con defecto de fábrica, escríbenos dentro del día siguiente y lo resolvemos.</p>
+    <ul class="q-puntos">
+      <li>Pago por SINPE Móvil o efectivo</li>
+      <li>Envíos por Correos o mensajería</li>
+      <li>Atención directa por WhatsApp</li>
+    </ul>
+    <a class="btn-suave" id="quienesWhats" href="#" target="_blank" rel="noopener">Escríbenos por WhatsApp</a>
+  </div>
+</section>
 
 <footer id="infoTienda">
   <div class="wrap">
@@ -1050,6 +1224,7 @@ details[open] summary::after{content:"−"}
       <div class="detalle">
         <p><b>Retiro en nuestro punto — gratis.</b> <span id="pieRetiro"></span> Coordinamos día y hora por WhatsApp.</p>
         <p><b>Correos de Costa Rica.</b> ₡3.000 dentro del Gran Área Metropolitana y ₡3.500 fuera del GAM. Entrega estimada de 2 a 3 días hábiles. Te pasamos el número de guía apenas lo despachamos.</p>
+        <p><b>Envío gratis por Correos</b> en compras al detalle desde <span id="pieEnvioGratis">₡30.000</span>. No aplica a cajas ni a compras al por mayor.</p>
         <p><b>Mensajería Uber Flash.</b> El costo varía según tu ubicación. Por WhatsApp te preguntamos si prefieres pedirlo tú misma o si lo pedimos nosotros — en ese caso te pedimos la dirección ahí mismo y te confirmamos el total.</p>
         <p>El envío se despacha una vez confirmado el pago.</p>
       </div>
@@ -1156,6 +1331,7 @@ details[open] summary::after{content:"−"}
   <div class="hoja">
     <div class="hoja-barra">
       <h2 id="hojaTitulo">Tu carrito</h2>
+      <span class="barra-total oculto" id="totalFijoPedido" aria-live="polite"></span>
       <button class="cerrar" id="btnCerrar" type="button" aria-label="Cerrar">✕</button>
     </div>
     <div class="hoja-cuerpo" id="hojaCuerpo"></div>
@@ -1182,6 +1358,7 @@ let CAJA_MARCAS_ABIERTO = false;  // si la lista de marcas está desplegada
 let CAJA_ABIERTAS = new Set();    // productos con los tonos desplegados en el armador
 let CAJA_RECIEN = '';             // producto que acaba de llegar al mínimo (para el efecto del precio)
 let MODO_PEDIDO = 'carrito';      // el checkout sirve para el carrito, la caja y la caja misteriosa
+let MAS_VENDIDOS = [];            // ids de los productos más vendidos (vacío = la sección no se muestra)
 let MISTERIOSA = null;            // { tamanos: [{ piezas, precio, valorMin, cupos }] } o null si no se ofrece
 let MIST = { piezas: 0, cantidad: 1, entrega: 'encargo' };   // lo que está eligiendo la clienta
 let CATEGORIA = 'Todo';
@@ -1419,6 +1596,8 @@ async function cargarCatalogo(){
     if (Number(d.minimoMayorista) >= 2) CONFIG.MINIMO_MAYOREO = Number(d.minimoMayorista);
     $('#pieCajaMin').textContent = CONFIG.MINIMO_MAYOREO;
     MISTERIOSA = d.misteriosa && Array.isArray(d.misteriosa.tamanos) && d.misteriosa.tamanos.length ? d.misteriosa : null;
+    if (Number(d.envioGratisDesde) > 0) CONFIG.ENVIO_GRATIS_DESDE = Number(d.envioGratisDesde);
+    MAS_VENDIDOS = Array.isArray(d.masVendidos) ? d.masVendidos : [];
   } catch (e) {
     // En producción, nunca mostrar "Vista de prueba" — solo avisar que hay un problema
     // técnico y pedir que recarguen. El catálogo de ejemplo es solo para desarrollo.
@@ -1431,6 +1610,9 @@ async function cargarCatalogo(){
   limpiarCarritoFantasma();
   limpiarCajaFantasma();
   pintarBloqueMist();
+  pintarMenu();
+  pintarEnvioGratis();
+  pintarMasVendidos();
   pintarHeroFotos();
   pintarFiltros();
   $('#cargando').classList.add('oculto');
@@ -1512,6 +1694,8 @@ function pintarHeroFotos(){
   if (!candidatas.length){
     candidatas = revuelto(unaFotoPorProducto(PRODUCTOS.filter(p => p.foto)));
   }
+  // El protagonista es algo que se puede comprar ya: primero lo que tiene stock
+  candidatas.sort((a, b) => (estadoStock(b).hay ? 1 : 0) - (estadoStock(a).hay ? 1 : 0));
 
   if (!candidatas.length){
     hero.classList.remove('con-fotos');
@@ -1519,8 +1703,7 @@ function pintarHeroFotos(){
     return;
   }
 
-  // En celular la foto no se muestra: ni siquiera se descarga
-  if (!window.matchMedia('(min-width:760px)').matches) return;
+  const enCelular = !window.matchMedia('(min-width:760px)').matches;
 
   hero.classList.add('con-fotos');
   contenedor.innerHTML = `
@@ -1538,7 +1721,20 @@ function pintarHeroFotos(){
     img.src = fotoAncho(p.foto, 800); // marco de hasta 360px, con margen para retina
     img.alt = [p.marca, p.nombre].filter(Boolean).join(' — ');
   }
+  // Si la foto no carga (Google a veces la rechaza), se prueba con otra; si fallan
+  // varias, la portada queda solo con texto en vez de mostrar un icono roto.
+  let fallos = 0;
+  imgA.onload = () => { imgA.onerror = null; };
+  imgA.onerror = () => {
+    fallos++;
+    if (fallos < Math.min(3, candidatas.length)) { pintar(candidatas[fallos], imgA); return; }
+    imgA.onerror = null;
+    hero.classList.remove('con-fotos');
+    contenedor.innerHTML = '';
+  };
   pintar(candidatas[0], imgA);
+  imgA.removeAttribute('loading');
+  if (enCelular) { imgA.style.opacity = '1'; return; } // en celular una sola foto: sin rotar, sin gastar datos
   if (candidatas.length < 2) return; // una sola foto aprobada: no hace falta rotar
 
   let indice = 0;
@@ -1566,12 +1762,18 @@ function pintarFiltros(){
     `<option value="${r.id}"${r.id === PRECIO ? ' selected' : ''}>${esc(r.label)}</option>`
   ).join('');
 
+  // Atajos por precio (los mismos rangos del selector, pero a la vista)
+  $('#atajosPrecio').innerHTML = RANGOS_PRECIO.filter(r => r.id !== 'todos').map(r =>
+    `<button class="atajo-precio" type="button" data-precio="${r.id}" aria-pressed="${r.id === PRECIO}">${esc(r.label)}</button>`
+  ).join('');
+
   actualizarFiltrosActivos();
 }
 
 // Refleja en pantalla si hay algún filtro puesto: resalta los selects que no
 // están en su valor por defecto y muestra/oculta el botón de "Limpiar".
 function actualizarFiltrosActivos(){
+  $$('#atajosPrecio .atajo-precio').forEach(b => b.setAttribute('aria-pressed', b.dataset.precio === PRECIO));
   $('#filtroMarca').classList.toggle('activo', MARCA !== 'Todas');
   $('#filtroPrecio').classList.toggle('activo', PRECIO !== 'todos');
   const hayFiltro = MARCA !== 'Todas' || PRECIO !== 'todos' || CATEGORIA !== 'Todo' || BUSQUEDA.trim() !== '';
@@ -1958,6 +2160,7 @@ function abrirHoja(titulo, html){
   clearTimeout(cierreTimer);
   $('#hojaTitulo').textContent = titulo;
   $('#hojaCuerpo').innerHTML = html;
+  $('#totalFijoPedido').classList.add('oculto'); // solo se muestra en el pedido (lo prende refrescarTotales)
   const velo = $('#velo');
   velo.classList.remove('oculto');
   document.body.style.overflow = 'hidden';
@@ -2012,7 +2215,7 @@ function verCarrito(){
     }).join('')}
     <div class="resumen">
       <div class="r-fila"><span>Productos</span><span>${colones(subtotal())}</span></div>
-      <div class="r-fila"><span>Envío</span><span>Se calcula en el siguiente paso</span></div>
+      ${filaEnvioCarrito()}
     </div>
     <button class="btn-grande" type="button" id="irCheckout">Continuar</button>
     <button class="btn-suave" type="button" id="seguirComprando">Seguir viendo productos</button>`;
@@ -2034,6 +2237,85 @@ const tituloPedido = () => enModoCaja() ? 'Tu caja' : (enModoMist() ? 'Tu caja m
 const botonPedido = () => enModoCaja() ? 'Confirmar caja' : (enModoMist() ? 'Confirmar caja misteriosa' : 'Confirmar pedido');
 const etiquetaResumen = () => enModoCaja() ? 'Caja' : (enModoMist() ? 'Caja misteriosa' : 'Productos');
 
+/* ── envío gratis por Correos ──────────
+   Mismo criterio que el servidor (envioDePedido en Code.gs, que es quien manda):
+   solo compras AL DETALLE — sin mayoreo, sin cajas, sin caja misteriosa — desde
+   CONFIG.ENVIO_GRATIS_DESDE, y solo por Correos. */
+const sinMayoreoNiCajas = () => !enModoCaja() && !enModoMist() && !hayMayoreoEnCarrito();
+const envioGratisAplica = () => sinMayoreoNiCajas() && subtotalPedido() >= CONFIG.ENVIO_GRATIS_DESDE;
+
+// La fila "Envío" del carrito: cuánto falta para que sea gratis, o que ya lo es
+function filaEnvioCarrito(){
+  const sub = subtotal();
+  if (hayMayoreoEnCarrito()){
+    return `<div class="r-fila"><span>Envío</span><span>Se calcula en el siguiente paso</span></div>`;
+  }
+  if (sub >= CONFIG.ENVIO_GRATIS_DESDE){
+    return `<div class="r-fila"><span>Envío por Correos</span><span class="envio-gratis">Gratis</span></div>`;
+  }
+  return `<div class="r-fila"><span>Envío</span><span>Se calcula en el siguiente paso</span></div>
+    <div class="lc-pista">Agrega ${colones(CONFIG.ENVIO_GRATIS_DESDE - sub)} más y el envío por Correos es gratis</div>`;
+}
+
+/* ── menú lateral ──────────────────────
+   Se abre con las tres rayas, se cierra con la X, tocando el fondo, con Esc o al elegir
+   una opción. Mientras está abierto la página de atrás no se mueve. */
+function abrirMenu(){
+  $('#menuLateral').classList.add('abierto');
+  $('#menuFondo').classList.add('abierto');
+  document.body.classList.add('menu-abierto');
+  $('#btnMenu').setAttribute('aria-expanded', 'true');
+  try { $('#btnMenuCerrar').focus({ preventScroll:true }); } catch (e0) { /* sin foco: no pasa nada */ }
+}
+function cerrarMenu(){
+  $('#menuLateral').classList.remove('abierto');
+  $('#menuFondo').classList.remove('abierto');
+  document.body.classList.remove('menu-abierto');
+  $('#btnMenu').setAttribute('aria-expanded', 'false');
+}
+function pintarMenu(){
+  const m = $('#menuMist');
+  if (m) m.classList.toggle('oculto', !MISTERIOSA);
+  if (MISTERIOSA){
+    const desde = Math.min(...MISTERIOSA.tamanos.map(t => t.precio));
+    $('#menuMistDesde').textContent = 'Desde ' + colones(desde);
+  }
+  const w = $('#menuWhats');
+  if (w) w.href = 'https://wa.me/' + CONFIG.WHATSAPP;
+  const n = $('#menuWhatsNum'); if (n) n.textContent = CONFIG.WHATSAPP_VISIBLE;
+}
+
+function pintarEnvioGratis(){
+  const desde = colones(CONFIG.ENVIO_GRATIS_DESDE);
+  const f = $('#franjaGratis'); if (f) f.textContent = 'Envío gratis por Correos desde ' + desde;
+  const p = $('#pieEnvioGratis'); if (p) p.textContent = desde;
+  const w = $('#quienesWhats');
+  if (w) w.href = 'https://wa.me/' + CONFIG.WHATSAPP + '?text=' + encodeURIComponent('¡Hola! Quisiera más información sobre Avellana Studio.');
+}
+
+// "Más vendidos": el servidor manda los ids solo cuando hay ventas suficientes.
+// Si no hay (o no hay 4 con stock), la sección no aparece.
+function pintarMasVendidos(){
+  const bloque = $('#bloqueMasVendidos');
+  if (!bloque) return;
+  const lista = (MAS_VENDIDOS || [])
+    .map(id => PRODUCTOS.find(p => String(p.id) === String(id)))
+    .filter(p => p && estadoStock(p).hay);
+  if (MODO_DEMO || lista.length < 4){ bloque.classList.add('oculto'); return; }
+  $('#masVendidos').innerHTML = lista.slice(0, 4).map((p, i) => `
+    <article class="prod" style="--i:${i}">
+      <div class="prod-img" data-ver="${esc(p.id)}" role="button" tabindex="0" aria-label="Ver detalle de ${esc(p.nombre)}">${tarjetaFoto(p)}</div>
+      <div class="prod-cuerpo">
+        ${p.marca ? `<div class="prod-marca">${esc(p.marca)}</div>` : ''}
+        <div class="prod-nombre" data-ver="${esc(p.id)}" role="button" tabindex="0">${esc(p.nombre)}</div>
+        ${p.tono ? `<div class="prod-tono">Tono ${esc(p.tono)}</div>` : ''}
+        <div class="prod-precio">${precioHtml(p)}</div>
+        <button class="btn-suave" type="button" data-ver="${esc(p.id)}">Ver producto</button>
+      </div>
+    </article>`).join('');
+  bloque.classList.remove('oculto');
+}
+
 function verCheckout(){
   const provincias = Object.keys(CANTONES);
   const html = `
@@ -2054,9 +2336,9 @@ function verCheckout(){
           <input type="radio" name="entrega" value="correos">
           <span class="txt">
             <span class="t1">Correos de Costa Rica</span>
-            <span class="t2">Entrega de 2 a 3 días hábiles, con número de guía</span>
+            <span class="t2" id="t2Correos">Entrega de 2 a 3 días hábiles, con número de guía</span>
           </span>
-          <span class="pr" id="prCorreos">${colones(CONFIG.ENVIO_GAM)}</span>
+          <span class="pr" id="prCorreos">${envioGratisAplica() ? 'Gratis' : colones(CONFIG.ENVIO_GAM)}</span>
         </label>
 
         <label class="opcion">
@@ -2127,6 +2409,8 @@ function verCheckout(){
         Pagas y nos envías el comprobante por WhatsApp (<b>${esc(numerosWhatsapp())}</b>); con eso confirmamos tu pedido.
       </div>
 
+      <p class="linea-confianza">Productos originales y sellados, importados de EE. UU. por nosotros.</p>
+
       <button class="btn-grande" type="submit" id="btnConfirmar">${botonPedido()}</button>
       <p class="nota-datos">Usamos estos datos únicamente para coordinar y entregar tu pedido.</p>
     </form>`;
@@ -2140,8 +2424,14 @@ function envioActual(){
   if (modo === 'retiro') return { modo, monto:0, etiqueta:'Envío', texto:'Gratis' };
   if (modo === 'expres') return { modo, monto:0, etiqueta:'Mensajería Uber Flash', texto:'A confirmar' };
   const canton = $('#canton')?.value || '';
-  if (!canton) return { modo, monto:CONFIG.ENVIO_GAM, etiqueta:'Envío por Correos', texto:'Elige tu cantón' , indefinido:true };
+  if (!canton) {
+    if (envioGratisAplica()) return { modo, monto:0, etiqueta:'Envío por Correos', texto:'Gratis', gratis:true };
+    return { modo, monto:CONFIG.ENVIO_GAM, etiqueta:'Envío por Correos', texto:'Elige tu cantón' , indefinido:true };
+  }
   const dentro = GAM.has(canton);
+  if (envioGratisAplica()) {
+    return { modo, monto:0, etiqueta: dentro ? 'Envío · dentro del GAM' : 'Envío · fuera del GAM', texto:'Gratis', dentroGAM: dentro, gratis:true };
+  }
   return {
     modo, monto: dentro ? CONFIG.ENVIO_GAM : CONFIG.ENVIO_FUERA,
     etiqueta: dentro ? 'Envío · dentro del GAM' : 'Envío · fuera del GAM',
@@ -2154,6 +2444,18 @@ function refrescarTotales(){
   const e = envioActual();
   $('#etiquetaEnvio').textContent = e.etiqueta;
   $('#montoEnvio').textContent    = e.texto;
+  const gratisYa = envioGratisAplica();
+  const bt = $('#totalFijoPedido');
+  if (bt){
+    bt.innerHTML = `<span class="bt-monto">${colones(subtotalPedido() + (e.indefinido ? 0 : e.monto))}</span>` +
+      (e.gratis ? '<span class="bt-nota">Envío gratis</span>' : '');
+    bt.classList.remove('oculto');
+  }
+  const prC = $('#prCorreos'); if (prC) prC.textContent = gratisYa ? 'Gratis' : colones(CONFIG.ENVIO_GAM);
+  const t2C = $('#t2Correos');
+  if (t2C) t2C.textContent = 'Entrega de 2 a 3 días hábiles, con número de guía' +
+    (gratisYa ? ' · envío gratis por tu compra'
+      : (sinMayoreoNiCajas() ? ` · gratis desde ${colones(CONFIG.ENVIO_GRATIS_DESDE)}` : ''));
   $('#montoTotal').textContent    = colones(subtotalPedido() + (e.indefinido ? 0 : e.monto));
   // Solo Correos necesita dirección en la página — Uber Flash se coordina
   // aparte por WhatsApp (le preguntamos ahí si lo pide ella o lo pedimos
@@ -3289,7 +3591,7 @@ function pedirMist(){
    EVENTOS
    ══════════════════════════════════════════════════════════════ */
 document.addEventListener('click', (ev) => {
-  const t = ev.target.closest('[data-agregar],[data-mas],[data-menos],[data-quitar],[data-encargo],[data-encargo-libre],[data-quitar-encargo],[data-encargo-mas],[data-encargo-menos],[data-tono-id],[data-cat],[data-copiar],[data-ver],[data-caja-marcas],[data-caja-marca],[data-caja-mas],[data-caja-menos],[data-caja-fam],[data-caja-abrir],[data-caja-con],[data-caja-continuar],[data-caja-vaciar],[data-caja-seguir],[data-caja-solo-ya],[data-caja-editar],[data-caja-todo],[data-mist-abrir],[data-mist-tam],[data-mist-entrega],[data-mist-mas],[data-mist-menos],[data-mist-pedir],#btnCaja,#btnBarraCaja,#irCheckout,#irEncargos,#seguirComprando,#btnCarrito,#btnVerCarrito,#btnEncargos,#btnBarraEncargos,#btnCerrar,#btnLimpiarFiltros,#verMasProductos');
+  const t = ev.target.closest('[data-agregar],[data-mas],[data-menos],[data-quitar],[data-encargo],[data-encargo-libre],[data-quitar-encargo],[data-encargo-mas],[data-encargo-menos],[data-tono-id],[data-cat],[data-precio],[data-copiar],[data-ver],[data-caja-marcas],[data-caja-marca],[data-caja-mas],[data-caja-menos],[data-caja-fam],[data-caja-abrir],[data-caja-con],[data-caja-continuar],[data-caja-vaciar],[data-caja-seguir],[data-caja-solo-ya],[data-caja-editar],[data-caja-todo],[data-mist-abrir],[data-mist-tam],[data-mist-entrega],[data-mist-mas],[data-mist-menos],[data-mist-pedir],#btnCaja,#btnBarraCaja,#irCheckout,#irEncargos,#seguirComprando,#btnCarrito,#btnVerCarrito,#btnEncargos,#btnBarraEncargos,#btnCerrar,#btnLimpiarFiltros,#verMasProductos');
   if (!t) return;
 
   // Caja misteriosa
@@ -3346,6 +3648,14 @@ document.addEventListener('click', (ev) => {
     guardarCarrito(); pintarGrilla(); actualizarBarra(); verCarrito();
     return;
   }
+  if (t.dataset.precio){
+    // Tocar el atajo activo lo apaga
+    PRECIO = PRECIO === t.dataset.precio ? 'todos' : t.dataset.precio;
+    $('#filtroPrecio').value = PRECIO;
+    actualizarFiltrosActivos();
+    pintarGrilla(true);
+    return;
+  }
   if (t.dataset.cat){
     CATEGORIA = t.dataset.cat;
     $$('#filtros .chip').forEach(c => c.setAttribute('aria-pressed', c.dataset.cat === CATEGORIA));
@@ -3372,8 +3682,28 @@ document.addEventListener('click', (ev) => {
 });
 
 $('#velo').addEventListener('click', (ev) => { if (ev.target.id === 'velo') cerrarHoja(); });
+
+$('#btnMenu').addEventListener('click', abrirMenu);
+$('#btnMenuCerrar').addEventListener('click', cerrarMenu);
+$('#menuFondo').addEventListener('click', cerrarMenu);
+// Elegir una opción cierra el menú; "Cómo comprar" y "Envíos" además abren su apartado del pie
+$('#menuLateral').addEventListener('click', (ev) => {
+  const el = ev.target.closest('a,button');
+  if (!el || el.id === 'btnMenuCerrar') return;
+  cerrarMenu();
+  const titulo = el.dataset.info;
+  if (titulo){
+    const d = [...document.querySelectorAll('footer details')]
+      .find(x => x.querySelector('summary').textContent.trim().startsWith(titulo));
+    if (d){
+      ev.preventDefault();
+      d.open = true;
+      setTimeout(() => d.scrollIntoView({ behavior:'smooth', block:'center' }), 60);
+    }
+  }
+});
 document.addEventListener('keydown', (ev) => {
-  if (ev.key === 'Escape') return cerrarHoja();
+  if (ev.key === 'Escape'){ if ($('#menuLateral').classList.contains('abierto')) return cerrarMenu(); return cerrarHoja(); }
   // .prod-img / .prod-nombre son role="button" (no <button> real, para no
   // pelear con su CSS), así que Enter/Espacio los activa a mano.
   if (ev.key === 'Enter' || ev.key === ' '){
