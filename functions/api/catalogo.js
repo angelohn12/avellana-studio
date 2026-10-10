@@ -39,7 +39,10 @@ export async function onRequest(context) {
 
   const cache = caches.default;
   const url = new URL(request.url);
-  const cacheKey = new Request(url.toString(), request);
+  // La clave NO incluye el query string ni las cabeceras de quien pide: la respuesta es
+  // siempre la misma, y con una clave por variante cualquiera podía forzar una lectura
+  // del Sheet por petición (?x=1, ?x=2…) y llenar el borde de copias.
+  const cacheKey = new Request(url.origin + url.pathname, { method: 'GET' });
   // Marca de "ya hay alguien renovando la copia": evita que 20 visitas
   // seguidas disparen 20 pedidos a Apps Script a la vez.
   const marcaKey = new Request(url.origin + '/__catalogo_renovando', { method: 'GET' });
@@ -65,6 +68,10 @@ export async function onRequest(context) {
   }
 
   // 2. Sin copia útil: hay que esperar datos frescos de Apps Script
+  // Si otra visita ya la está renovando y tenemos una copia (aunque vieja), se entrega esa
+  // en vez de mandar otra lectura a Apps Script.
+  if (cachedResp && (await cache.match(marcaKey))) return paraNavegador(cachedResp);
+  context.waitUntil(cache.put(marcaKey, new Response('1', { headers: { 'cache-control': 'public, max-age=25' } })));
   try {
     const text = await renovar(cache, cacheKey);
     return paraNavegador(new Response(text, { headers: { 'content-type': 'application/json' } }));

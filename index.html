@@ -1407,7 +1407,8 @@ async function cargarCatalogo(){
           throw segundoError;
         });
       }
-      try { sessionStorage.setItem(CATALOGO_CACHE_KEY, JSON.stringify({ t: Date.now(), d })); } catch (e1) { /* idem */ }
+      // Solo se guarda una respuesta buena: un error (502) guardado haría que recargar no sirva por 5 min
+      if (d && d.ok) { try { sessionStorage.setItem(CATALOGO_CACHE_KEY, JSON.stringify({ t: Date.now(), d })); } catch (e1) { /* idem */ } }
       cargarCatalogo._agotado = agotado;
     }
 
@@ -1804,7 +1805,7 @@ function htmlDetalleProducto(p){
   // selector (un solo tono); si hay varios, el selector ya lo deja claro.
   return `<div class="detalle-prod" data-detalle-id="${esc(p.id)}" data-detalle-grupo="${esc(grupo.clave)}">
     <div class="detalle-foto">${tarjetaFoto(p, 500)}</div>
-    ${(p.marca || (grupo.variantes.length <= 1 && p.tono)) ? `<div class="prod-marca">${[p.marca, grupo.variantes.length <= 1 ? p.tono : null].filter(Boolean).join(' · ')}</div>` : ''}
+    ${(p.marca || (grupo.variantes.length <= 1 && p.tono)) ? `<div class="prod-marca">${[p.marca, grupo.variantes.length <= 1 ? p.tono : null].filter(Boolean).map(esc).join(' · ')}</div>` : ''}
     ${selectorTono}
     <div class="prod-precio">${precioHtml(p)}</div>
     ${mayoreoHtml(p, grupo.variantes.length > 1)}
