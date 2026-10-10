@@ -4,7 +4,7 @@
 <meta charset="utf-8">
 <meta name="viewport" content="width=device-width, initial-scale=1, viewport-fit=cover">
 <title>Avellana Studio — Tienda</title>
-<meta name="description" content="Maquillaje, skincare y productos de belleza en Costa Rica. Elegí lo tuyo y coordinamos por WhatsApp. Envíos a todo el país y retiro en Calle Blancos.">
+<meta name="description" content="Maquillaje, skincare y productos de belleza en Costa Rica. Elegí lo tuyo y pagá por SINPE Móvil. Envíos a todo el país y retiro en Calle Blancos.">
 <meta name="theme-color" content="#FDF8F4">
 <meta name="color-scheme" content="light">
 
@@ -977,14 +977,13 @@ details[open] summary::after{content:"−"}
     <div>
       <p class="hero-eyebrow">Belleza que florece · Costa Rica</p>
       <h1>Maquillaje y skincare, <em>traído para vos</em></h1>
-      <p>Elegí lo tuyo, confirmá el pedido y coordinamos por WhatsApp. Sin cuentas, sin pagar en línea.</p>
+      <p>Elegí lo tuyo, hacé tu pedido y pagá por SINPE Móvil. Sin cuentas ni tarjetas.</p>
       <button class="hero-caja" type="button" data-caja-abrir>Armá tu caja al por mayor</button>
-      <span class="hero-caja-nota">Elegí tus productos, de a 3 o más de cada uno. Todo nuevo, sellado y original.</span>
+      <span class="hero-caja-nota">Desde 3 unidades de cada producto.</span>
       <div class="hero-trust">
-        <span>Envío a todo el país</span>
-        <span>Retiro en Calle Blancos, San José</span>
-        <span>Se coordina por WhatsApp</span>
-        <a href="#infoTienda">¿Cómo funciona la tienda?</a>
+        <span><b>Entrega inmediata:</b> lo que tiene stock</span>
+        <span><b>Por encargo:</b> <b id="heroEncargoDias" style="font-weight:inherit"></b> días hábiles</span>
+        <a href="#infoTienda">¿Cómo funciona?</a>
       </div>
     </div>
     <div class="hero-fotos" id="heroFotos"></div>
@@ -993,7 +992,7 @@ details[open] summary::after{content:"−"}
   <section class="mist-banner oculto" id="bloqueMist" aria-labelledby="mistTitulo">
     <p class="hero-eyebrow" style="animation:none">Nuevo en Avellana</p>
     <h2 id="mistTitulo">Caja misteriosa</h2>
-    <p>Vos elegís cuántas piezas. Nosotras elegimos la magia. Maquillaje nuevo, sellado y original, y siempre más barato que comprarlo al detalle.</p>
+    <p>Vos elegís cuántas piezas y nosotras elegimos la magia. Siempre pagás menos que su valor al detalle.</p>
     <button class="hero-caja" type="button" data-mist-abrir>Quiero mi caja misteriosa</button>
     <span class="hero-caja-nota" id="mistDesde"></span>
   </section>
@@ -1030,10 +1029,10 @@ details[open] summary::after{content:"−"}
       <div class="detalle">
         <ol>
           <li>Elegí tus productos y agregalos al carrito.</li>
-          <li>Confirmá el pedido con tu nombre y WhatsApp. <b>Todavía no pagás nada.</b></li>
-          <li>Te escribimos por WhatsApp desde el <b class="numerosWhats"></b> (cualquiera de los dos es nuestro), con el monto final.</li>
-          <li>Pagás por SINPE Móvil y nos mandás el comprobante. Si retirás en nuestro punto, también podés pagar en efectivo al retirar.</li>
-          <li>Coordinamos la entrega o el envío.</li>
+          <li>Confirmá el pedido con tu nombre y WhatsApp. Tu pedido queda registrado y te mostramos el monto exacto.</li>
+          <li>Pagás por SINPE Móvil a cualquiera de los dos números que te mostramos. Si retirás en nuestro punto, también podés pagar en efectivo al retirar.</li>
+          <li>Nos enviás el comprobante (la captura) por WhatsApp, al <b class="numerosWhats"></b> (cualquiera de los dos es nuestro).</li>
+          <li>Verificamos el pago, te confirmamos que recibimos tu pedido y coordinamos la entrega o el envío. Si es por Correos, te pasamos la guía.</li>
         </ol>
       </div>
     </details>
@@ -1062,7 +1061,7 @@ details[open] summary::after{content:"−"}
         <p>Vos elegís <b>cuántas piezas</b> y el tamaño de tu caja. Nosotras escogemos los productos: la sorpresa se revela al abrirla.</p>
         <p>Todo es <b>nuevo, sellado y original</b>, sin repetir productos. Cada tamaño tiene precio fijo y te decimos cuánto valdrían esas piezas compradas al detalle en la tienda: siempre pagás menos.</p>
         <p>Si hay cajas listas, tu entrega es inmediata. Si no, la caja va por encargo y llega en <span id="pieMistDias"></span> días hábiles.</p>
-        <p>Hacés el pedido acá, te escribimos por WhatsApp y coordinamos el pago. <b>No armamos ni enviamos tu caja sin el pago completo.</b></p>
+        <p>Hacés el pedido acá, pagás por SINPE Móvil y nos enviás el comprobante por WhatsApp. <b>No armamos ni enviamos tu caja sin el pago completo.</b></p>
         <button class="btn-suave" type="button" style="margin-top:4px" data-mist-abrir>Quiero mi caja misteriosa</button>
       </div>
     </details>
@@ -1073,7 +1072,7 @@ details[open] summary::after{content:"−"}
         <p>Armá tu propia caja con los productos que quieras. <b>Cada producto lleva mínimo <span id="pieCajaMin"></span></b> (podés combinar tonos del mismo producto) y todo se cobra a precio mayorista. Con 1 o 2 de un producto no aplica el precio mayorista.</p>
         <p>Todos nuestros productos son <b>nuevos, sellados y originales</b>.</p>
         <p>Lo que tenemos en mano sale de inmediato. Lo que no, lo mandamos a traer y tarda de <span id="pieCajaDias"></span> días hábiles: antes de confirmar te avisamos qué productos van por encargo, y podés elegir «Solo entrega inmediata».</p>
-        <p>Hacés el pedido acá, te escribimos por WhatsApp y coordinamos el pago. <b>No enviamos una caja sin el pago completo.</b></p>
+        <p>Hacés el pedido acá, pagás por SINPE Móvil y nos enviás el comprobante por WhatsApp. <b>No enviamos una caja sin el pago completo.</b></p>
         <button class="btn-suave" type="button" style="margin-top:4px" data-caja-abrir>Armar mi caja</button>
       </div>
     </details>
@@ -1340,9 +1339,9 @@ function estaPublicado(p){
 function estadoStock(p){
   const esEncargo = p.modalidad === 'encargo';
   const s = Number(p.stock) || 0;
-  if (esEncargo || s <= 0) return { clase:'e-encargo', texto:'Por encargo', hay:false };
+  if (esEncargo || s <= 0) return { clase:'e-encargo', texto:'Por encargo · ' + CONFIG.ENCARGO_DIAS_MIN + '-' + CONFIG.ENCARGO_DIAS_MAX + ' días', hay:false };
   if (s <= CONFIG.POCAS_UNIDADES) return { clase:'e-pocas', texto:'Pocas unidades', hay:true };
-  return { clase:'e-ok', texto:'Disponible', hay:true };
+  return { clase:'e-ok', texto:'Entrega inmediata', hay:true };
 }
 
 /* ══════════════════════════════════════════════════════════════
@@ -2124,8 +2123,8 @@ function verCheckout(){
       </div>
 
       <div class="aviso" id="avisoFormaPago">
-        <b>Acá no se paga nada.</b> Armamos tu pedido, te escribimos por WhatsApp
-        desde el <b>${esc(numerosWhatsapp())}</b> para confirmar el total, y ahí coordinamos el pago.
+        <b>Cómo se paga.</b> Al confirmar te mostramos el monto exacto y los números de SINPE Móvil.
+        Pagás y nos enviás el comprobante por WhatsApp (<b>${esc(numerosWhatsapp())}</b>); con eso confirmamos tu pedido.
       </div>
 
       <button class="btn-grande" type="submit" id="btnConfirmar">${botonPedido()}</button>
@@ -2167,27 +2166,25 @@ function refrescarTotales(){
   const aviso = $('#avisoFormaPago');
   if (aviso) {
     aviso.innerHTML = e.modo === 'retiro'
-      ? `<b>Acá no se paga nada.</b> Armamos tu pedido, te escribimos por WhatsApp
-         desde el <b>${esc(numerosWhatsapp())}</b> para confirmar el total, y ahí coordinás
-         el pago en <b>efectivo o SINPE Móvil</b> al retirar.`
-      : `<b>Acá no se paga nada.</b> Armamos tu pedido, te escribimos por WhatsApp
-         desde el <b>${esc(numerosWhatsapp())}</b> para confirmar el total, y ahí coordinamos
-         el pago por <b>SINPE Móvil</b>.`;
+      ? `<b>Cómo se paga.</b> Al confirmar te mostramos el monto exacto y los números de <b>SINPE Móvil</b>:
+         pagás y nos enviás el comprobante por WhatsApp (<b>${esc(numerosWhatsapp())}</b>).
+         También podés pagar en <b>efectivo</b> al retirar.`
+      : `<b>Cómo se paga.</b> Al confirmar te mostramos el monto exacto y los números de <b>SINPE Móvil</b>:
+         pagás y nos enviás el comprobante por WhatsApp (<b>${esc(numerosWhatsapp())}</b>).
+         Despachamos cuando verificamos el pago.`;
     if (enModoMist()) {
       // La misteriosa se arma después, con el pago hecho: nunca antes
       const inmediata = MIST.entrega === 'inmediata';
-      aviso.innerHTML = `<b>Acá no se paga nada.</b> Anotamos tu caja misteriosa, te escribimos por WhatsApp
-         desde el <b>${esc(numerosWhatsapp())}</b> para confirmar el total y coordinar el pago
-         ${e.modo === 'retiro' ? '(efectivo o SINPE Móvil)' : 'por <b>SINPE Móvil</b>'}.
+      aviso.innerHTML = `<b>Cómo se paga.</b> Al confirmar te mostramos el monto exacto y los números de <b>SINPE Móvil</b>:
+         pagás y nos enviás el comprobante por WhatsApp (<b>${esc(numerosWhatsapp())}</b>).
          <b>No armamos ni enviamos tu caja sin el pago completo.</b>` +
-        (inmediata ? '<br><br><b>Entrega inmediata:</b> la tenemos lista, coordinamos apenas se pague.'
+        (inmediata ? '<br><br><b>Entrega inmediata:</b> la tenemos lista, la coordinamos apenas verifiquemos el pago.'
           : `<br><br><b>Va por encargo:</b> llega en ${CONFIG.ENCARGO_DIAS_MIN} a ${CONFIG.ENCARGO_DIAS_MAX} días hábiles.`);
     } else if (enModoCaja()) {
       // Una caja nunca sale (ni se pide lo que va por encargo) sin el pago completo
       const enc = piezasPorEncargo();
-      aviso.innerHTML = `<b>Acá no se paga nada.</b> Armamos tu caja, te escribimos por WhatsApp
-         desde el <b>${esc(numerosWhatsapp())}</b> para confirmar el total y coordinar el pago
-         ${e.modo === 'retiro' ? '(efectivo o SINPE Móvil)' : 'por <b>SINPE Móvil</b>'}.
+      aviso.innerHTML = `<b>Cómo se paga.</b> Al confirmar te mostramos el monto exacto y los números de <b>SINPE Móvil</b>:
+         pagás y nos enviás el comprobante por WhatsApp (<b>${esc(numerosWhatsapp())}</b>).
          <b>No enviamos una caja sin el pago completo.</b>` +
         (enc ? `<br><br><b>${enc} ${enc === 1 ? 'pieza va' : 'piezas van'} por encargo:</b> tardan de ${CONFIG.ENCARGO_DIAS_MIN} a ${CONFIG.ENCARGO_DIAS_MAX} días hábiles en llegar.` : '');
     } else if (hayMayoreoEnCarrito()) {
@@ -2733,8 +2730,8 @@ function verCheckoutEncargo(){
       </div>
 
       <div class="aviso" id="avisoFormaPago">
-        <b>Acá no se paga nada.</b> Te escribimos por WhatsApp desde el <b>${esc(numerosWhatsapp())}</b>
-        para confirmar precio y tiempo de entrega de cada producto antes de pedirte nada.
+        <b>Esto es una solicitud: todavía no pagás.</b> Te escribimos por WhatsApp desde el <b>${esc(numerosWhatsapp())}</b>
+        para confirmar disponibilidad, precio y tiempo de entrega. Recién ahí se coordina el adelanto.
       </div>
 
       <button class="btn-grande" type="submit" id="btnConfirmarEncargo">Confirmar encargo</button>
@@ -2808,7 +2805,7 @@ function verConfirmacionEncargo(productos){
       <div class="pasos">
         <div class="paso"><i>1</i><p><b>Ya quedó guardado.</b> Revisamos precio y tiempo de entrega de cada producto.</p></div>
         <div class="paso"><i>2</i><p><b>Te escribimos por WhatsApp</b> desde el <b>${esc(numerosWhatsapp())}</b> (cualquiera de los dos es nuestro), en horario de ${esc(CONFIG.HORA_ATENCION)}, para confirmarte todo.</p></div>
-        <div class="paso"><i>3</i><p><b>Ahí coordinamos</b> el adelanto y el tiempo de entrega.</p></div>
+        <div class="paso"><i>3</i><p><b>Ahí coordinamos</b> el adelanto y el tiempo de entrega. Hasta ese momento no pagás nada.</p></div>
       </div>
 
       ${MODO_DEMO ? `<div class="aviso"><b>Vista de prueba.</b> Este encargo no se guardó en ningún lado — la tienda todavía no está conectada.</div>` : ''}
@@ -3424,6 +3421,7 @@ $('#pieRetiro').textContent = CONFIG.RETIRO + '.';
 $('#pieWhats').textContent  = 'WhatsApp ' + CONFIG.WHATSAPP_VISIBLE + ' · ' + CONFIG.WHATSAPP_2_VISIBLE;
 $$('.numerosWhats').forEach(el => { el.textContent = numerosWhatsapp(); });
 $('#pieEncargoDias').textContent = CONFIG.ENCARGO_DIAS_MIN + ' a ' + CONFIG.ENCARGO_DIAS_MAX;
+$('#heroEncargoDias').textContent = CONFIG.ENCARGO_DIAS_MIN + ' a ' + CONFIG.ENCARGO_DIAS_MAX;
 $('#pieEncargoPct').textContent  = CONFIG.ENCARGO_ADELANTO_PCT;
 $('#pieCajaDias').textContent = CONFIG.ENCARGO_DIAS_MIN + ' a ' + CONFIG.ENCARGO_DIAS_MAX;
 $('#pieMistDias').textContent = CONFIG.ENCARGO_DIAS_MIN + ' a ' + CONFIG.ENCARGO_DIAS_MAX;
