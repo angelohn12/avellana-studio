@@ -83,7 +83,7 @@ const CONFIG = {
   ENVIO_GRATIS_DESDE: 50000,        // Correos gratis en compras AL DETALLE desde este monto (sin mayoreo, cajas
                                     // ni caja misteriosa) — se reemplaza por el que manda el servidor
 
-  POCAS_UNIDADES: 3,                // muestra "Pocas unidades" con esto o menos
+  POCAS_UNIDADES: 3,                // muestra "Quedan N" (o "Última unidad") con esto o menos
   MAX_POR_PRODUCTO: 3,              // tope de unidades del mismo producto por pedido
   MAX_POR_PRODUCTO_MAYOREO: 60,     // tope para productos con precio mayorista (igual que el servidor)
   MAX_LINEAS_CAJA: 40,              // tonos distintos por caja (el servidor acepta hasta 40 líneas)
@@ -274,6 +274,14 @@ header{
 .barra-total .bt-nota{display:block;font-size:11px;color:var(--salvia-texto,#3F7A57);font-weight:500}
 .linea-confianza{margin:14px 0 0;font-size:12.5px;line-height:1.55;color:var(--tinta-2)}
 .nota-campo{display:block;margin-top:6px;font-size:12px;line-height:1.5;color:var(--tinta-3)}
+/* Barra del envío gratis: se llena a medida que el carrito se acerca al monto */
+.meta-envio{margin:12px 0 4px}
+.meta-envio-txt{font-size:13px;line-height:1.45;color:var(--tinta-2);margin-bottom:7px}
+.meta-envio-txt b{color:var(--tinta);font-weight:600;font-variant-numeric:tabular-nums}
+.meta-envio-barra{height:8px;border-radius:999px;background:var(--linea);overflow:hidden}
+.meta-envio-barra span{display:block;height:100%;border-radius:999px;background:var(--coral);transition:width .45s var(--curva)}
+.meta-envio.lista .meta-envio-barra span{background:var(--salvia)}
+.meta-envio.lista .meta-envio-txt{color:var(--salvia-texto,#3F7A57);font-weight:500}
 
 /* ── menú lateral (las tres rayas) ──── */
 .btn-menu{
@@ -1528,7 +1536,8 @@ function estadoStock(p){
   const esEncargo = p.modalidad === 'encargo';
   const s = Number(p.stock) || 0;
   if (esEncargo || s <= 0) return { clase:'e-encargo', texto:'Por encargo · ' + CONFIG.ENCARGO_DIAS_MIN + '-' + CONFIG.ENCARGO_DIAS_MAX + ' días', hay:false };
-  if (s <= CONFIG.POCAS_UNIDADES) return { clase:'e-pocas', texto:'Pocas unidades', hay:true };
+  // Escasez honesta: el número real de unidades libres (el servidor ya descontó lo apartado)
+  if (s <= CONFIG.POCAS_UNIDADES) return { clase:'e-pocas', texto: s === 1 ? 'Última unidad' : 'Quedan ' + s, hay:true };
   return { clase:'e-ok', texto:'Entrega inmediata', hay:true };
 }
 
@@ -2261,11 +2270,19 @@ function filaEnvioCarrito(){
   if (hayMayoreoEnCarrito()){
     return `<div class="r-fila"><span>Envío</span><span>Se calcula en el siguiente paso</span></div>`;
   }
+  const pct = Math.max(0, Math.min(100, Math.round(sub / CONFIG.ENVIO_GRATIS_DESDE * 100)));
   if (sub >= CONFIG.ENVIO_GRATIS_DESDE){
-    return `<div class="r-fila"><span>Envío por Correos</span><span class="envio-gratis">Gratis</span></div>`;
+    return `<div class="r-fila"><span>Envío por Correos</span><span class="envio-gratis">Gratis</span></div>
+      <div class="meta-envio lista">
+        <div class="meta-envio-txt">Tu envío por Correos es gratis</div>
+        <div class="meta-envio-barra" role="progressbar" aria-valuemin="0" aria-valuemax="100" aria-valuenow="100" aria-label="Envío gratis alcanzado"><span style="width:100%"></span></div>
+      </div>`;
   }
   return `<div class="r-fila"><span>Envío</span><span>Se calcula en el siguiente paso</span></div>
-    <div class="lc-pista">Agrega ${colones(CONFIG.ENVIO_GRATIS_DESDE - sub)} más y el envío por Correos es gratis</div>`;
+    <div class="meta-envio">
+      <div class="meta-envio-txt">Te faltan <b>${colones(CONFIG.ENVIO_GRATIS_DESDE - sub)}</b> para el envío gratis por Correos</div>
+      <div class="meta-envio-barra" role="progressbar" aria-valuemin="0" aria-valuemax="100" aria-valuenow="${pct}" aria-label="Avance hacia el envío gratis"><span style="width:${pct}%"></span></div>
+    </div>`;
 }
 
 /* ── menú lateral ──────────────────────
