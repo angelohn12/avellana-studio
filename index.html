@@ -84,6 +84,7 @@ const CONFIG = {
                                     // ni caja misteriosa) — se reemplaza por el que manda el servidor
 
   POCAS_UNIDADES: 3,                // muestra "Quedan N" (o "Última unidad") con esto o menos
+  TONOS_LISTA_DESDE: 5,             // desde cuántos tonos se usa el selector desplegable (menos: pastillas)
   MAX_POR_PRODUCTO: 3,              // tope de unidades del mismo producto por pedido
   MAX_POR_PRODUCTO_MAYOREO: 60,     // tope para productos con precio mayorista (igual que el servidor)
   MAX_LINEAS_CAJA: 40,              // tonos distintos por caja (el servidor acepta hasta 40 líneas)
@@ -547,6 +548,45 @@ body.menu-abierto{overflow:hidden}
 .tono-pill:hover{border-color:var(--tinta-3)}
 .tono-pill[aria-pressed="true"]{border-color:var(--tinta);color:var(--tinta);font-weight:500}
 .tono-pill.sin-stock{color:var(--tinta-3);opacity:.55}
+
+/* Selector desplegable (productos con muchos tonos): una sola línea cerrada, la lista
+   se abre debajo y se cierra al elegir. Con pocos tonos se siguen viendo las pastillas. */
+.tono-select{margin:4px 0 8px}
+.tono-sel-btn{
+  width:100%;display:flex;align-items:center;gap:10px;text-align:left;
+  padding:10px 12px;border:1px solid var(--linea);border-radius:10px;
+  background:var(--papel);color:var(--tinta);font-size:14px;
+}
+.tono-sel-btn:hover{border-color:var(--tinta-3)}
+.tono-sel-actual{display:flex;flex-direction:column;flex:1;min-width:0}
+.tono-sel-actual small{font-size:10.5px;letter-spacing:.08em;text-transform:uppercase;color:var(--tinta-3)}
+.tono-sel-actual b{font-weight:500;overflow:hidden;text-overflow:ellipsis;white-space:nowrap}
+.tono-sel-estado,.tono-sel-cant{font-size:12px;color:var(--tinta-3);white-space:nowrap}
+.tono-sel-estado.pocas,.tono-op em.pocas{color:var(--coral)}
+.tono-sel-flecha{flex:0 0 auto;transition:transform .15s var(--curva)}
+.tono-select.abierto .tono-sel-flecha{transform:rotate(180deg)}
+.tono-sel-lista{border:1px solid var(--linea);border-radius:10px;margin-top:6px;background:var(--papel);overflow:hidden}
+.tono-op{
+  display:flex;justify-content:space-between;align-items:center;gap:10px;width:100%;
+  text-align:left;padding:12px;font-size:14px;color:var(--tinta);
+  border-bottom:1px solid var(--linea);background:none;
+}
+.tono-op:last-child{border-bottom:0}
+.tono-op.activo{font-weight:500;background:rgba(0,0,0,.04)}
+.tono-op.sin-stock{color:var(--tinta-3)}
+.tono-op em{font-style:normal;font-size:12px;color:var(--tinta-3);white-space:nowrap}
+
+/* Aviso cuando algo se agotó justo mientras la clienta compraba */
+.aviso-agotado{
+  background:#FFF6E8;border-left:3px solid var(--coral);border-radius:8px;
+  padding:12px 14px;margin:0 0 14px;font-size:13.5px;line-height:1.5;color:var(--tinta-2);
+}
+.aa-titulo{font-weight:600;color:var(--tinta);margin-bottom:6px}
+.aviso-agotado b{font-weight:600;color:var(--tinta)}
+.agotado-fila p{margin:0 0 8px}
+.agotado-fila + .agotado-fila{margin-top:10px}
+.agotado-fila .btn-suave{margin-top:0}
+.aa-pie{margin:10px 0 0;font-size:12px;color:var(--tinta-3)}
 .prod-precio{font-size:13.5px;font-weight:500;color:var(--tinta);font-variant-numeric:tabular-nums;margin-top:4px}
 .prod-precio-antes{color:var(--tinta-3);text-decoration:line-through;font-weight:400;margin-right:6px}
 .prod-precio-ahora{color:var(--coral);font-weight:600}
@@ -2008,7 +2048,28 @@ function htmlDetalleProducto(p){
 
   // Acá sí hay espacio de sobra, así que la lista completa de tonos vive
   // en la ficha de detalle (no en la tarjeta de la grilla).
-  const selectorTono = grupo.variantes.length > 1
+  const estadoTono = (v) => { const e = estadoStock(v); return e.hay ? (e.clase === 'e-pocas' ? e.texto : '') : 'por encargo'; };
+  const selectorTono = grupo.variantes.length >= CONFIG.TONOS_LISTA_DESDE
+    ? `<div class="tono-select" role="group" aria-label="Elige el tono">
+        <button type="button" class="tono-sel-btn" data-tono-abrir aria-haspopup="listbox" aria-expanded="false">
+          <span class="tono-sel-actual"><small>Tono</small><b>${esc(p.tono || 'Único')}</b></span>
+          <span class="tono-sel-estado${estadoStock(p).clase === 'e-pocas' ? ' pocas' : ''}">${esc(estadoTono(p))}</span>
+          <span class="tono-sel-cant">${grupo.variantes.length} tonos</span>
+          <svg class="tono-sel-flecha" width="16" height="16" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2" stroke-linecap="round" stroke-linejoin="round" aria-hidden="true"><polyline points="6 9 12 15 18 9"/></svg>
+        </button>
+        <div class="tono-sel-lista" role="listbox" aria-label="Tonos disponibles" hidden>
+          ${grupo.variantes.map(v => {
+            const activo = String(v.id) === String(p.id);
+            const hayV = estadoStock(v).hay;
+            const pocas = estadoStock(v).clase === 'e-pocas';
+            return `<button type="button" role="option" class="tono-op${activo ? ' activo' : ''}${hayV ? '' : ' sin-stock'}"
+                      aria-selected="${activo}" data-tono-grupo="${esc(grupo.clave)}" data-tono-id="${esc(v.id)}">
+                      <span>${esc(v.tono || 'Único')}</span><em${pocas ? ' class="pocas"' : ''}>${esc(estadoTono(v))}</em>
+                    </button>`;
+          }).join('')}
+        </div>
+      </div>`
+    : grupo.variantes.length > 1
     ? `<div class="tono-picker" role="group" aria-label="Elige el tono">
         ${grupo.variantes.map(v => {
           const activo = String(v.id) === String(p.id);
@@ -2198,6 +2259,90 @@ function cerrarHoja(){
   cierreTimer = setTimeout(() => velo.classList.add('oculto'), 300);
 }
 
+/* ── última unidad: qué pasa cuando algo se agota mientras se compra ──────────────
+   El servidor es quien manda: si al confirmar ya no alcanza, no guarda el pedido y devuelve
+   qué se agotó y cuánto queda. Acá se deja el carrito con lo que sí hay y se ofrece el encargo. */
+let OMITIR_REVISION_STOCK = false;
+let REVISION_STOCK = 0;
+
+function bannerAgotados(lista, alConfirmar){
+  const filas = lista.map(a => {
+    const p = PRODUCTOS.find(x => String(x.id) === String(a.id));
+    const nombre = (a.nombre || (p && p.nombre) || 'Producto') + (a.tono ? ' · ' + a.tono : '');
+    const descripcion = [p && p.marca, a.nombre, a.tono && ('tono ' + a.tono)].filter(Boolean).join(' ');
+    const texto = a.quedan > 0
+      ? `Solo quedan <b>${a.quedan}</b> de <b>${esc(nombre)}</b>. Dejamos en tu carrito las que sí hay.`
+      : `Otra clienta se llevó la última unidad de <b>${esc(nombre)}</b> hace un momento.`;
+    return `<div class="agotado-fila"><p>${texto}</p>
+      <button class="btn-suave" type="button" data-encargo="${esc(descripcion)}" data-encargo-id="${esc(a.id)}">Pedir por encargo · ${CONFIG.ENCARGO_DIAS_MIN} a ${CONFIG.ENCARGO_DIAS_MAX} días hábiles</button>
+    </div>`;
+  }).join('');
+  const quedaAlgo = Object.keys(CARRITO).length > 0;
+  const pie = [
+    quedaAlgo ? 'Lo demás de tu carrito sigue igual.' : '',
+    alConfirmar ? 'Tu pedido no se envió.' : ''
+  ].filter(Boolean).join(' ');
+  return `<div class="aviso-agotado" role="alert">
+    <div class="aa-titulo">${lista.length === 1 ? 'Se acaba de agotar' : 'Se agotaron algunos productos'}</div>
+    ${filas}
+    ${pie ? `<p class="aa-pie">${pie}</p>` : ''}
+  </div>`;
+}
+
+function aplicarAgotados(lista, alConfirmar){
+  lista.forEach(a => {
+    const p = PRODUCTOS.find(x => String(x.id) === String(a.id));
+    if (p) p.stock = a.quedan;
+    if (a.quedan <= 0) delete CARRITO[a.id];
+    else if ((CARRITO[a.id] || 0) > a.quedan) CARRITO[a.id] = a.quedan;
+  });
+  guardarCarrito();
+  pintarGrilla();
+  actualizarBarra();
+  OMITIR_REVISION_STOCK = true;       // el carrito ya quedó al día: no hace falta volver a preguntar
+  try { verCarrito(); } finally { OMITIR_REVISION_STOCK = false; }
+  const cuerpo = $('#hojaCuerpo');
+  if (cuerpo) cuerpo.insertAdjacentHTML('afterbegin', bannerAgotados(lista, !!alConfirmar));
+}
+
+// Al abrir el carrito se consulta cuánto queda LIBRE ahora mismo (las copias del catálogo
+// pueden tener unos minutos de atraso). Si no hay conexión no pasa nada: igual el servidor
+// revisa al confirmar.
+async function revisarStockCarrito(){
+  if (MODO_DEMO) return;
+  const ids = Object.keys(CARRITO);
+  if (!ids.length) return;
+  const mia = ++REVISION_STOCK;
+  const controlador = new AbortController();
+  const corte = setTimeout(() => controlador.abort(), 12000);
+  try {
+    const r = await fetch(CONFIG.API, {
+      method:'POST',
+      headers:{ 'Content-Type':'text/plain;charset=utf-8' },
+      body: JSON.stringify({ accion:'revisar_stock', ids }),
+      signal: controlador.signal
+    });
+    const d = JSON.parse(await r.text());
+    if (!d || !d.ok || !d.stock || mia !== REVISION_STOCK) return;
+    const cambios = [];
+    ids.forEach(id => {
+      const libre = d.stock[String(id)];
+      const p = PRODUCTOS.find(x => String(x.id) === String(id));
+      if (libre === undefined || !p) return;
+      p.stock = libre;
+      if ((CARRITO[id] || 0) > libre){
+        cambios.push({ id, nombre:p.nombre, tono:p.tono || '', pidio:CARRITO[id], quedan:libre });
+      }
+    });
+    // Solo si la clienta sigue mirando el carrito; si ya pasó al pedido, el servidor avisa al confirmar
+    if (cambios.length && $('#hojaCuerpo #irCheckout')) aplicarAgotados(cambios);
+  } catch (e) {
+    /* sin conexión o lento: el servidor revisa al confirmar */
+  } finally {
+    clearTimeout(corte);
+  }
+}
+
 function verCarrito(){
   const lineas = lineasCarrito();
   if (!lineas.length){
@@ -2240,6 +2385,7 @@ function verCarrito(){
     <button class="btn-grande" type="button" id="irCheckout">Continuar</button>
     <button class="btn-suave" type="button" id="seguirComprando">Seguir viendo productos</button>`;
   abrirHoja('Tu carrito', html);
+  if (!OMITIR_REVISION_STOCK) revisarStockCarrito();
 }
 
 /* El checkout sirve para el carrito normal y para la caja al por mayor: lo
@@ -2680,6 +2826,7 @@ async function enviarAlServidor(cuerpo, alReintentar){
       if (d && d.ok) return d;
       const e = new Error((d && d.error) || 'no se pudo guardar');
       e.delServidor = true;
+      if (d && Array.isArray(d.agotados)) e.agotados = d.agotados;
       throw e;
     } catch (err) {
       if (err.delServidor) throw err;
@@ -2753,6 +2900,11 @@ async function enviarPedido(ev){
       ENVIANDO = false;
       btn.disabled = false;
       btn.textContent = botonPedido();
+      // Se agotó justo ahora: no se guardó nada, se actualiza el carrito y se le explica
+      if (err && err.agotados && err.agotados.length){
+        aplicarAgotados(err.agotados, true);
+        return;
+      }
       mostrarErrorEnvio($('#formPedido'), mensajeErrorEnvio(err, (pedido.caja || pedido.misteriosa) ? 'tu caja' : 'tu pedido'));
       return;
     }
@@ -3648,7 +3800,7 @@ function pedirMist(){
    EVENTOS
    ══════════════════════════════════════════════════════════════ */
 document.addEventListener('click', (ev) => {
-  const t = ev.target.closest('[data-agregar],[data-mas],[data-menos],[data-quitar],[data-encargo],[data-encargo-libre],[data-quitar-encargo],[data-encargo-mas],[data-encargo-menos],[data-tono-id],[data-cat],[data-precio],[data-copiar],[data-ver],[data-caja-marcas],[data-caja-marca],[data-caja-mas],[data-caja-menos],[data-caja-fam],[data-caja-abrir],[data-caja-con],[data-caja-continuar],[data-caja-vaciar],[data-caja-seguir],[data-caja-solo-ya],[data-caja-editar],[data-caja-todo],[data-mist-abrir],[data-mist-tam],[data-mist-entrega],[data-mist-mas],[data-mist-menos],[data-mist-pedir],#btnCaja,#btnBarraCaja,#irCheckout,#irEncargos,#seguirComprando,#btnCarrito,#btnVerCarrito,#btnEncargos,#btnBarraEncargos,#btnCerrar,#btnLimpiarFiltros,#verMasProductos');
+  const t = ev.target.closest('[data-agregar],[data-mas],[data-menos],[data-quitar],[data-encargo],[data-encargo-libre],[data-quitar-encargo],[data-encargo-mas],[data-encargo-menos],[data-tono-abrir],[data-tono-id],[data-cat],[data-precio],[data-copiar],[data-ver],[data-caja-marcas],[data-caja-marca],[data-caja-mas],[data-caja-menos],[data-caja-fam],[data-caja-abrir],[data-caja-con],[data-caja-continuar],[data-caja-vaciar],[data-caja-seguir],[data-caja-solo-ya],[data-caja-editar],[data-caja-todo],[data-mist-abrir],[data-mist-tam],[data-mist-entrega],[data-mist-mas],[data-mist-menos],[data-mist-pedir],#btnCaja,#btnBarraCaja,#irCheckout,#irEncargos,#seguirComprando,#btnCarrito,#btnVerCarrito,#btnEncargos,#btnBarraEncargos,#btnCerrar,#btnLimpiarFiltros,#verMasProductos');
   if (!t) return;
 
   // Caja misteriosa
@@ -3697,6 +3849,16 @@ document.addEventListener('click', (ev) => {
   if (t.dataset.quitarEncargo !== undefined) return quitarEncargo(Number(t.dataset.quitarEncargo));
   if (t.dataset.encargoMas !== undefined)   return cambiarCantidadEncargo(Number(t.dataset.encargoMas), 1);
   if (t.dataset.encargoMenos !== undefined) return cambiarCantidadEncargo(Number(t.dataset.encargoMenos), -1);
+  if (t.dataset.tonoAbrir !== undefined){
+    const caja = t.closest('.tono-select');
+    const lista = caja && caja.querySelector('.tono-sel-lista');
+    if (!lista) return;
+    const abrir = lista.hidden;
+    lista.hidden = !abrir;
+    caja.classList.toggle('abierto', abrir);
+    t.setAttribute('aria-expanded', String(abrir));
+    return;
+  }
   if (t.dataset.tonoId)  return elegirTono(t.dataset.tonoGrupo, t.dataset.tonoId);
   if (t.dataset.ver)     return verProducto(t.dataset.ver);
 
