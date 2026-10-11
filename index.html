@@ -319,6 +319,19 @@ header{
 }
 .menu-item:hover{color:var(--coral)}
 .menu-item small{font-size:11.5px;color:var(--salvia-texto,#3F7A57);font-weight:500;white-space:nowrap}
+/* "Ver productos" del menú: se despliega con los tipos de producto */
+.menu-desplegable svg{flex:0 0 auto;transition:transform .15s var(--curva)}
+.menu-desplegable[aria-expanded="true"] svg{transform:rotate(180deg)}
+.menu-sub{padding:2px 0 6px 12px;border-bottom:1px solid var(--linea-suave)}
+.menu-sub[hidden]{display:none}
+.menu-sub-item{
+  display:flex;flex-direction:column;align-items:flex-start;gap:1px;width:100%;
+  padding:10px 2px;text-align:left;font-size:14.5px;color:var(--tinta);background:none;
+  border-bottom:1px solid var(--linea-suave);
+}
+.menu-sub-item:last-child{border-bottom:0}
+.menu-sub-item small{font-size:11.5px;color:var(--tinta-3);font-weight:400}
+.menu-sub-item:hover{color:var(--coral)}
 .menu-pie{margin-top:auto;padding-top:16px;border-top:1px solid var(--linea);font-size:13px;color:var(--tinta-2);line-height:1.9}
 .menu-pie a{color:var(--tinta-2);text-decoration:none}
 .menu-pie a:hover{color:var(--coral)}
@@ -799,6 +812,21 @@ body.menu-abierto{overflow:hidden}
 .lc-total{font-size:14px;font-weight:600;font-variant-numeric:tabular-nums;text-align:right;white-space:nowrap}
 
 /* ── arma tu caja ───────────────────── */
+/* Hoja "Elige una marca" (botón rojo de la portada) */
+.elegir-intro{margin:0 0 12px;font-size:14px;color:var(--tinta-2)}
+.elegir-todo{
+  width:100%;padding:13px 14px;margin-bottom:12px;border-radius:10px;
+  border:1px solid var(--tinta);color:var(--tinta);background:var(--papel);font-size:14px;font-weight:500;
+}
+.elegir-marcas{display:grid;grid-template-columns:repeat(2,minmax(0,1fr));gap:8px}
+.elegir-marca{
+  display:flex;justify-content:space-between;align-items:center;gap:8px;text-align:left;
+  padding:12px;border:1px solid var(--linea);border-radius:10px;background:var(--papel);
+  font-size:13.5px;color:var(--tinta);min-width:0;
+}
+.elegir-marca span{overflow:hidden;text-overflow:ellipsis;white-space:nowrap}
+.elegir-marca small{flex:0 0 auto;font-size:11.5px;color:var(--tinta-3)}
+.elegir-marca:hover{border-color:var(--tinta-3)}
 .hero-caja{
   margin-top:20px;display:inline-flex;align-items:center;gap:9px;
   padding:14px 20px;border-radius:var(--radio-chico);background:var(--tinta);color:#FFF;
@@ -1152,7 +1180,7 @@ details[open] summary::after{content:"−"}
       <p class="hero-eyebrow">Belleza que florece · Costa Rica</p>
       <h1>Maquillaje y skincare, <em>traído para ti</em></h1>
       <p>Elige lo tuyo, haz tu pedido y paga por SINPE Móvil.</p>
-      <a class="hero-caja hero-ver" href="#explorar">Ver productos</a>
+      <a class="hero-caja hero-ver" href="#explorar" data-elegir-marca>Ver productos</a>
       <ul class="hero-confianza" aria-label="Por qué comprar en Avellana">
         <li><svg width="17" height="17" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2" stroke-linecap="round" stroke-linejoin="round" aria-hidden="true"><path d="M12 3 4 6v6c0 4.5 3.4 8 8 9 4.6-1 8-4.5 8-9V6l-8-3Z"/><path d="m9 12 2 2 4-4"/></svg>Productos originales y sellados</li>
         <li><svg width="17" height="17" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2" stroke-linecap="round" stroke-linejoin="round" aria-hidden="true"><path d="M2 16l20-8-8 12-3-5-9 1Z"/></svg>Importados de EE. UU. por nosotros</li>
@@ -1219,7 +1247,11 @@ details[open] summary::after{content:"−"}
   </div>
   <div class="menu-grupo">
     <p class="menu-rotulo">Comprar</p>
-    <a class="menu-item" href="#explorar">Ver productos</a>
+    <button class="menu-item menu-desplegable" id="menuVerProductos" type="button" data-menu-tipos aria-expanded="false" aria-controls="menuTipos">
+      Ver productos
+      <svg width="16" height="16" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2" stroke-linecap="round" stroke-linejoin="round" aria-hidden="true"><polyline points="6 9 12 15 18 9"/></svg>
+    </button>
+    <div class="menu-sub" id="menuTipos" hidden></div>
     <button class="menu-item oculto" id="menuMist" type="button" data-mist-abrir>Caja misteriosa <small id="menuMistDesde"></small></button>
     <button class="menu-item" type="button" data-caja-abrir>Armar caja al por mayor</button>
     <button class="menu-item" type="button" data-encargo="">Pedir por encargo</button>
@@ -1667,10 +1699,12 @@ async function cargarCatalogo(){
     banda.textContent = 'Tenemos un problema técnico cargando el catálogo. Recarga la página, por favor.';
     banda.classList.remove('oculto');
   }
+  asignarTipos();
   limpiarCarritoFantasma();
   limpiarCajaFantasma();
   pintarBloqueMist();
   pintarMenu();
+  pintarMenuTipos();
   pintarEnvioGratis();
   pintarMasVendidos();
   pintarHeroFotos();
@@ -1681,6 +1715,107 @@ async function cargarCatalogo(){
   actualizarBarra();
   actualizarBadgeEncargos();
   actualizarBadgeCaja();
+}
+
+/* ── tipos de producto ───────────────────
+   La hoja solo trae "Maquillaje" o "Cuidado personal"; para poder elegir "labios", "rostro"…
+   el tipo se deduce del nombre (lo que va después del guion largo describe el producto).
+   Lo que no encaja queda en "Otros". */
+const TIPOS_ORDEN = ['Labios', 'Rostro', 'Ojos', 'Mejillas', 'Cuidado personal', 'Otros'];
+const TIPOS_AYUDA = {
+  'Labios': 'Labiales, gloss, aceites y delineadores',
+  'Rostro': 'Bases, correctores, polvos y primers',
+  'Ojos': 'Sombras, delineador, pestañas y cejas',
+  'Mejillas': 'Rubor, bronceador, contorno e iluminador',
+  'Cuidado personal': 'Piel y cuerpo',
+  'Otros': 'Más productos'
+};
+const TIPOS_REGLAS = [
+  ['Labios',   /labial|gloss|\blip ?(oil|tint|liner|stain|balm|plump|stick|butter|mask)|lipliner|tinta para labios|aceite labial|labios/],
+  ['Ojos',     /sombra|delineador|eyeliner|pesta|mascara|cejas|\bbrow|\bojos\b|eyeshadow|\blash/],
+  ['Mejillas', /rubor|blush|bronce|bronz|contorno|contour|iluminador|highlighter|colorete|\bcheek/],
+  ['Rostro',   /base|foundation|corrector|concealer|polvo|powder|primer|prebase|fijador|bb cream|cc cream|skin tint|tinte|spray|difuminador|matificante|poros/],
+  ['Cuidado personal', /crema|cream|serum|suero|hidratante|toner|tonico|limpiador|mascarilla|bruma|body|loci/]
+];
+function tipoDe(p){
+  const original = String(p.categoriaOriginal != null ? p.categoriaOriginal : p.categoria || '').trim();
+  if (original === 'Cuidado personal') return 'Cuidado personal';
+  const nombre = String(p.nombre || '');
+  const partes = nombre.split(/\s[—–-]\s/);
+  const descripcion = sinTildes(partes.length > 1 ? partes.slice(1).join(' ') : nombre);
+  const todo = sinTildes(nombre);
+  for (const [tipo, re] of TIPOS_REGLAS) if (re.test(descripcion)) return tipo;
+  for (const [tipo, re] of TIPOS_REGLAS) if (re.test(todo)) return tipo;
+  // Sin pistas en el nombre: si la hoja ya traía un tipo concreto (no el genérico), se respeta
+  if (original && original !== 'Maquillaje') return original;
+  return 'Otros';
+}
+function asignarTipos(){
+  PRODUCTOS.forEach(p => {
+    if (p.tipoAsignado) return;
+    p.categoriaOriginal = p.categoria;
+    p.categoria = tipoDe(p);
+    p.tipoAsignado = true;
+  });
+}
+
+// Cuántos productos (agrupando tonos) hay por tipo, en el orden del menú
+function tiposConConteo(){
+  const vistos = new Set();
+  const cuentas = {};
+  PRODUCTOS.forEach(p => {
+    const k = claveGrupo(p);
+    if (vistos.has(k)) return;
+    vistos.add(k);
+    const t = p.categoria || 'Otros';
+    cuentas[t] = (cuentas[t] || 0) + 1;
+  });
+  const orden = TIPOS_ORDEN.filter(t => cuentas[t]);
+  Object.keys(cuentas).filter(t => !TIPOS_ORDEN.includes(t)).sort().forEach(t => orden.push(t));
+  return orden.map(t => ({ tipo: t, n: cuentas[t] }));
+}
+
+// Deja el catálogo mostrando solo lo elegido (marca y/o tipo) y baja a la lista
+function aplicarVista({ marca = 'Todas', tipo = 'Todo' } = {}){
+  MARCA = marca; CATEGORIA = tipo; PRECIO = 'todos'; BUSQUEDA = '';
+  $('#buscar').value = '';
+  $('#filtroMarca').value = MARCA;
+  $('#filtroPrecio').value = PRECIO;
+  $$('#filtros .chip').forEach(c => c.setAttribute('aria-pressed', c.dataset.cat === CATEGORIA));
+  actualizarFiltrosActivos();
+  pintarGrilla(true);
+  cerrarMenu();
+  if (!$('#velo').classList.contains('oculto')) cerrarHoja();
+  setTimeout(() => { const d = $('#explorar'); if (d) d.scrollIntoView({ behavior:'smooth', block:'start' }); }, 80);
+}
+
+// Botón rojo de la portada: elegir una marca
+function abrirElegirMarca(){
+  const vistos = new Set();
+  const cuentas = new Map();
+  PRODUCTOS.forEach(p => {
+    if (!p.marca) return;
+    const k = claveGrupo(p);
+    if (vistos.has(k)) return;
+    vistos.add(k);
+    cuentas.set(p.marca, (cuentas.get(p.marca) || 0) + 1);
+  });
+  const marcas = [...cuentas.entries()].sort((a, b) => a[0].localeCompare(b[0], 'es'));
+  abrirHoja('Elige una marca', `
+    <p class="elegir-intro">Elige una marca para ver solo sus productos.</p>
+    <button class="elegir-todo" type="button" data-ver-marca="">Ver todos los productos</button>
+    <div class="elegir-marcas">${marcas.map(([m, n]) =>
+      `<button class="elegir-marca" type="button" data-ver-marca="${esc(m)}"><span>${esc(m)}</span><small>${n}</small></button>`).join('')}</div>`);
+}
+
+// "Ver productos" del menú: los tipos de producto
+function pintarMenuTipos(){
+  const caja = $('#menuTipos');
+  if (!caja) return;
+  caja.innerHTML =
+    `<button class="menu-sub-item" type="button" data-ver-tipo="">Todo el catálogo</button>` +
+    tiposConConteo().map(({ tipo, n }) =>
+      `<button class="menu-sub-item" type="button" data-ver-tipo="${esc(tipo)}">${esc(tipo)}<small>${esc(TIPOS_AYUDA[tipo] || '')} · ${n}</small></button>`).join('');
 }
 
 // Quita del carrito productos que ya no existen o quedaron sin stock
@@ -1826,7 +1961,8 @@ function pintarHeroFotos(){
 }
 
 function pintarFiltros(){
-  const cats = ['Todo', ...new Set(PRODUCTOS.map(p => p.categoria).filter(Boolean))];
+  const catsHay = new Set(PRODUCTOS.map(p => p.categoria).filter(Boolean));
+  const cats = ['Todo', ...TIPOS_ORDEN.filter(t => catsHay.has(t)), ...[...catsHay].filter(t => !TIPOS_ORDEN.includes(t)).sort()];
   $('#filtros').innerHTML = cats.map(c =>
     `<button class="chip" type="button" data-cat="${esc(c)}" aria-pressed="${c === CATEGORIA}">${esc(c)}</button>`
   ).join('');
@@ -1869,7 +2005,7 @@ function productosVisibles(){
       if (rango.max != null && precio >= rango.max) return false;
     }
     if (!q) return true;
-    return sinTildes([p.nombre, p.marca, p.categoria, p.tono, p.descripcion]
+    return sinTildes([p.nombre, p.marca, p.categoria, p.categoriaOriginal, p.tono, p.descripcion]
       .filter(Boolean).join(' ')).includes(q);
   });
 }
@@ -3817,7 +3953,7 @@ function pedirMist(){
    EVENTOS
    ══════════════════════════════════════════════════════════════ */
 document.addEventListener('click', (ev) => {
-  const t = ev.target.closest('[data-agregar],[data-mas],[data-menos],[data-quitar],[data-encargo],[data-encargo-libre],[data-quitar-encargo],[data-encargo-mas],[data-encargo-menos],[data-tono-abrir],[data-tono-id],[data-cat],[data-precio],[data-copiar],[data-ver],[data-caja-marcas],[data-caja-marca],[data-caja-mas],[data-caja-menos],[data-caja-fam],[data-caja-abrir],[data-caja-con],[data-caja-continuar],[data-caja-vaciar],[data-caja-seguir],[data-caja-solo-ya],[data-caja-editar],[data-caja-todo],[data-mist-abrir],[data-mist-tam],[data-mist-entrega],[data-mist-mas],[data-mist-menos],[data-mist-pedir],#btnCaja,#btnBarraCaja,#irCheckout,#irEncargos,#seguirComprando,#btnCarrito,#btnVerCarrito,#btnEncargos,#btnBarraEncargos,#btnCerrar,#btnLimpiarFiltros,#verMasProductos');
+  const t = ev.target.closest('[data-agregar],[data-mas],[data-menos],[data-quitar],[data-encargo],[data-encargo-libre],[data-quitar-encargo],[data-encargo-mas],[data-encargo-menos],[data-tono-abrir],[data-tono-id],[data-elegir-marca],[data-ver-marca],[data-ver-tipo],[data-menu-tipos],[data-cat],[data-precio],[data-copiar],[data-ver],[data-caja-marcas],[data-caja-marca],[data-caja-mas],[data-caja-menos],[data-caja-fam],[data-caja-abrir],[data-caja-con],[data-caja-continuar],[data-caja-vaciar],[data-caja-seguir],[data-caja-solo-ya],[data-caja-editar],[data-caja-todo],[data-mist-abrir],[data-mist-tam],[data-mist-entrega],[data-mist-mas],[data-mist-menos],[data-mist-pedir],#btnCaja,#btnBarraCaja,#irCheckout,#irEncargos,#seguirComprando,#btnCarrito,#btnVerCarrito,#btnEncargos,#btnBarraEncargos,#btnCerrar,#btnLimpiarFiltros,#verMasProductos');
   if (!t) return;
 
   // Caja misteriosa
@@ -3866,6 +4002,16 @@ document.addEventListener('click', (ev) => {
   if (t.dataset.quitarEncargo !== undefined) return quitarEncargo(Number(t.dataset.quitarEncargo));
   if (t.dataset.encargoMas !== undefined)   return cambiarCantidadEncargo(Number(t.dataset.encargoMas), 1);
   if (t.dataset.encargoMenos !== undefined) return cambiarCantidadEncargo(Number(t.dataset.encargoMenos), -1);
+  if (t.dataset.elegirMarca !== undefined){ ev.preventDefault(); return abrirElegirMarca(); }
+  if (t.dataset.verMarca !== undefined)    return aplicarVista({ marca: t.dataset.verMarca || 'Todas' });
+  if (t.dataset.verTipo !== undefined)     return aplicarVista({ tipo: t.dataset.verTipo || 'Todo' });
+  if (t.dataset.menuTipos !== undefined){
+    const lista = $('#menuTipos');
+    const abrir = lista.hidden;
+    lista.hidden = !abrir;
+    t.setAttribute('aria-expanded', String(abrir));
+    return;
+  }
   if (t.dataset.tonoAbrir !== undefined){
     const caja = t.closest('.tono-select');
     const lista = caja && caja.querySelector('.tono-sel-lista');
@@ -3926,6 +4072,7 @@ $('#menuFondo').addEventListener('click', cerrarMenu);
 $('#menuLateral').addEventListener('click', (ev) => {
   const el = ev.target.closest('a,button');
   if (!el || el.id === 'btnMenuCerrar') return;
+  if (el.dataset.menuTipos !== undefined) return;   // solo despliega los tipos
   cerrarMenu();
   const titulo = el.dataset.info;
   if (titulo){
