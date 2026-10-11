@@ -1774,13 +1774,17 @@ function pintarHeroFotos(){
 
   const imgA = contenedor.querySelector('.hf-a');
   const imgB = contenedor.querySelector('.hf-b');
+  imgB.removeAttribute('loading'); // la segunda foto se carga cuando toca rotar, no antes
 
   // Asignación directa (no HTML), no lleva esc(): esc() es para texto que se
   // inserta como marcado, y aquí src/alt se ponen como propiedades del DOM.
+  // En celular la foto es un poco más liviana (el marco ocupa el ancho de la pantalla, pero
+  // 640 px alcanza con retina) y se rotan como máximo 8, para no gastar datos de más.
   function pintar(p, img){
-    img.src = fotoAncho(p.foto, 800); // marco de hasta 360px, con margen para retina
+    img.src = fotoAncho(p.foto, enCelular ? 640 : 800);
     img.alt = [p.marca, p.nombre].filter(Boolean).join(' — ');
   }
+  if (enCelular) candidatas = candidatas.slice(0, 8);
   // Si la foto no carga (Google a veces la rechaza), se prueba con otra; si fallan
   // varias, la portada queda solo con texto en vez de mostrar un icono roto.
   let fallos = 0;
@@ -1794,18 +1798,31 @@ function pintarHeroFotos(){
   };
   pintar(candidatas[0], imgA);
   imgA.removeAttribute('loading');
-  if (enCelular) { imgA.style.opacity = '1'; return; } // en celular una sola foto: sin rotar, sin gastar datos
   if (candidatas.length < 2) return; // una sola foto aprobada: no hace falta rotar
+  // Quien pidió menos movimiento en su teléfono o computadora ve una sola foto, quieta
+  if (window.matchMedia('(prefers-reduced-motion:reduce)').matches) return;
 
   let indice = 0;
-  cicloHeroFotos = setInterval(() => {
+  let cambiando = false;
+  const siguienteFoto = () => {
+    if (cambiando || document.hidden) return;   // con la pestaña oculta no se gastan datos
+    cambiando = true;
     indice = (indice + 1) % candidatas.length;
     const activa = contenedor.querySelector('.activa');
     const siguiente = activa === imgA ? imgB : imgA;
+    // Se cambia de foto recién cuando la nueva terminó de cargar: así nunca se ve un hueco
+    // en blanco con una conexión lenta. Si no carga, se salta a la que sigue.
+    const mostrar = () => {
+      siguiente.onload = siguiente.onerror = null;
+      imgA.classList.toggle('activa', siguiente === imgA);
+      imgB.classList.toggle('activa', siguiente === imgB);
+      cambiando = false;
+    };
+    siguiente.onload = mostrar;
+    siguiente.onerror = () => { siguiente.onload = siguiente.onerror = null; cambiando = false; };
     pintar(candidatas[indice], siguiente);
-    imgA.classList.toggle('activa', siguiente === imgA);
-    imgB.classList.toggle('activa', siguiente === imgB);
-  }, 6000);
+  };
+  cicloHeroFotos = setInterval(siguienteFoto, 6000);
 }
 
 function pintarFiltros(){
