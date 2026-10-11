@@ -316,15 +316,24 @@ header{
 body.menu-abierto{overflow:hidden}
 
 /* ── franja de anuncio ──────────────── */
+/* Cinta que se mueve de derecha a izquierda, sin parar. Se detiene al tocarla o pasar el
+   cursor (así se puede leer) y queda quieta si la persona pidió menos movimiento. */
 .franja{
-  background:var(--coral);color:#FFF;text-align:center;
-  padding:9px 16px;font-size:10.5px;font-weight:500;
+  background:var(--coral);color:#FFF;overflow:hidden;white-space:nowrap;
+  padding:9px 0;font-size:10.5px;font-weight:500;
   letter-spacing:.11em;text-transform:uppercase;line-height:1.5;
 }
-@media (max-width:640px){
-  .franja-gratis{display:block}
-  .franja-mayoreo{display:none} /* el mayoreo ya tiene su enlace en la portada: la franja queda en 2 líneas */
-  .franja-sep{display:none}
+.franja-pista{display:flex;width:max-content;animation:franja-mover 70s linear infinite;will-change:transform}
+.franja:hover .franja-pista,.franja:active .franja-pista{animation-play-state:paused}
+.franja-grupo{display:flex;flex:0 0 auto}
+.franja-grupo span{padding:0 26px;position:relative}
+.franja-grupo span::after{content:"";position:absolute;right:-2px;top:50%;width:4px;height:4px;margin-top:-2px;border-radius:50%;background:rgba(255,255,255,.7)}
+@keyframes franja-mover{from{transform:translateX(0)}to{transform:translateX(-50%)}}
+@media (prefers-reduced-motion:reduce){
+  .franja{white-space:normal;padding:9px 16px;text-align:center}
+  .franja-pista{width:auto;justify-content:center;flex-wrap:wrap}
+  .franja-grupo[aria-hidden="true"]{display:none}
+  .franja-grupo span:nth-child(n+5){display:none}
 }
 
 /* ── hero: callado. La foto del producto es la que habla ── */
@@ -1062,7 +1071,7 @@ details[open] summary::after{content:"−"}
 
 <div id="bandaDemo" class="banda-demo oculto"></div>
 
-<aside class="franja" aria-label="Avisos de la tienda">Envíos a todo el país · Retiro gratis en San José<span class="franja-gratis"><span class="franja-sep"> · </span><span id="franjaGratis">Envío gratis por Correos desde ₡50.000</span></span><span class="franja-mayoreo"><span class="franja-sep"> · </span>Al por mayor desde 3 unidades</span></aside>
+<aside class="franja" aria-label="Avisos de la tienda"><div class="franja-pista" id="franjaPista"><div class="franja-grupo"><span>Envíos a todo el país</span><span>Retiro gratis en San José</span><span>Envío gratis por Correos desde ₡50.000</span><span>Al por mayor desde 3 unidades</span></div></div></aside>
 
 <header>
   <div class="wrap barra">
@@ -1106,8 +1115,6 @@ details[open] summary::after{content:"−"}
         <span class="hero-caja-nota">Desde 3 unidades de cada producto.</span>
       </div>
       <div class="hero-trust">
-        <span><b>Entrega inmediata:</b> lo que tiene stock</span>
-        <span><b>Por encargo:</b> <b id="heroEncargoDias" style="font-weight:inherit"></b> días hábiles</span>
         <a href="#infoTienda">¿Cómo funciona?</a>
         <a href="#quienes">Quiénes somos</a>
       </div>
@@ -2289,9 +2296,26 @@ function pintarMenu(){
   const n = $('#menuWhatsNum'); if (n) n.textContent = CONFIG.WHATSAPP_VISIBLE;
 }
 
+// La cinta de arriba: los mensajes se repiten para que nunca haya un hueco, y solo la primera
+// vuelta se lee con lector de pantalla (el resto es adorno).
+function pintarFranja(){
+  const pista = $('#franjaPista');
+  if (!pista) return;
+  const mensajes = [
+    'Envíos a todo el país',
+    'Retiro gratis en San José',
+    'Envío gratis por Correos desde ' + colones(CONFIG.ENVIO_GRATIS_DESDE),
+    'Al por mayor desde ' + CONFIG.MINIMO_MAYOREO + ' unidades'
+  ];
+  const grupo = (adorno) => '<div class="franja-grupo"' + (adorno ? ' aria-hidden="true"' : '') + '>' +
+    [0, 1, 2].map(v => mensajes.map(t =>
+      '<span' + ((adorno || v > 0) ? ' aria-hidden="true"' : '') + '>' + esc(t) + '</span>').join('')).join('') + '</div>';
+  pista.innerHTML = grupo(false) + grupo(true);
+}
+
 function pintarEnvioGratis(){
   const desde = colones(CONFIG.ENVIO_GRATIS_DESDE);
-  const f = $('#franjaGratis'); if (f) f.textContent = 'Envío gratis por Correos desde ' + desde;
+  pintarFranja();
   const p = $('#pieEnvioGratis'); if (p) p.textContent = desde;
   const w = $('#quienesWhats');
   if (w) w.href = 'https://wa.me/' + CONFIG.WHATSAPP + '?text=' + encodeURIComponent('¡Hola! Quisiera más información sobre Avellana Studio.');
@@ -3767,7 +3791,6 @@ $('#pieRetiro').textContent = CONFIG.RETIRO + '.';
 $('#pieWhats').textContent  = 'WhatsApp ' + CONFIG.WHATSAPP_VISIBLE + ' · ' + CONFIG.WHATSAPP_2_VISIBLE;
 $$('.numerosWhats').forEach(el => { el.textContent = numerosWhatsapp(); });
 $('#pieEncargoDias').textContent = CONFIG.ENCARGO_DIAS_MIN + ' a ' + CONFIG.ENCARGO_DIAS_MAX;
-$('#heroEncargoDias').textContent = CONFIG.ENCARGO_DIAS_MIN + ' a ' + CONFIG.ENCARGO_DIAS_MAX;
 $('#pieEncargoPct').textContent  = CONFIG.ENCARGO_ADELANTO_PCT;
 $('#pieCajaDias').textContent = CONFIG.ENCARGO_DIAS_MIN + ' a ' + CONFIG.ENCARGO_DIAS_MAX;
 $('#pieMistDias').textContent = CONFIG.ENCARGO_DIAS_MIN + ' a ' + CONFIG.ENCARGO_DIAS_MAX;
