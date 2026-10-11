@@ -95,8 +95,8 @@ const CONFIG = {
   DIAS_DEFECTO: 1,                  // plazo para reportar defecto de fábrica
   INSTAGRAM: 'avellana.sstudio',
 
-  ENCARGO_DIAS_MIN: 20,             // rango de días hábiles que tarda un encargo
-  ENCARGO_DIAS_MAX: 25,
+  ENCARGO_DIAS_MIN: 15,             // rango de días hábiles que tarda un encargo
+  ENCARGO_DIAS_MAX: 20,
   ENCARGO_ADELANTO_PCT: 50,         // % que se cobra por adelantado en un encargo
 
   // El SINPE mismo NO va acá — lo manda el servidor en la respuesta de
@@ -3331,7 +3331,7 @@ function verConfirmacionEncargo(productos){
    Cada producto de la caja lleva CONFIG.MINIMO_MAYOREO o más (los tonos del
    mismo producto suman) y todo va a precio mayorista: con 1 o 2 de un
    producto no hay precio mayorista, así que no se acepta. Lo que no está en
-   stock se pide por encargo (20 a 25 días hábiles) y se le avisa ANTES de
+   stock se pide por encargo (15 a 20 días hábiles) y se le avisa ANTES de
    confirmar. El servidor vuelve a revisar todo; esto es solo para mostrarlo.
    ══════════════════════════════════════════════════════════════ */
 function cargarCaja(){
