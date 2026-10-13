@@ -1161,6 +1161,27 @@ details[open] summary::after{content:"−"}
   .franja-grupo span{font-size:11.5px}
 }
 
+/* ── Botón flotante «Contáctanos» (WhatsApp con Anyelo o Belén) ─────────────── */
+.btn-contacto{
+  position:fixed;right:14px;bottom:18px;z-index:var(--z-flotante);
+  display:inline-flex;align-items:center;gap:9px;min-height:48px;padding:0 18px 0 15px;
+  background:var(--cafe);color:#FFF;border-radius:999px;
+  font-size:12.5px;font-weight:600;letter-spacing:.04em;
+  box-shadow:0 8px 22px rgba(30,16,8,.28);
+  transition:bottom .22s var(--curva), background .16s var(--curva), transform .13s var(--curva);
+}
+.btn-contacto:hover{background:var(--coral)}
+.btn-contacto:active{transform:scale(.97)}
+.btn-contacto svg{flex:0 0 auto}
+.contacto-opcion{
+  display:flex;align-items:center;justify-content:space-between;gap:12px;width:100%;
+  padding:16px;margin-top:10px;border:1px solid var(--linea);border-radius:var(--radio-chico);
+  background:var(--papel);color:var(--tinta);text-decoration:none;font-size:14px;font-weight:600;
+}
+.contacto-opcion small{display:block;font-weight:400;font-size:12.5px;color:var(--tinta-3);margin-top:2px}
+.contacto-opcion:hover{border-color:var(--coral)}
+.contacto-num{font-variant-numeric:tabular-nums;color:var(--coral);white-space:nowrap}
+
 @media (prefers-reduced-motion:reduce){*{animation:none !important;transition:none !important}}
 </style>
 </head>
@@ -1216,6 +1237,7 @@ details[open] summary::after{content:"−"}
       <div class="hero-trust">
         <a href="#infoTienda">¿Cómo funciona?</a>
         <a href="#quienes">Quiénes somos</a>
+        <a href="#" data-contacto>Contáctanos</a>
       </div>
     </div>
     <div class="hero-fotos" id="heroFotos"></div>
@@ -1284,6 +1306,7 @@ details[open] summary::after{content:"−"}
     <a class="menu-item" href="#infoTienda" data-info="Cómo comprar">Cómo comprar</a>
     <a class="menu-item" href="#infoTienda" data-info="Envíos y entregas">Envíos y formas de pago</a>
     <a class="menu-item" href="#quienes">Quiénes somos</a>
+    <button class="menu-item" type="button" data-contacto>Contáctanos</button>
   </div>
   <div class="menu-pie">
     <a id="menuWhats" href="#" target="_blank" rel="noopener">WhatsApp <span id="menuWhatsNum"></span></a><br>
@@ -1440,6 +1463,11 @@ details[open] summary::after{content:"−"}
     </button>
   </div>
 </div>
+
+<button class="btn-contacto" id="btnContacto" type="button" data-contacto aria-label="Contáctanos por WhatsApp">
+  <svg width="20" height="20" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2" stroke-linecap="round" stroke-linejoin="round" aria-hidden="true"><path d="M21 11.5a8.4 8.4 0 0 1-12.3 7.4L3 20.5l1.7-5.4A8.4 8.4 0 1 1 21 11.5Z"/></svg>
+  Contáctanos
+</button>
 
 <div class="velo oculto" id="velo" role="dialog" aria-modal="true" aria-labelledby="hojaTitulo">
   <div class="hoja">
@@ -2434,6 +2462,41 @@ function cerrarHoja(){
   clearTimeout(cierreTimer);
   cierreTimer = setTimeout(() => velo.classList.add('oculto'), 300);
 }
+
+/* ── Contáctanos: hoja con los dos WhatsApp (Anyelo y Belén) y botón flotante ──
+   El botón flotante se acomoda arriba de la barra del carrito cuando esta aparece. */
+function abrirContacto(){
+  const msj = encodeURIComponent('¡Hola! Quisiera más información sobre Avellana Studio.');
+  const fila = (nombre, visible, wa) =>
+    `<a class="contacto-opcion" href="https://wa.me/${esc(wa)}?text=${msj}" target="_blank" rel="noopener">
+       <span>${esc(nombre)}<small>Escríbenos por WhatsApp</small></span>
+       <span class="contacto-num">${esc(visible)}</span></a>`;
+  abrirHoja('Contáctanos', `
+    <p style="margin:0 0 4px;color:var(--tinta-2);font-size:14px">Escríbenos por WhatsApp para dudas, tonos, disponibilidad o pedidos. Respondemos de ${esc(CONFIG.HORA_ATENCION)}.</p>
+    ${fila('Anyelo', CONFIG.WHATSAPP_VISIBLE, CONFIG.WHATSAPP)}
+    ${fila('Belén', CONFIG.WHATSAPP_2_VISIBLE, CONFIG.WHATSAPP_2)}
+    <p class="nota-datos" style="margin-top:16px">Cualquiera de los dos números es de la tienda: te atendemos igual.</p>`);
+}
+function acomodarContacto(){
+  const btn = $('#btnContacto'), barra = $('#barraAbajo');
+  if (!btn || !barra) return;
+  const alto = barra.classList.contains('oculto') ? 0 : barra.offsetHeight;
+  btn.style.bottom = (alto + 16) + 'px';
+}
+document.addEventListener('click', (ev) => {
+  if (!ev.target.closest('[data-contacto]')) return;
+  ev.preventDefault();
+  cerrarMenu();
+  abrirContacto();
+});
+try {
+  const barraContacto = $('#barraAbajo');
+  if (barraContacto){
+    new ResizeObserver(acomodarContacto).observe(barraContacto);
+    new MutationObserver(acomodarContacto).observe(barraContacto, { attributes:true, attributeFilter:['class'] });
+  }
+} catch (e0) { /* sin observadores: el botón queda abajo y no pasa nada */ }
+acomodarContacto();
 
 /* ── última unidad: qué pasa cuando algo se agota mientras se compra ──────────────
    El servidor es quien manda: si al confirmar ya no alcanza, no guarda el pedido y devuelve
