@@ -4,7 +4,7 @@
 <meta charset="utf-8">
 <meta name="viewport" content="width=device-width, initial-scale=1, viewport-fit=cover">
 <title>Avellana Studio — Tienda</title>
-<meta name="description" content="Maquillaje, skincare y productos de belleza en Costa Rica. Elige lo tuyo y paga por SINPE Móvil. Envíos a todo el país y retiro en Calle Blancos.">
+<meta name="description" content="Maquillaje, skincare y productos de belleza en Costa Rica. Haz tu pedido y lo confirmamos por WhatsApp. Pago por SINPE Móvil. Envíos a todo el país y retiro en Calle Blancos.">
 <meta name="theme-color" content="#FDF8F4">
 <meta name="color-scheme" content="light">
 
@@ -97,7 +97,7 @@ const CONFIG = {
 
   ENCARGO_DIAS_MIN: 15,             // rango de días hábiles que tarda un encargo
   ENCARGO_DIAS_MAX: 20,
-  ENCARGO_ADELANTO_PCT: 50,         // % que se cobra por adelantado en un encargo
+  ENCARGO_ADELANTO_PCT: 70,         // % que se cobra al confirmar un encargo (el resto, cuando llega a Costa Rica)
 
   // El SINPE mismo NO va acá — lo manda el servidor en la respuesta de
   // crear_pedido, para que nunca quede escrito fijo en esta página pública.
@@ -1179,12 +1179,12 @@ details[open] summary::after{content:"−"}
     <div>
       <p class="hero-eyebrow">Belleza que florece · Costa Rica</p>
       <h1>Maquillaje y skincare, <em>traído para ti</em></h1>
-      <p>Elige lo tuyo, haz tu pedido y paga por SINPE Móvil.</p>
+      <p>Elige lo tuyo, haz tu pedido y te escribimos por WhatsApp para confirmarlo.</p>
       <a class="hero-caja hero-ver" href="#explorar" data-elegir-marca>Ver productos</a>
       <ul class="hero-confianza" aria-label="Por qué comprar en Avellana">
         <li><svg width="17" height="17" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2" stroke-linecap="round" stroke-linejoin="round" aria-hidden="true"><path d="M12 3 4 6v6c0 4.5 3.4 8 8 9 4.6-1 8-4.5 8-9V6l-8-3Z"/><path d="m9 12 2 2 4-4"/></svg>Productos originales y sellados</li>
         <li><svg width="17" height="17" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2" stroke-linecap="round" stroke-linejoin="round" aria-hidden="true"><path d="M2 16l20-8-8 12-3-5-9 1Z"/></svg>Importados de EE. UU. por nosotros</li>
-        <li><svg width="17" height="17" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2" stroke-linecap="round" stroke-linejoin="round" aria-hidden="true"><rect x="7" y="2" width="10" height="20" rx="2"/><path d="M11 18h2"/></svg>Pagas por SINPE Móvil</li>
+        <li><svg width="17" height="17" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2" stroke-linecap="round" stroke-linejoin="round" aria-hidden="true"><rect x="7" y="2" width="10" height="20" rx="2"/><path d="M11 18h2"/></svg>Confirmamos por WhatsApp · pago por SINPE Móvil</li>
       </ul>
       <div class="hero-mayoreo-bloque" style="margin-top:14px">
         <button class="hero-caja hero-caja-link" type="button" data-caja-abrir>Armar mi caja al por mayor</button>
@@ -1293,10 +1293,10 @@ details[open] summary::after{content:"−"}
       <div class="detalle">
         <ol>
           <li>Elige tus productos y agrégalos al carrito.</li>
-          <li>Confirma el pedido con tu nombre y WhatsApp. Tu pedido queda registrado y te mostramos el monto exacto.</li>
-          <li>Pagas por SINPE Móvil a cualquiera de los dos números que te mostramos. Si retiras en nuestro punto, también puedes pagar en efectivo al retirar.</li>
-          <li>Nos envías el comprobante (la captura) por WhatsApp, al <b class="numerosWhats"></b> (cualquiera de los dos es nuestro).</li>
-          <li>Verificamos el pago, te confirmamos que recibimos tu pedido y coordinamos la entrega o el envío. Si es por Correos, te pasamos la guía.</li>
+          <li>Confirma el pedido con tu nombre y WhatsApp. Tu pedido queda registrado y apartamos tus productos.</li>
+          <li>Te escribimos por WhatsApp, desde el <b class="numerosWhats"></b> (cualquiera de los dos es nuestro), para confirmar tu pedido y el método de entrega.</li>
+          <li>Ahí mismo te pasamos el monto exacto y el número para pagar por SINPE Móvil. Si retiras en nuestro punto, también puedes pagar en efectivo al retirar.</li>
+          <li>Cuando verificamos el pago, coordinamos la entrega o el envío. Si es por Correos, te pasamos la guía.</li>
         </ol>
       </div>
     </details>
@@ -1305,7 +1305,7 @@ details[open] summary::after{content:"−"}
       <summary>Formas de pago</summary>
       <div class="detalle">
         <p>Recibimos <b>SINPE Móvil</b>. Si retiras en nuestro punto, también puedes pagar en <b>efectivo</b> al retirar.</p>
-        <p>El número para el SINPE te lo mostramos apenas confirmas tu pedido — así puedes pagar de una vez, sin esperar a que te escribamos. <b>Nunca lo mostramos antes de que hagas un pedido real</b>, y tampoco te vamos a pedir datos de tarjeta ni de cuenta bancaria por acá.</p>
+        <p>El número para el SINPE y el monto exacto te los pasamos nosotros por WhatsApp al confirmar tu pedido. No te vamos a pedir datos de tarjeta ni de cuenta bancaria por esta página.</p>
       </div>
     </details>
 
@@ -1326,7 +1326,7 @@ details[open] summary::after{content:"−"}
         <p>Tú eliges <b>cuántas piezas</b> y el tamaño de tu caja. Nosotras escogemos los productos: la sorpresa se revela al abrirla.</p>
         <p>Todo es <b>nuevo, sellado y original</b>, sin repetir productos. Cada tamaño tiene precio fijo y te decimos cuánto valdrían esas piezas compradas al detalle en la tienda: siempre pagas menos.</p>
         <p>Si hay cajas listas, tu entrega es inmediata. Si no, la caja va por encargo y llega en <span id="pieMistDias"></span> días hábiles.</p>
-        <p>Haces el pedido acá, pagas por SINPE Móvil y nos envías el comprobante por WhatsApp. <b>No armamos ni enviamos tu caja sin el pago completo.</b></p>
+        <p>Haces el pedido acá y te escribimos por WhatsApp para confirmarlo y pedirte el pago por SINPE Móvil. <b>No armamos ni enviamos tu caja sin el pago completo.</b></p>
         <button class="btn-suave" type="button" style="margin-top:4px" data-mist-abrir>Quiero mi caja misteriosa</button>
       </div>
     </details>
@@ -1337,7 +1337,7 @@ details[open] summary::after{content:"−"}
         <p>Arma tu propia caja con los productos que quieras. <b>Cada producto lleva mínimo <span id="pieCajaMin"></span></b> (puedes combinar tonos del mismo producto) y todo se cobra a precio mayorista. Con 1 o 2 de un producto no aplica el precio mayorista.</p>
         <p>Todos nuestros productos son <b>nuevos, sellados y originales</b>.</p>
         <p>Lo que tenemos en mano sale de inmediato. Lo que no, lo mandamos a traer y tarda de <span id="pieCajaDias"></span> días hábiles: antes de confirmar te avisamos qué productos van por encargo, y puedes elegir «Solo entrega inmediata».</p>
-        <p>Haces el pedido acá, pagas por SINPE Móvil y nos envías el comprobante por WhatsApp. <b>No enviamos una caja sin el pago completo.</b></p>
+        <p>Haces el pedido acá y te escribimos por WhatsApp para confirmarlo y pedirte el pago por SINPE Móvil. <b>No enviamos una caja sin el pago completo.</b></p>
         <button class="btn-suave" type="button" style="margin-top:4px" data-caja-abrir>Armar mi caja</button>
       </div>
     </details>
@@ -1352,7 +1352,7 @@ details[open] summary::after{content:"−"}
           <li>Cuando termines, abre tu lista, pon tu nombre y WhatsApp una sola vez, y mándala completa.</li>
           <li>Te escribimos por WhatsApp para confirmar precio y tiempo de cada uno antes de pedirte nada.</li>
         </ol>
-        <p>Los encargos tardan de <span id="pieEncargoDias"></span> días hábiles en llegar y pedimos un adelanto del <span id="pieEncargoPct"></span>%. Todo se confirma por WhatsApp antes de que pagues nada.</p>
+        <p>Los encargos tardan de <span id="pieEncargoDias"></span> días hábiles en llegar. Para encargarlos pedimos el <b><span id="pieEncargoPct"></span>%</b> del valor al confirmar y el <b><span id="pieEncargoResto"></span>%</b> restante cuando el producto ya esté en Costa Rica, antes de entregártelo. Todo se confirma por WhatsApp antes de que pagues nada.</p>
         <button class="btn-suave" type="button" style="margin-top:4px" data-encargo="">Pedir algo por encargo</button>
       </div>
     </details>
@@ -2755,8 +2755,8 @@ function verCheckout(){
       </div>
 
       <div class="aviso" id="avisoFormaPago">
-        <b>Cómo se paga.</b> Al confirmar te mostramos el monto exacto y los números de SINPE Móvil.
-        Pagas y nos envías el comprobante por WhatsApp (<b>${esc(numerosWhatsapp())}</b>); con eso confirmamos tu pedido.
+        <b>Cómo se paga.</b> Al confirmar, tu pedido queda registrado y te escribimos por WhatsApp (<b>${esc(numerosWhatsapp())}</b>)
+        para confirmarlo y pedirte el pago por SINPE Móvil. Hasta ese momento no pagas nada.
       </div>
 
       <p class="linea-confianza">Productos originales y sellados, importados de EE. UU. por nosotros.</p>
@@ -2818,26 +2818,22 @@ function refrescarTotales(){
   const aviso = $('#avisoFormaPago');
   if (aviso) {
     aviso.innerHTML = e.modo === 'retiro'
-      ? `<b>Cómo se paga.</b> Al confirmar te mostramos el monto exacto y los números de <b>SINPE Móvil</b>:
-         pagas y nos envías el comprobante por WhatsApp (<b>${esc(numerosWhatsapp())}</b>).
-         También puedes pagar en <b>efectivo</b> al retirar.`
-      : `<b>Cómo se paga.</b> Al confirmar te mostramos el monto exacto y los números de <b>SINPE Móvil</b>:
-         pagas y nos envías el comprobante por WhatsApp (<b>${esc(numerosWhatsapp())}</b>).
-         Despachamos cuando verificamos el pago.`;
+      ? `<b>Cómo se paga.</b> Al confirmar, te escribimos por WhatsApp (<b>${esc(numerosWhatsapp())}</b>) para confirmar tu pedido
+         y pedirte el pago por <b>SINPE Móvil</b>. También puedes pagar en <b>efectivo</b> al retirar.`
+      : `<b>Cómo se paga.</b> Al confirmar, te escribimos por WhatsApp (<b>${esc(numerosWhatsapp())}</b>) para confirmar tu pedido
+         y pedirte el pago por <b>SINPE Móvil</b>. Despachamos cuando verificamos el pago.`;
     if (enModoMist()) {
       // La misteriosa se arma después, con el pago hecho: nunca antes
       const inmediata = MIST.entrega === 'inmediata';
-      aviso.innerHTML = `<b>Cómo se paga.</b> Al confirmar te mostramos el monto exacto y los números de <b>SINPE Móvil</b>:
-         pagas y nos envías el comprobante por WhatsApp (<b>${esc(numerosWhatsapp())}</b>).
-         <b>No armamos ni enviamos tu caja sin el pago completo.</b>` +
+      aviso.innerHTML = `<b>Cómo se paga.</b> Al confirmar, te escribimos por WhatsApp (<b>${esc(numerosWhatsapp())}</b>) para confirmar tu caja
+         y pedirte el pago por <b>SINPE Móvil</b>. <b>No armamos ni enviamos tu caja sin el pago completo.</b>` +
         (inmediata ? '<br><br><b>Entrega inmediata:</b> la tenemos lista, la coordinamos apenas verifiquemos el pago.'
           : `<br><br><b>Va por encargo:</b> llega en ${CONFIG.ENCARGO_DIAS_MIN} a ${CONFIG.ENCARGO_DIAS_MAX} días hábiles.`);
     } else if (enModoCaja()) {
       // Una caja nunca sale (ni se pide lo que va por encargo) sin el pago completo
       const enc = piezasPorEncargo();
-      aviso.innerHTML = `<b>Cómo se paga.</b> Al confirmar te mostramos el monto exacto y los números de <b>SINPE Móvil</b>:
-         pagas y nos envías el comprobante por WhatsApp (<b>${esc(numerosWhatsapp())}</b>).
-         <b>No enviamos una caja sin el pago completo.</b>` +
+      aviso.innerHTML = `<b>Cómo se paga.</b> Al confirmar, te escribimos por WhatsApp (<b>${esc(numerosWhatsapp())}</b>) para confirmar tu caja
+         y pedirte el pago por <b>SINPE Móvil</b>. <b>No enviamos una caja sin el pago completo.</b>` +
         (enc ? `<br><br><b>${enc} ${enc === 1 ? 'pieza va' : 'piezas van'} por encargo:</b> tardan de ${CONFIG.ENCARGO_DIAS_MIN} a ${CONFIG.ENCARGO_DIAS_MAX} días hábiles en llegar.` : '');
     } else if (hayMayoreoEnCarrito()) {
       // Al por mayor no hay pagos en partes: se paga completo antes del envío,
@@ -3090,17 +3086,16 @@ function verConfirmacion(numero, pedido){
   const fecha = new Date().toLocaleDateString('es-CR', { day:'numeric', month:'long', year:'numeric' });
   // Sin emoji: el corazón se rompía al abrir el link de WhatsApp (salía un símbolo raro).
   const texto = encodeURIComponent(`¡Hola! Acabo de hacer ${pedido.misteriosa ? 'la caja misteriosa' : (pedido.caja ? 'la caja' : 'el pedido')} ${numero} en la tienda Avellana Studio.`);
-  // Mensaje para cuando ya pagó: lleva número, monto y avisa que adjunta el comprobante
-  const textoPago = encodeURIComponent(`¡Hola! Ya realicé el pago por SINPE Móvil ${pedido.misteriosa ? 'de la caja misteriosa' : (pedido.caja ? 'de la caja' : 'del pedido')} ${numero} por ${colones(pedido.total)}. Adjunto el comprobante.`);
+
   const esRetiro = pedido.entrega === 'retiro';
   const esMist = !!pedido.misteriosa;
   const esCaja = !!pedido.caja || esMist;
   const enc = pedido.caja ? (Number(pedido.porEncargo) || 0) : 0;
   const pasoPago = esCaja
-    ?`<b>Pagas por SINPE Móvil</b> el monto exacto de abajo${pedido.entrega === 'expres' ? ' (el envío se cotiza aparte)' : ''} y nos mandas el comprobante por WhatsApp. <b>No enviamos una caja sin el pago completo.</b>`
+    ?`<b>Te pedimos el pago por SINPE Móvil</b> en esa misma conversación, con el monto exacto${pedido.entrega === 'expres' ? ' (el envío se cotiza aparte)' : ''}. <b>No enviamos una caja sin el pago completo.</b>`
     : esRetiro
-      ? `<b>Pagas al retirar</b>, en efectivo o SINPE Móvil. Si prefieres adelantar el pago por SINPE, abajo están los números.`
-      : `<b>Pagas por SINPE Móvil</b> el monto exacto de abajo${pedido.entrega === 'expres' ? ' (el envío se cotiza aparte)' : ''} y nos mandas el comprobante por WhatsApp.`;
+      ? `<b>Pagas al retirar</b>, en efectivo o SINPE Móvil. Si prefieres adelantar el pago por SINPE, te pasamos los datos por WhatsApp.`
+      : `<b>Te pasamos el número de SINPE Móvil</b> y el monto exacto en esa misma conversación${pedido.entrega === 'expres' ? ' (el envío se cotiza aparte)' : ''}. Despachamos cuando verificamos el pago.`;
   const pasoEntrega = esMist
     ? (pedido.inmediata
         ? `<b>Tu caja misteriosa sale de entrega inmediata:</b> la armamos apenas esté el pago y coordinamos ${esRetiro ? 'el retiro' : 'el envío'} por WhatsApp.`
@@ -3131,29 +3126,16 @@ function verConfirmacion(numero, pedido){
         <div class="r-fila grande"><span>Total${pedido.entrega === 'expres' ? ' parcial' : ''}</span><span>${colones(pedido.total)}</span></div>
       </div>
 
-      <div class="sinpe-caja">
-        <p class="sinpe-titulo">SINPE Móvil — paga a cualquiera de estos dos números</p>
-        ${(pedido.sinpe || []).map(c => `
-          <div class="sinpe-fila">
-            <div>
-              <div class="sinpe-nombre">${esc(c.nombre)}</div>
-              <div class="sinpe-numero">${esc(c.numero)}</div>
-            </div>
-            <button type="button" class="sinpe-copiar" data-copiar="${esc(c.numero)}">Copiar</button>
-          </div>`).join('')}
-        <p class="sinpe-nota"><b>Cuando hagas el pago, envía el comprobante (la captura del SINPE) por WhatsApp</b> con el botón de abajo — así confirmamos más rápido.</p>
-      </div>
 
       ${MODO_DEMO ? `<div class="aviso"><b>Vista de prueba.</b> Este pedido no se guardó en ningún lado — la tienda todavía no está conectada.</div>` : ''}
 
-      <p style="margin:18px 0 8px;font-size:12.5px;color:var(--tinta-2);text-align:center">¿Ya hiciste el pago? Envía el comprobante a cualquiera de los dos números:</p>
+      <p style="margin:18px 0 8px;font-size:12.5px;color:var(--tinta-2);text-align:center">¿Quieres adelantar la conversación? Escríbenos a cualquiera de los dos números:</p>
       <div class="wa-dos">
         <a class="btn-grande" style="display:block;text-align:center;text-decoration:none"
-           href="https://wa.me/${esc(CONFIG.WHATSAPP)}?text=${textoPago}" target="_blank" rel="noopener">Enviar comprobante · ${esc(CONFIG.WHATSAPP_VISIBLE)}</a>
+           href="https://wa.me/${esc(CONFIG.WHATSAPP)}?text=${texto}" target="_blank" rel="noopener">Escribir por WhatsApp · ${esc(CONFIG.WHATSAPP_VISIBLE)}</a>
         <a class="btn-grande" style="display:block;text-align:center;text-decoration:none"
-           href="https://wa.me/${esc(CONFIG.WHATSAPP_2)}?text=${textoPago}" target="_blank" rel="noopener">Enviar comprobante · ${esc(CONFIG.WHATSAPP_2_VISIBLE)}</a>
+           href="https://wa.me/${esc(CONFIG.WHATSAPP_2)}?text=${texto}" target="_blank" rel="noopener">Escribir por WhatsApp · ${esc(CONFIG.WHATSAPP_2_VISIBLE)}</a>
       </div>
-      <p style="margin:10px 0 0;font-size:12px;color:var(--tinta-2);text-align:center">¿Solo tienes una consulta? <a href="https://wa.me/${esc(CONFIG.WHATSAPP)}?text=${texto}" target="_blank" rel="noopener">Escríbenos por WhatsApp</a>.</p>
       <button class="btn-suave" type="button" id="seguirComprando">Volver a la tienda</button>
     </div>`;
   abrirHoja(esMist ? 'Caja misteriosa confirmada' : (esCaja ? 'Caja confirmada' : 'Pedido confirmado'), html);
@@ -3395,7 +3377,8 @@ function verCheckoutEncargo(){
 
       <div class="aviso" id="avisoFormaPago">
         <b>Esto es una solicitud: todavía no pagas.</b> Te escribimos por WhatsApp desde el <b>${esc(numerosWhatsapp())}</b>
-        para confirmar disponibilidad, precio y tiempo de entrega. Recién ahí se coordina el adelanto.
+        para confirmar disponibilidad, precio y tiempo de entrega. Si seguimos adelante, se paga el <b>${CONFIG.ENCARGO_ADELANTO_PCT}%</b>
+        al confirmar y el <b>${100 - CONFIG.ENCARGO_ADELANTO_PCT}%</b> restante cuando el producto ya esté en Costa Rica.
       </div>
 
       <button class="btn-grande" type="submit" id="btnConfirmarEncargo">Confirmar encargo</button>
@@ -3469,7 +3452,7 @@ function verConfirmacionEncargo(productos){
       <div class="pasos">
         <div class="paso"><i>1</i><p><b>Ya quedó guardado.</b> Revisamos precio y tiempo de entrega de cada producto.</p></div>
         <div class="paso"><i>2</i><p><b>Te escribimos por WhatsApp</b> desde el <b>${esc(numerosWhatsapp())}</b> (cualquiera de los dos es nuestro), en horario de ${esc(CONFIG.HORA_ATENCION)}, para confirmarte todo.</p></div>
-        <div class="paso"><i>3</i><p><b>Ahí coordinamos</b> el adelanto y el tiempo de entrega. Hasta ese momento no pagas nada.</p></div>
+        <div class="paso"><i>3</i><p><b>Ahí coordinamos</b> el tiempo de entrega y el pago: el <b>${CONFIG.ENCARGO_ADELANTO_PCT}%</b> al confirmar y el <b>${100 - CONFIG.ENCARGO_ADELANTO_PCT}%</b> restante cuando llegue a Costa Rica. Hasta ese momento no pagas nada.</p></div>
       </div>
 
       ${MODO_DEMO ? `<div class="aviso"><b>Vista de prueba.</b> Este encargo no se guardó en ningún lado — la tienda todavía no está conectada.</div>` : ''}
@@ -4135,6 +4118,7 @@ $('#pieWhats').textContent  = 'WhatsApp ' + CONFIG.WHATSAPP_VISIBLE + ' · ' + C
 $$('.numerosWhats').forEach(el => { el.textContent = numerosWhatsapp(); });
 $('#pieEncargoDias').textContent = CONFIG.ENCARGO_DIAS_MIN + ' a ' + CONFIG.ENCARGO_DIAS_MAX;
 $('#pieEncargoPct').textContent  = CONFIG.ENCARGO_ADELANTO_PCT;
+$('#pieEncargoResto').textContent = 100 - CONFIG.ENCARGO_ADELANTO_PCT;
 $('#pieCajaDias').textContent = CONFIG.ENCARGO_DIAS_MIN + ' a ' + CONFIG.ENCARGO_DIAS_MAX;
 $('#pieMistDias').textContent = CONFIG.ENCARGO_DIAS_MIN + ' a ' + CONFIG.ENCARGO_DIAS_MAX;
 cargarCatalogo();
