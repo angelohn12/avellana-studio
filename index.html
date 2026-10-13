@@ -1336,7 +1336,7 @@ details[open] summary::after{content:"−"}
       <div class="detalle">
         <p>Arma tu propia caja con los productos que quieras. <b>Cada producto lleva mínimo <span id="pieCajaMin"></span></b> (puedes combinar tonos del mismo producto) y todo se cobra a precio mayorista. Con 1 o 2 de un producto no aplica el precio mayorista.</p>
         <p>Todos nuestros productos son <b>nuevos, sellados y originales</b>.</p>
-        <p>Lo que tenemos en mano sale de inmediato. Lo que no, lo mandamos a traer y tarda de <span id="pieCajaDias"></span> días hábiles: antes de confirmar te avisamos qué productos van por encargo, y puedes elegir «Solo entrega inmediata».</p>
+        <p>Lo que tenemos en mano sale de inmediato. Lo que no, lo mandamos a traer y tarda de <span id="pieCajaDias"></span> días hábiles: antes de confirmar te avisamos qué productos van por encargo, y puedes elegir «Solo entrega inmediata». Por lo que va por encargo pagas el <span id="pieCajaPct"></span>% al confirmar y el <span id="pieCajaResto"></span>% restante cuando llegue a Costa Rica; lo que está en stock se paga completo.</p>
         <p>Haces el pedido acá y te escribimos por WhatsApp para confirmarlo y pedirte el pago por SINPE Móvil. <b>No enviamos una caja sin el pago completo.</b></p>
         <button class="btn-suave" type="button" style="margin-top:4px" data-caja-abrir>Armar mi caja</button>
       </div>
@@ -2834,7 +2834,7 @@ function refrescarTotales(){
       const enc = piezasPorEncargo();
       aviso.innerHTML = `<b>Cómo se paga.</b> Al confirmar, te escribimos por WhatsApp (<b>${esc(numerosWhatsapp())}</b>) para confirmar tu caja
          y pedirte el pago por <b>SINPE Móvil</b>. <b>No enviamos una caja sin el pago completo.</b>` +
-        (enc ? `<br><br><b>${enc} ${enc === 1 ? 'pieza va' : 'piezas van'} por encargo:</b> tardan de ${CONFIG.ENCARGO_DIAS_MIN} a ${CONFIG.ENCARGO_DIAS_MAX} días hábiles en llegar.` : '');
+        (enc ? `<br><br><b>${enc} ${enc === 1 ? 'pieza va' : 'piezas van'} por encargo:</b> tardan de ${CONFIG.ENCARGO_DIAS_MIN} a ${CONFIG.ENCARGO_DIAS_MAX} días hábiles en llegar. Por ${enc === 1 ? 'ella' : 'ellas'} pagas el <b>${CONFIG.ENCARGO_ADELANTO_PCT}%</b> al confirmar y el <b>${100 - CONFIG.ENCARGO_ADELANTO_PCT}%</b> restante cuando lleguen a Costa Rica; lo que está en stock se paga completo.` : '');
     } else if (hayMayoreoEnCarrito()) {
       // Al por mayor no hay pagos en partes: se paga completo antes del envío,
       // o al recibirlo si se retira en persona.
@@ -3032,7 +3032,7 @@ async function enviarPedido(ev){
       numero = d.numero || null;
       pedido.repetido = !!d.repetido;
       // Lo que cuenta es lo que dice el servidor: cuántas piezas quedaron por encargo
-      if (pedido.caja) pedido.porEncargo = Number(d.porEncargo) || 0;
+      if (pedido.caja) { pedido.porEncargo = Number(d.porEncargo) || 0; pedido.alLlegar = Number(d.alLlegar) || 0; }
       if (pedido.misteriosa) { pedido.piezas = Number(d.piezas) || 0; pedido.inmediata = !!d.inmediata; }
       // Los montos que valen son los del servidor (recalcula precios, mayoreo
       // y envío). Si por algo no coinciden con los del carrito, la clienta ve
@@ -3092,7 +3092,9 @@ function verConfirmacion(numero, pedido){
   const esCaja = !!pedido.caja || esMist;
   const enc = pedido.caja ? (Number(pedido.porEncargo) || 0) : 0;
   const pasoPago = esCaja
-    ?`<b>Te pedimos el pago por SINPE Móvil</b> en esa misma conversación, con el monto exacto${pedido.entrega === 'expres' ? ' (el envío se cotiza aparte)' : ''}. <b>No enviamos una caja sin el pago completo.</b>`
+    ?(enc
+      ? `<b>Te pedimos por SINPE Móvil</b> lo que hay en stock completo y el <b>${CONFIG.ENCARGO_ADELANTO_PCT}%</b> de lo que va por encargo${pedido.entrega === 'expres' ? ' (el envío se cotiza aparte)' : ''}. El <b>${100 - CONFIG.ENCARGO_ADELANTO_PCT}%</b> restante${pedido.alLlegar ? ' (' + colones(pedido.alLlegar) + ')' : ''} lo pagas cuando esas piezas lleguen a Costa Rica. <b>No enviamos una caja sin el pago completo.</b>`
+      : `<b>Te pedimos el pago por SINPE Móvil</b> en esa misma conversación, con el monto exacto${pedido.entrega === 'expres' ? ' (el envío se cotiza aparte)' : ''}. <b>No enviamos una caja sin el pago completo.</b>`)
     : esRetiro
       ? `<b>Pagas al retirar</b>, en efectivo o SINPE Móvil. Si prefieres adelantar el pago por SINPE, te pasamos los datos por WhatsApp.`
       : `<b>Te pasamos el número de SINPE Móvil</b> y el monto exacto en esa misma conversación${pedido.entrega === 'expres' ? ' (el envío se cotiza aparte)' : ''}. Despachamos cuando verificamos el pago.`;
@@ -3101,7 +3103,7 @@ function verConfirmacion(numero, pedido){
         ? `<b>Tu caja misteriosa sale de entrega inmediata:</b> la armamos apenas esté el pago y coordinamos ${esRetiro ? 'el retiro' : 'el envío'} por WhatsApp.`
         : `<b>Tu caja misteriosa va por encargo:</b> llega en ${CONFIG.ENCARGO_DIAS_MIN} a ${CONFIG.ENCARGO_DIAS_MAX} días hábiles. Te avisamos por WhatsApp. La sorpresa se revela al abrirla.`)
     : esCaja && enc
-    ?`<b>${enc} ${enc === 1 ? 'pieza va' : 'piezas van'} por encargo</b>: ${enc === 1 ? 'la pedimos' : 'las pedimos'} apenas esté el pago y tardan de ${CONFIG.ENCARGO_DIAS_MIN} a ${CONFIG.ENCARGO_DIAS_MAX} días hábiles en llegar. Te avisamos por WhatsApp para coordinar ${esRetiro ? 'el retiro' : 'el envío'}.`
+    ?`<b>${enc} ${enc === 1 ? 'pieza va' : 'piezas van'} por encargo</b>: ${enc === 1 ? 'la pedimos' : 'las pedimos'} apenas esté el primer pago y tardan de ${CONFIG.ENCARGO_DIAS_MIN} a ${CONFIG.ENCARGO_DIAS_MAX} días hábiles en llegar. Te avisamos por WhatsApp para coordinar ${esRetiro ? 'el retiro' : 'el envío'}.`
     : `<b>${esRetiro ? 'Coordinamos el retiro' : 'Lo enviamos'}</b>${pedido.entrega === 'correos' ? ' y te pasamos el número de guía' : ''}.`;
   const html = `
     <div class="listo">
@@ -4119,6 +4121,8 @@ $$('.numerosWhats').forEach(el => { el.textContent = numerosWhatsapp(); });
 $('#pieEncargoDias').textContent = CONFIG.ENCARGO_DIAS_MIN + ' a ' + CONFIG.ENCARGO_DIAS_MAX;
 $('#pieEncargoPct').textContent  = CONFIG.ENCARGO_ADELANTO_PCT;
 $('#pieEncargoResto').textContent = 100 - CONFIG.ENCARGO_ADELANTO_PCT;
+$('#pieCajaPct').textContent = CONFIG.ENCARGO_ADELANTO_PCT;
+$('#pieCajaResto').textContent = 100 - CONFIG.ENCARGO_ADELANTO_PCT;
 $('#pieCajaDias').textContent = CONFIG.ENCARGO_DIAS_MIN + ' a ' + CONFIG.ENCARGO_DIAS_MAX;
 $('#pieMistDias').textContent = CONFIG.ENCARGO_DIAS_MIN + ' a ' + CONFIG.ENCARGO_DIAS_MAX;
 cargarCatalogo();
