@@ -1138,6 +1138,29 @@ details[open] summary::after{content:"−"}
 }
 .brindis.ver{opacity:1;transform:translateX(-50%) translateY(0)}
 
+/* ── Celular: letra legible y botones fáciles de tocar (12/10/2026) ─────────
+   Textos de lectura de al menos 12,5 px y todo lo que se toca de ~44 px de alto
+   (antes había botones de 37 px, enlaces de 15 px y notas de 10–11 px). */
+.prod-tono,.prod-mayoreo,.lc-pista,.hero-caja-nota,.cj-chip,.cj-chip small,.cj-solo small,.cj-sub,.cj-gana,
+.cj-pista,.cj-ya,.cj-enc,.cj-parcial,.opcion .t2,.campo .error,.sinpe-nota,.nota-datos,.menu-item small,
+.menu-sub-item small,.elegir-marca small,.barra-total .bt-nota,.tono-sel-actual small,.campo label .op,
+.linea-carrito .mini .sin-foto,.cj-cab .mini .sin-foto,.lc-quitar{font-size:12.5px}
+.campo label{font-size:11px}
+.hero-trust span{font-size:11px}
+@media (max-width:759px){
+  .btn-carrito{min-height:44px}
+  .acciones-header .btn-carrito{font-size:10.5px}
+  .btn-carrito .n{height:19px;font-size:11px}
+  .chip{padding:15px 0}
+  .atajo-precio{min-height:44px;display:inline-flex;align-items:center}
+  .select-filtro{min-height:44px;font-size:12.5px}
+  .hero-trust a{font-size:11.5px;padding:14px 6px;margin:-14px -6px}
+  .lc-quitar{display:inline-block;padding:10px 6px;margin:-7px -6px 0 -6px}
+  /* enlaces de pie y del menú: área de toque de 44 px sin mover el diseño */
+  .menu-pie a,.pie-final .dat a,.pie-final .leg a{display:inline-block;padding:13px 6px;margin:-13px -6px}
+  .franja-grupo span{font-size:11.5px}
+}
+
 @media (prefers-reduced-motion:reduce){*{animation:none !important;transition:none !important}}
 </style>
 </head>
