@@ -5,7 +5,7 @@
 <meta name="viewport" content="width=device-width, initial-scale=1, viewport-fit=cover">
 <title>Avellana Studio — Tienda</title>
 <meta name="description" content="Maquillaje, skincare y productos de belleza en Costa Rica. Haz tu pedido y lo confirmamos por WhatsApp. Pago por SINPE Móvil. Envíos a todo el país y retiro en Calle Blancos.">
-<meta name="theme-color" content="#FDF8F4">
+<meta name="theme-color" content="#FFFFFF">
 <meta name="color-scheme" content="light">
 
 <!-- Vista previa al compartir el link (WhatsApp, Instagram, Facebook) -->
@@ -50,8 +50,8 @@ try{if(localStorage.getItem("avl_mist")==="1")document.documentElement.classList
 <link rel="preconnect" href="https://fonts.googleapis.com">
 <link rel="preconnect" href="https://fonts.gstatic.com" crossorigin>
 <!-- Las fuentes se piden sin frenar la pantalla (se ve el texto enseguida y se cambia al cargar), y solo los pesos que de verdad se usan. -->
-<link rel="preload" as="style" href="https://fonts.googleapis.com/css2?family=DM+Mono:wght@400;500&family=Playfair+Display:wght@600&family=Poppins:wght@300;400;500;600&display=swap" onload="this.onload=null;this.rel='stylesheet'">
-<noscript><link rel="stylesheet" href="https://fonts.googleapis.com/css2?family=DM+Mono:wght@400;500&family=Playfair+Display:wght@600&family=Poppins:wght@300;400;500;600&display=swap"></noscript>
+<link rel="preload" as="style" href="https://fonts.googleapis.com/css2?family=DM+Mono:wght@400;500&family=DM+Serif+Display&family=DM+Sans:wght@300;400;500;600&family=Poppins:wght@600&display=swap" onload="this.onload=null;this.rel='stylesheet'">
+<noscript><link rel="stylesheet" href="https://fonts.googleapis.com/css2?family=DM+Mono:wght@400;500&family=DM+Serif+Display&family=DM+Sans:wght@300;400;500;600&family=Poppins:wght@600&display=swap"></noscript>
 
 <script>
 // El navegador a veces "recuerda" el scroll de la última visita y abre la
@@ -138,14 +138,14 @@ const CANTONES = {
 @font-face{font-family:"Playfair Respaldo";src:local("Georgia");font-weight:100 900;size-adjust:88%;ascent-override:123%;descent-override:28.5%;line-gap-override:0%}
 :root{
   /* Marca — se usan como bloques planos y saturados, nunca como lavados suaves */
-  --cafe:#5D300E;
-  --coral:#C93D51;
-  --rosa:#FDA6AB;
-  --rosa-hondo:#D98B93;
+  --cafe:#3B0F1F;   /* vino (marca nueva 14/10/2026) */
+  --coral:#6E1D3B;   /* baya: color principal de botones y acentos */
+  --rosa:#F2B8C0;
+  --rosa-hondo:#E58AA3;
   --durazno:#FAC977;
-  --menta:#C6E9C8;
-  --salvia:#61A07D;
-  --salvia-texto:#3F7A57;   /* el verde de siempre para fondos y puntitos; este es para TEXTO (se lee mejor) */
+  --menta:#FBEDEE;
+  --salvia:#4F5630;   /* oliva oscuro */
+  --salvia-texto:#4F5630;   /* el verde de siempre para fondos y puntitos; este es para TEXTO (se lee mejor) */
 
   /* Superficies: blanco puro, como las tiendas de belleza que funcionan */
   --crema:#FFFFFF;
@@ -182,7 +182,7 @@ const CANTONES = {
 html{-webkit-text-size-adjust:100%;scroll-behavior:smooth}
 body{
   margin:0;color:var(--tinta);
-  font-family:"Poppins","Poppins Respaldo",system-ui,-apple-system,"Segoe UI",sans-serif;
+  font-family:"DM Sans","Poppins Respaldo",system-ui,-apple-system,"Segoe UI",sans-serif;
   font-weight:300;font-size:15px;line-height:1.6;
   -webkit-font-smoothing:antialiased;
   padding-bottom:96px;
@@ -221,12 +221,15 @@ header{
 .barra{display:flex;align-items:center;justify-content:space-between;gap:14px;padding-top:15px;padding-bottom:15px}
 /* El logotipo es el único lugar donde vive la serif */
 .marca{
-  font-family:"Playfair Display","Playfair Respaldo",Georgia,serif;font-weight:600;font-size:19px;
-  letter-spacing:-.012em;color:var(--cafe);line-height:1;
+  display:flex;align-items:center;gap:9px;
+  font-family:"Poppins","Poppins Respaldo",system-ui,sans-serif;font-weight:600;font-size:21px;
+  letter-spacing:-.01em;color:var(--cafe);line-height:1;
 }
+.marca-sim{width:24px;height:auto;flex:0 0 auto;display:block}
+.marca-txt{display:block}
 .marca small{
-  display:block;font-family:"DM Mono","DM Mono Respaldo",monospace;font-size:9px;font-weight:400;
-  letter-spacing:.2em;text-transform:uppercase;color:var(--tinta-3);margin-top:5px;
+  display:block;font-family:"Poppins","Poppins Respaldo",system-ui,sans-serif;font-size:7.5px;font-weight:400;
+  letter-spacing:.5em;text-transform:uppercase;color:var(--tinta-3);margin-top:5px;
 }
 .acciones-header{display:flex;align-items:center;gap:8px}
 .btn-carrito{
@@ -269,10 +272,10 @@ header{
   border-radius:var(--radio-chico);display:grid;gap:8px;max-width:340px;
 }
 .hero-confianza li{display:flex;align-items:center;gap:9px;font-size:13px;color:var(--tinta-2);line-height:1.35}
-.hero-confianza svg{flex:0 0 auto;color:var(--salvia-texto,#3F7A57)}
+.hero-confianza svg{flex:0 0 auto;color:var(--salvia-texto,#4F5630)}
 .barra-total{margin-left:auto;margin-right:12px;text-align:right;line-height:1.25}
 .barra-total .bt-monto{display:block;font-size:15px;font-weight:600;font-variant-numeric:tabular-nums;color:var(--tinta)}
-.barra-total .bt-nota{display:block;font-size:11px;color:var(--salvia-texto,#3F7A57);font-weight:500}
+.barra-total .bt-nota{display:block;font-size:11px;color:var(--salvia-texto,#4F5630);font-weight:500}
 .linea-confianza{margin:14px 0 0;font-size:12.5px;line-height:1.55;color:var(--tinta-2)}
 .nota-campo{display:block;margin-top:6px;font-size:12px;line-height:1.5;color:var(--tinta-3)}
 /* Barra del envío gratis: se llena a medida que el carrito se acerca al monto */
@@ -282,7 +285,7 @@ header{
 .meta-envio-barra{height:8px;border-radius:999px;background:var(--linea);overflow:hidden}
 .meta-envio-barra span{display:block;height:100%;border-radius:999px;background:var(--coral);transition:width .45s var(--curva)}
 .meta-envio.lista .meta-envio-barra span{background:var(--salvia)}
-.meta-envio.lista .meta-envio-txt{color:var(--salvia-texto,#3F7A57);font-weight:500}
+.meta-envio.lista .meta-envio-txt{color:var(--salvia-texto,#4F5630);font-weight:500}
 
 /* ── menú lateral (las tres rayas) ──── */
 .btn-menu{
@@ -318,7 +321,7 @@ header{
   border-bottom:1px solid var(--linea-suave);text-decoration:none;background:none;
 }
 .menu-item:hover{color:var(--coral)}
-.menu-item small{font-size:11.5px;color:var(--salvia-texto,#3F7A57);font-weight:500;white-space:nowrap}
+.menu-item small{font-size:11.5px;color:var(--salvia-texto,#4F5630);font-weight:500;white-space:nowrap}
 /* "Ver productos" del menú: se despliega con los tipos de producto */
 .menu-desplegable svg{flex:0 0 auto;transition:transform .15s var(--curva)}
 .menu-desplegable[aria-expanded="true"] svg{transform:rotate(180deg)}
@@ -960,7 +963,7 @@ body.menu-abierto{overflow:hidden}
   font-family:"DM Mono","DM Mono Respaldo",monospace;font-size:10px;letter-spacing:.07em;text-transform:uppercase;
   color:var(--tinta-2);border:1px solid var(--linea);padding:7px 11px;
 }
-.envio-gratis{color:var(--salvia-texto,#3F7A57);font-weight:500}
+.envio-gratis{color:var(--salvia-texto,#4F5630);font-weight:500}
 
 /* ── formulario ─────────────────────── */
 .grupo{margin-bottom:18px}
@@ -1014,7 +1017,7 @@ fieldset{border:0;padding:0;margin:0 0 18px}
 /* Error al mandar un pedido: queda fijo en el formulario (el brindis de
    abajo se va solo a los 2 segundos y se podía perder) */
 .aviso.error{background:#FBE3E6;border-left-color:#A5323F;color:#5a1d24}
-.aviso.ok{background:#E8F4EA;border-left-color:var(--salvia)}
+.aviso.ok{background:#EEF0E2;border-left-color:var(--salvia)}
 .wa-dos{display:grid;grid-template-columns:1fr 1fr;gap:8px;margin-top:4px}
 .wa-dos .btn-grande{font-size:12px;letter-spacing:.04em}
 
@@ -1105,7 +1108,7 @@ details[open] summary::after{content:"−"}
 .pie-final{
   text-align:center;padding:34px 0 12px;margin-top:26px;border-top:1px solid var(--linea);
 }
-.pie-final .nom{font-family:"Playfair Display","Playfair Respaldo",serif;font-size:16px;font-weight:600;color:var(--cafe);margin-bottom:10px}
+.pie-final .nom{font-family:"Poppins","Poppins Respaldo",system-ui,sans-serif;font-size:16px;font-weight:600;color:var(--cafe);margin-bottom:10px}
 .pie-final .dat{font-family:"DM Mono","DM Mono Respaldo",monospace;font-size:10.5px;color:var(--tinta-3);line-height:2.1;letter-spacing:.08em}
 .pie-final a{color:var(--tinta-2);text-decoration:none;border-bottom:1px solid var(--linea)}
 .pie-final a:hover{color:var(--coral);border-bottom-color:var(--coral)}
@@ -1183,6 +1186,8 @@ details[open] summary::after{content:"−"}
 .contacto-num{font-variant-numeric:tabular-nums;color:var(--coral);white-space:nowrap}
 
 @media (prefers-reduced-motion:reduce){*{animation:none !important;transition:none !important}}
+/* Marca 14/10/2026: titulares en DM Serif Display, cuerpo en DM Sans, logo en Poppins */
+.hero h1,.mist-banner h2,.mas-vendidos h2,.quienes h2,.hoja-barra h2,footer h2{font-family:"DM Serif Display","Playfair Respaldo",Georgia,serif;font-weight:400;letter-spacing:0}
 </style>
 </head>
 <body>
@@ -1199,7 +1204,7 @@ details[open] summary::after{content:"−"}
       <button class="btn-menu" id="btnMenu" type="button" aria-label="Abrir menú" aria-expanded="false" aria-controls="menuLateral">
         <svg width="22" height="22" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2" stroke-linecap="round" aria-hidden="true"><path d="M4 7h16M4 12h16M4 17h16"/></svg>
       </button>
-      <div class="marca">Avellana Studio<small>Costa Rica</small></div>
+      <div class="marca" aria-label="Avellana Studio"><svg class="marca-sim" viewBox="0 0 100 120" aria-hidden="true"><path d="M16 60A34 34 0 0 1 84 60Z" fill="#3B0F1F"/><path d="M22 66H78C78 94 66 112 50 112S22 94 22 66Z" fill="#6E1D3B"/><path d="M33 78C34 90 38 99 44 104" stroke="#F2B8C0" stroke-width="5" stroke-linecap="round" fill="none"/><rect x="47" y="14" width="6" height="14" rx="3" fill="#3B0F1F"/></svg><span class="marca-txt">avellana<small>Studio</small></span></div>
     </div>
     <div class="acciones-header">
       <button class="btn-carrito btn-encargos oculto" id="btnCaja" type="button">
@@ -1285,7 +1290,7 @@ details[open] summary::after{content:"−"}
 <div class="menu-fondo" id="menuFondo"></div>
 <nav class="menu-lateral" id="menuLateral" aria-label="Menú de la tienda">
   <div class="menu-cab">
-    <div class="marca">Avellana Studio</div>
+    <div class="marca" aria-label="Avellana Studio"><svg class="marca-sim" viewBox="0 0 100 120" aria-hidden="true"><path d="M16 60A34 34 0 0 1 84 60Z" fill="#3B0F1F"/><path d="M22 66H78C78 94 66 112 50 112S22 94 22 66Z" fill="#6E1D3B"/><path d="M33 78C34 90 38 99 44 104" stroke="#F2B8C0" stroke-width="5" stroke-linecap="round" fill="none"/><rect x="47" y="14" width="6" height="14" rx="3" fill="#3B0F1F"/></svg><span class="marca-txt">avellana<small>Studio</small></span></div>
     <button class="menu-cerrar" id="btnMenuCerrar" type="button" aria-label="Cerrar menú">
       <svg width="20" height="20" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2" stroke-linecap="round" aria-hidden="true"><path d="M6 6l12 12M18 6 6 18"/></svg>
     </button>
@@ -3194,7 +3199,7 @@ function verConfirmacion(numero, pedido){
   const html = `
     <div class="listo">
       <div class="marca-ok">
-        <svg width="30" height="30" viewBox="0 0 24 24" fill="none" stroke="#3F7A57" stroke-width="2.4" stroke-linecap="round" stroke-linejoin="round" aria-hidden="true"><polyline points="4 12.5 9.5 18 20 6.5"/></svg>
+        <svg width="30" height="30" viewBox="0 0 24 24" fill="none" stroke="#4F5630" stroke-width="2.4" stroke-linecap="round" stroke-linejoin="round" aria-hidden="true"><polyline points="4 12.5 9.5 18 20 6.5"/></svg>
       </div>
       <h3>${esMist ? 'Caja misteriosa recibida' : (esCaja ? 'Caja recibida' : 'Pedido recibido')}</h3>
       <div class="num">${esc(numero)} · ${esc(fecha)}</div>
@@ -3533,7 +3538,7 @@ function verConfirmacionEncargo(productos){
   const html = `
     <div class="listo">
       <div class="marca-ok">
-        <svg width="30" height="30" viewBox="0 0 24 24" fill="none" stroke="#3F7A57" stroke-width="2.4" stroke-linecap="round" stroke-linejoin="round" aria-hidden="true"><polyline points="4 12.5 9.5 18 20 6.5"/></svg>
+        <svg width="30" height="30" viewBox="0 0 24 24" fill="none" stroke="#4F5630" stroke-width="2.4" stroke-linecap="round" stroke-linejoin="round" aria-hidden="true"><polyline points="4 12.5 9.5 18 20 6.5"/></svg>
       </div>
       <h3>Encargo recibido</h3>
 
