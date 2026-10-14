@@ -1660,6 +1660,15 @@ function estaPublicado(p){
 // No se distingue entre "se agotó" y "nunca lo tuvimos en inventario" — para
 // la clienta es la misma situación y la misma solución: pedirlo por encargo.
 // Ambos casos comparten el mismo texto, el mismo color y el mismo botón.
+// Si la clienta ya tiene en el carrito TODAS las unidades que hay (el tope lo pone el stock,
+// no el máximo por pedido), no puede sumar más: le ofrecemos pedir las demás por encargo.
+function masPorEncargoHtml(p, enCarrito){
+  const hay = (Number(p.stock) || 0) > 0 && p.modalidad !== 'encargo';
+  if (!hay || enCarrito < topeDe(p) || topeDe(p) >= topeMaximo(p)) return '';
+  const d = (p.marca ? p.marca + ' ' : '') + p.nombre + (p.tono ? ', tono ' + p.tono : '');
+  return `<button class="btn-avisar" type="button" style="margin-top:8px" data-encargo="${esc(d)}" data-encargo-id="${esc(p.id)}">¿Quieres más? Pídelas por encargo</button>`;
+}
+
 function estadoStock(p){
   const esEncargo = p.modalidad === 'encargo';
   const s = Number(p.stock) || 0;
@@ -2193,6 +2202,7 @@ function pintarGrilla(reanimar = false){
     } else {
       control = `<button class="btn-agregar" type="button" data-agregar="${esc(p.id)}">Agregar</button>`;
     }
+    control += masPorEncargoHtml(p, enCarrito);
 
     // En la grilla no mostramos la lista completa de tonos (con muchos
     // colores esa lista crece y descuadra la altura de las tarjetas de al
@@ -2254,6 +2264,7 @@ function htmlDetalleProducto(p){
   } else {
     control = `<button class="btn-agregar" type="button" data-agregar="${esc(p.id)}">Agregar</button>`;
   }
+  control += masPorEncargoHtml(p, enCarrito);
 
   // Acá sí hay espacio de sobra, así que la lista completa de tonos vive
   // en la ficha de detalle (no en la tarjeta de la grilla).
