@@ -1727,7 +1727,11 @@ async function intentarCargarCatalogo(){
     // entre todas las visitas. Mucho más rápido y no depende de que Apps
     // Script responda rápido en cada visita. Ver functions/api/catalogo.js.
     const r = await fetch('/api/catalogo', { method:'GET', signal: controlador.signal });
-    return await r.json();
+    const d = await r.json();
+    // Copia de respaldo (Apps Script no respondió a tiempo): sirve para mostrar
+    // la tienda ya, pero no se guarda — la próxima página trae la fresca.
+    if (d && r.headers.get('x-catalogo') === 'respaldo') d._respaldo = true;
+    return d;
   } catch (errFetch) {
     if (controlador.signal.aborted) throw Object.assign(new Error('tiempo agotado'), { agotado: true });
     throw errFetch;
@@ -1763,7 +1767,7 @@ async function cargarCatalogo(){
         });
       }
       // Solo se guarda una respuesta buena: un error (502) guardado haría que recargar no sirva por 5 min
-      if (d && d.ok) { try { sessionStorage.setItem(CATALOGO_CACHE_KEY, JSON.stringify({ t: Date.now(), d })); } catch (e1) { /* idem */ } }
+      if (d && d.ok && !d._respaldo) { try { sessionStorage.setItem(CATALOGO_CACHE_KEY, JSON.stringify({ t: Date.now(), d })); } catch (e1) { /* idem */ } }
       cargarCatalogo._agotado = agotado;
     }
 

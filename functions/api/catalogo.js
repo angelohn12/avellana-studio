@@ -10,12 +10,19 @@
 // por navegador) y la reparte así:
 //
 //   · Copia de menos de 2 minutos  → se entrega tal cual, sin tocar Apps Script.
-//   · Copia de entre 2 y 30 min    → se entrega AL INSTANTE y, por detrás,
-//                                    se pide una nueva a Apps Script. Nadie
-//                                    espera los 3-4 s que tarda el Sheet.
-//   · Copia de más de 30 min (o nada) → se espera a Apps Script; si falla,
-//                                    se entrega la vieja antes que dejar a
-//                                    la clienta sin catálogo.
+//   · Copia de más de 2 min (hasta 24 h) → se entrega AL INSTANTE y, por
+//                                    detrás, se pide una nueva a Apps Script.
+//   · Sin copia en el borde         → se espera a Apps Script como máximo
+//                                    ESPERA_MAX_MS; si no llega a tiempo se
+//                                    entrega catalogo-respaldo.json (copia
+//                                    publicada con la tienda) y la lectura
+//                                    sigue por detrás para la próxima visita.
+//
+// Por qué (14/10/2026): con pocas visitas, Cloudflare bota la copia del
+// borde o la copia pasaba de 30 min, y la siguiente clienta esperaba a
+// Apps Script en frío: se midieron 13–20 s. Nadie que llega de un anuncio
+// espera eso. Una copia de minutos u horas se corrige sola en segundos,
+// y el pedido igual se confirma por WhatsApp.
 //
 // Antes la copia se guardaba con "max-age=300": Cloudflare la botaba a los
 // 5 min y el plan B de "copia vieja si Apps Script falla" nunca tenía qué
@@ -26,7 +33,7 @@
 
 const APPS_SCRIPT_URL = 'https://script.google.com/macros/s/AKfycbxQVdDsH_Qgg9MnRgb0rDyzYPkvRESEi2FGD-ENHeT9L7CMbZl_xTaVxDs0wfNe3tflMg/exec';
 const FRESCURA_MS = 2 * 60 * 1000;          // hasta acá la copia es "fresca"
-const TOLERANCIA_MS = 30 * 60 * 1000;       // hasta acá se entrega vieja mientras se renueva (el stock cambia: no más)
+const ESPERA_MAX_MS = 4000;                 // sin copia: lo máximo que se espera a Apps Script
 const VIDA_EN_BORDE_S = 24 * 60 * 60;       // cuánto Cloudflare conserva la copia
 const NAVEGADOR_S = 60;                     // cuánto la reutiliza el navegador de la clienta
 
@@ -55,32 +62,50 @@ export async function onRequest(context) {
     // 1a. Fresca: directo, sin tocar Apps Script
     if (edad < FRESCURA_MS) return paraNavegador(cachedResp);
 
-    // 1b. Algo vieja pero usable: se entrega ya y se renueva por detrás
-    if (edad < TOLERANCIA_MS) {
-      if (!(await cache.match(marcaKey))) {
-        context.waitUntil((async () => {
-          await cache.put(marcaKey, new Response('1', { headers: { 'cache-control': 'public, max-age=25' } }));
-          try { await renovar(cache, cacheKey); } catch (err) { /* la copia vieja sigue sirviendo */ }
-        })());
-      }
-      return paraNavegador(cachedResp);
+    // 1b. Vieja pero de hoy: se entrega ya y se renueva por detrás
+    if (!(await cache.match(marcaKey))) {
+      context.waitUntil((async () => {
+        await cache.put(marcaKey, new Response('1', { headers: { 'cache-control': 'public, max-age=25' } }));
+        try { await renovar(cache, cacheKey); } catch (err) { /* la copia vieja sigue sirviendo */ }
+      })());
     }
+    return paraNavegador(cachedResp);
   }
 
-  // 2. Sin copia útil: hay que esperar datos frescos de Apps Script
-  // Si otra visita ya la está renovando y tenemos una copia (aunque vieja), se entrega esa
-  // en vez de mandar otra lectura a Apps Script.
-  if (cachedResp && (await cache.match(marcaKey))) return paraNavegador(cachedResp);
+  // 2. Sin copia en el borde: se le da a Apps Script hasta ESPERA_MAX_MS.
+  //    La lectura no se cancela si se pasa: sigue por detrás y deja la copia
+  //    guardada para la próxima visita.
   context.waitUntil(cache.put(marcaKey, new Response('1', { headers: { 'cache-control': 'public, max-age=25' } })));
-  try {
-    const text = await renovar(cache, cacheKey);
-    return paraNavegador(new Response(text, { headers: { 'content-type': 'application/json' } }));
-  } catch (err) {
-    // 3. Apps Script falló — mejor la copia vieja (aunque no esté fresca)
-    //    que dejar a la clienta sin catálogo real.
-    if (cachedResp) return paraNavegador(cachedResp);
-    return json({ ok: false, error: 'no se pudo cargar el catálogo: ' + (err && err.message || String(err)) }, 502);
+  const lectura = renovar(cache, cacheKey);
+  context.waitUntil(lectura.catch(() => {}));
+  const aTiempo = await Promise.race([
+    lectura.then(text => ({ text }), err => ({ err })),
+    new Promise(r => setTimeout(() => r({ tarde: true }), ESPERA_MAX_MS))
+  ]);
+  if (aTiempo.text) return paraNavegador(new Response(aTiempo.text, { headers: { 'content-type': 'application/json' } }));
+
+  // 3. Apps Script tardó o falló: copia de respaldo publicada con la tienda
+  const respaldo = await leerRespaldo(context, url);
+  if (respaldo) return respaldo;
+  if (aTiempo.tarde) {
+    // Sin respaldo: no queda más que esperar la lectura en curso
+    try {
+      const text = await lectura;
+      return paraNavegador(new Response(text, { headers: { 'content-type': 'application/json' } }));
+    } catch (err) { aTiempo.err = err; }
   }
+  return json({ ok: false, error: 'no se pudo cargar el catálogo: ' + (aTiempo.err && aTiempo.err.message || String(aTiempo.err)) }, 502);
+}
+
+// catalogo-respaldo.json: copia del catálogo que se publica con la tienda.
+// Se marca con x-catalogo: respaldo para que el navegador no la guarde.
+async function leerRespaldo(context, url) {
+  try {
+    const r = await context.env.ASSETS.fetch(new Request(url.origin + '/catalogo-respaldo.json'));
+    if (!r.ok) return null;
+    const h = new Headers({ 'content-type': 'application/json', 'cache-control': 'no-store', 'x-catalogo': 'respaldo' });
+    return new Response(r.body, { status: 200, headers: h });
+  } catch (err) { return null; }
 }
 
 // Pide el catálogo a Apps Script, lo valida y lo guarda en el borde.
