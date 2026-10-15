@@ -1189,6 +1189,15 @@ details[open] summary::after{content:"−"}
 /* Marca 14/10/2026: titulares en DM Serif Display, cuerpo en DM Sans, logo en Poppins */
 .hero h1,.mist-banner h2,.mas-vendidos h2,.quienes h2,.hoja-barra h2,footer h2{font-family:"DM Serif Display","Playfair Respaldo",Georgia,serif;font-weight:400;letter-spacing:0}
 </style>
+<!-- Meta Pixel (conjunto de datos «Avellana Studio») — mide visitas y pedidos para los anuncios -->
+<script>
+!function(f,b,e,v,n,t,s){if(f.fbq)return;n=f.fbq=function(){n.callMethod?
+n.callMethod.apply(n,arguments):n.queue.push(arguments)};if(!f._fbq)f._fbq=n;
+n.push=n;n.loaded=!0;n.version='2.0';n.queue=[];t=b.createElement(e);t.async=!0;
+t.src=v;s=b.getElementsByTagName(e)[0];s.parentNode.insertBefore(t,s)}(window,
+document,'script','https://connect.facebook.net/en_US/fbevents.js');
+fbq('init','1336062436262787');fbq('track','PageView');
+</script>
 </head>
 <body>
 
@@ -2319,9 +2328,13 @@ function htmlDetalleProducto(p){
   </div>`;
 }
 
+// Avisa al píxel de Meta; si un bloqueador lo quitó, la tienda sigue igual.
+function px(evento, datos){ try { if (window.fbq) fbq('track', evento, datos || {}); } catch(e){} }
+
 function verProducto(id){
   const p = PRODUCTOS.find(x => String(x.id) === String(id));
   if (!p) return;
+  px('ViewContent', { content_ids:[String(p.id)], content_name:p.nombre, content_type:'product', value:Number(p.precioVenta)||0, currency:'CRC' });
   abrirHoja(p.nombre, htmlDetalleProducto(p));
 }
 
@@ -2355,7 +2368,7 @@ function agregar(id, n = 1){
   pintarGrilla();
   actualizarBarra();
   refrescarDetalleAbierto(id);
-  if (nuevo > actual) pulsarCarrito();
+  if (nuevo > actual) { pulsarCarrito(); px('AddToCart', { content_ids:[String(p.id)], content_name:p.nombre, content_type:'product', value:(Number(p.precioVenta)||0)*(nuevo-actual), currency:'CRC' }); }
   if (n > 0 && actual === 0) brindis('Agregado al carrito');
 }
 
@@ -2763,6 +2776,7 @@ function pintarMasVendidos(){
 }
 
 function verCheckout(){
+  px('InitiateCheckout');
   const provincias = Object.keys(CANTONES);
   const html = `
     <form id="formPedido" novalidate>
@@ -3114,6 +3128,9 @@ function mensajeErrorEnvio(err, queEs){
     si ya había entrado, no se duplica. Si sigue fallando, ${contacto}.`;
 }
 
+// Cualquier botón de WhatsApp de la tienda cuenta como «contacto» para Meta
+document.addEventListener('click', e => { if (e.target.closest && e.target.closest('a[href^="https://wa.me"]')) px('Contact'); });
+
 async function enviarPedido(ev){
   ev.preventDefault();
   if (ENVIANDO) return;
@@ -3161,6 +3178,8 @@ async function enviarPedido(ev){
     }
   }
 
+  // Pedido registrado (el pago se coordina después por SINPE)
+  if (!MODO_DEMO && !pedido.repetido) px('Purchase', { value:Number(pedido.total)||0, currency:'CRC' });
   if (!numero) numero = 'AV-' + String(Date.now()).slice(-4);
   // En modo demo no hay servidor real que devuelva el SINPE — se rellena
   // acá solo para que la vista previa se vea completa, nunca en producción.
