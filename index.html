@@ -3,7 +3,7 @@
 <head>
 <meta charset="utf-8">
 <meta name="viewport" content="width=device-width, initial-scale=1, viewport-fit=cover">
-<title>Avellana Studio — Tienda</title>
+<title>Avellana Studio — Maquillaje y skincare en Costa Rica</title>
 <meta name="description" content="Maquillaje, skincare y productos de belleza en Costa Rica. Haz tu pedido y lo confirmamos por WhatsApp. Pago por SINPE Móvil. Envíos a todo el país y retiro en Calle Blancos.">
 <meta name="theme-color" content="#FFFFFF">
 <meta name="color-scheme" content="light">
@@ -1806,6 +1806,10 @@ async function cargarCatalogo(){
   actualizarBarra();
   actualizarBadgeEncargos();
   actualizarBadgeCaja();
+  // Enlace directo a un producto (/?p=<id>), lo usan las páginas /p/... de
+  // Google: abre la ficha de ese producto apenas carga el catálogo.
+  const pedido = new URLSearchParams(location.search).get('p');
+  if (pedido && !MODO_DEMO) verProducto(pedido);
 }
 
 /* ── tipos de producto ───────────────────
