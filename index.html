@@ -1199,6 +1199,8 @@ details[open] summary::after{content:"−"}
   background:var(--papel);color:var(--tinta);border:1px solid var(--linea);border-radius:var(--radio-chico);
   box-shadow:0 10px 30px rgba(0,0,0,.14);padding:16px 16px 14px;font-size:13px;line-height:1.5}
 .aviso-cookies[hidden]{display:none}
+/* Con el carrito o una ventana abierta, el aviso no tapa el botón Continuar (vuelve a verse al cerrar) */
+body:has(#velo:not(.oculto)) .aviso-cookies{display:none}
 .aviso-cookies p{margin:0 0 12px;color:var(--tinta-2)}
 .aviso-cookies a{color:var(--coral)}
 .aviso-cookies .ac-botones{display:flex;gap:8px}
