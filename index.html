@@ -1185,18 +1185,31 @@ details[open] summary::after{content:"−"}
 .contacto-opcion:hover{border-color:var(--coral)}
 .contacto-num{font-variant-numeric:tabular-nums;color:var(--coral);white-space:nowrap}
 
+/* Aviso de cookies (consentimiento del píxel de Meta) */
+.aviso-cookies{position:fixed;left:12px;right:12px;bottom:12px;z-index:2147483000;max-width:520px;margin:0 auto;
+  background:var(--papel);color:var(--tinta);border:1px solid var(--linea);border-radius:var(--radio-chico);
+  box-shadow:0 10px 30px rgba(0,0,0,.14);padding:16px 16px 14px;font-size:13px;line-height:1.5}
+.aviso-cookies[hidden]{display:none}
+.aviso-cookies p{margin:0 0 12px;color:var(--tinta-2)}
+.aviso-cookies a{color:var(--coral)}
+.aviso-cookies .ac-botones{display:flex;gap:8px}
+.aviso-cookies .ac-botones button{flex:1;margin:0;padding:12px 0}
 @media (prefers-reduced-motion:reduce){*{animation:none !important;transition:none !important}}
 /* Marca 14/10/2026: titulares en DM Serif Display, cuerpo en DM Sans, logo en Poppins */
 .hero h1,.mist-banner h2,.mas-vendidos h2,.quienes h2,.hoja-barra h2,footer h2{font-family:"DM Serif Display","Playfair Respaldo",Georgia,serif;font-weight:400;letter-spacing:0}
 </style>
-<!-- Meta Pixel (conjunto de datos «Avellana Studio») — mide visitas y pedidos para los anuncios -->
+<!-- Meta Pixel (conjunto de datos «Avellana Studio»): SOLO se carga si la clienta acepta en el aviso de cookies -->
 <script>
-!function(f,b,e,v,n,t,s){if(f.fbq)return;n=f.fbq=function(){n.callMethod?
-n.callMethod.apply(n,arguments):n.queue.push(arguments)};if(!f._fbq)f._fbq=n;
-n.push=n;n.loaded=!0;n.version='2.0';n.queue=[];t=b.createElement(e);t.async=!0;
-t.src=v;s=b.getElementsByTagName(e)[0];s.parentNode.insertBefore(t,s)}(window,
-document,'script','https://connect.facebook.net/en_US/fbevents.js');
-fbq('set','autoConfig',false,'1336062436262787');fbq('init','1336062436262787');fbq('track','PageView');
+function cargarPixel(){
+  if (window.fbq) return;
+  !function(f,b,e,v,n,t,s){if(f.fbq)return;n=f.fbq=function(){n.callMethod?
+  n.callMethod.apply(n,arguments):n.queue.push(arguments)};if(!f._fbq)f._fbq=n;
+  n.push=n;n.loaded=!0;n.version='2.0';n.queue=[];t=b.createElement(e);t.async=!0;
+  t.src=v;s=b.getElementsByTagName(e)[0];s.parentNode.insertBefore(t,s)}(window,
+  document,'script','https://connect.facebook.net/en_US/fbevents.js');
+  fbq('set','autoConfig',false,'1336062436262787');fbq('init','1336062436262787');fbq('track','PageView');
+}
+try { if (localStorage.getItem('avl_cookies') === 'si') cargarPixel(); } catch(e){}
 </script>
 </head>
 <body>
@@ -1443,7 +1456,7 @@ fbq('set','autoConfig',false,'1336062436262787');fbq('init','1336062436262787');
         Calle Blancos, San José
       </div>
       <div class="leg" style="margin-top:20px;font-size:12px;color:var(--tinta-3)">
-        <a href="politicas.html">Términos y privacidad</a>
+        <a href="politicas.html">Términos y privacidad</a> · <a href="#" id="abrirCookies">Preferencias de cookies</a>
       </div>
     </div>
   </div>
@@ -2843,7 +2856,7 @@ function verCheckout(){
             <label for="cedula">Número de cédula</label>
             <input type="text" id="cedula" name="cedula" inputmode="numeric" autocomplete="off" placeholder="Ej. 1 0234 0567">
             <span class="error oculto" data-error="cedula">Escribe tu número de cédula (de 9 a 12 dígitos)</span>
-            <small class="nota-campo">Correos de Costa Rica puede pedirla al entregar tu envío. La usamos solo para eso y la borramos cuando despachamos tu pedido.</small>
+            <small class="nota-campo">Requerida por Correos de Costa Rica para la entrega del envío. Se utiliza únicamente con este fin y se elimina de nuestros registros una vez despachado el pedido.</small>
           </div>
         </div>
       </div>
@@ -4247,6 +4260,33 @@ $('#pieCajaResto').textContent = 100 - CONFIG.ENCARGO_ADELANTO_PCT;
 $('#pieCajaDias').textContent = CONFIG.ENCARGO_DIAS_MIN + ' a ' + CONFIG.ENCARGO_DIAS_MAX;
 $('#pieMistDias').textContent = CONFIG.ENCARGO_DIAS_MIN + ' a ' + CONFIG.ENCARGO_DIAS_MAX;
 cargarCatalogo();
+</script>
+<div class="aviso-cookies" id="avisoCookies" role="dialog" aria-live="polite" aria-label="Aviso de cookies" hidden>
+  <p>Usamos cookies esenciales para que la tienda funcione. Con tu permiso, también usamos el píxel de Meta para medir nuestros anuncios; no compartimos tu nombre, teléfono ni dirección. <a href="politicas.html#cookies">Más información</a></p>
+  <div class="ac-botones">
+    <button class="btn-suave" type="button" id="cookiesNo">Rechazar</button>
+    <button class="btn-grande" type="button" id="cookiesSi">Aceptar</button>
+  </div>
+</div>
+<script>
+(function(){
+  const aviso = document.getElementById('avisoCookies');
+  const leer = () => { try { return localStorage.getItem('avl_cookies'); } catch(e){ return null; } };
+  const guardar = v => { try { localStorage.setItem('avl_cookies', v); } catch(e){} };
+  function decidir(v){
+    const antes = leer();
+    guardar(v);
+    aviso.hidden = true;
+    if (v === 'si') cargarPixel();
+    // Si antes había aceptado y ahora rechaza, se recarga para apagar el píxel
+    else if (antes === 'si') location.reload();
+  }
+  document.getElementById('cookiesSi').addEventListener('click', () => decidir('si'));
+  document.getElementById('cookiesNo').addEventListener('click', () => decidir('no'));
+  const enlace = document.getElementById('abrirCookies');
+  if (enlace) enlace.addEventListener('click', e => { e.preventDefault(); aviso.hidden = false; });
+  if (!leer()) aviso.hidden = false;
+})();
 </script>
 </body>
 </html>
