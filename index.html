@@ -1640,6 +1640,35 @@ function sinTildes(t){
     .replace(/['’`´]/g, '').toLowerCase();
 }
 
+// Palabras que la clienta escribe distinto a como está en el catálogo.
+const SINONIMOS = {
+  skincare: ['cuidado personal'], skin: ['cuidado personal'], cara: ['rostro', 'face'], face: ['rostro'],
+  boca: ['labio', 'lip'], lip: ['labio'], labio: ['lip'], labial: ['lip'],
+  pintalabio: ['labial', 'lip'], lipstick: ['labial'], brillo: ['gloss'],
+  rimel: ['mascara', 'pestana'], ojo: ['eye', 'pestana', 'delineador', 'sombra'],
+  blush: ['rubor'], rubor: ['blush'], polvo: ['powder'], iluminador: ['highlight'],
+  bronceador: ['bronzer'], fijador: ['setting', 'spray'], primer: ['prebase'],
+  perfume: ['fragancia', 'mist'], crema: ['cream'], protector: ['spf', 'solar']
+};
+// Quita el plural sencillo del español: "labiales" → "labial", "rubores" → "rubor".
+function singular(p){
+  if (p.length > 4 && /[lrndzj]es$/.test(p)) return p.slice(0, -2);
+  if (p.length > 3 && p.endsWith('s')) return p.slice(0, -1);
+  return p;
+}
+// Cada palabra de la búsqueda tiene que aparecer (en cualquier orden),
+// aceptando plurales y sinónimos.
+function coincideBusqueda(texto, q){
+  const t = sinTildes(texto);
+  if (t.includes(q)) return true;
+  return q.split(/\s+/).filter(Boolean).every(p => {
+    if (t.includes(p)) return true;
+    const s = singular(p);
+    if (t.includes(s)) return true;
+    return (SINONIMOS[s] || SINONIMOS[p] || []).some(x => t.includes(x));
+  });
+}
+
 function esc(t){
   return String(t == null ? '' : t)
     .replace(/&/g,'&amp;').replace(/</g,'&lt;').replace(/>/g,'&gt;')
@@ -2114,8 +2143,8 @@ function productosVisibles(){
       if (rango.max != null && precio >= rango.max) return false;
     }
     if (!q) return true;
-    return sinTildes([p.nombre, p.marca, p.categoria, p.categoriaOriginal, p.tono, p.descripcion]
-      .filter(Boolean).join(' ')).includes(q);
+    return coincideBusqueda([p.nombre, p.marca, p.categoria, p.categoriaOriginal, p.tono, p.descripcion]
+      .filter(Boolean).join(' '), q);
   });
 }
 
@@ -3739,7 +3768,7 @@ function familiasVisiblesCaja(){
     // (o los que ya están en la caja, para que se puedan corregir)
     if (CAJA_SOLO_YA && f.stock < min && unidadesCajaDe(f.clave) === 0) return false;
     if (!q) return true;
-    return sinTildes([f.marca, f.nombre, f.categoria, ...f.variantes.map(v => v.tono)].filter(Boolean).join(' ')).includes(q);
+    return coincideBusqueda([f.marca, f.nombre, f.categoria, ...f.variantes.map(v => v.tono)].filter(Boolean).join(' '), q);
   });
 }
 
