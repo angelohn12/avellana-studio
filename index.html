@@ -14,15 +14,16 @@
 <meta property="og:title" content="Avellana Studio — Belleza que florece">
 <meta property="og:description" content="Maquillaje, skincare y productos de belleza en Costa Rica. Envíos a todo el país y retiro en Calle Blancos.">
 <meta property="og:locale" content="es_CR">
-<meta property="og:image" content="https://avellana-studio.pages.dev/icon-512.png">
-<meta property="og:image:width" content="512">
-<meta property="og:image:height" content="512">
-<meta name="twitter:card" content="summary">
+<meta property="og:image" content="https://avellana-studio.pages.dev/compartir.jpg">
+<meta property="og:image:width" content="1200">
+<meta property="og:image:height" content="630">
+<meta name="twitter:card" content="summary_large_image">
 
 <!-- Antes era un SVG embebido (data:) — se ve bien en el navegador, pero Google
      no puede rastrear un ícono así para mostrarlo en los resultados de
      búsqueda (necesita un archivo real con su propia URL). Por eso ahora son
      archivos PNG de verdad, generados a partir del mismo dibujo. -->
+<link rel="preload" as="image" href="/portada.webp" fetchpriority="high">
 <link rel="icon" href="/favicon.png" type="image/png" sizes="32x32">
 <link rel="apple-touch-icon" href="/apple-touch-icon.png">
 
@@ -406,6 +407,9 @@ body.menu-abierto{overflow:hidden}
   object-fit:cover;border-radius:12px;display:block;opacity:0;transition:opacity .6s ease;
 }
 .hero-foto-marco img.activa{opacity:1}
+/* Foto fija de portada (portada.webp, 6 KB, publicada con la tienda): se ve desde el primer
+   instante, mientras llega el catálogo y la foto que rota encima. Antes se veía un cuadro gris. */
+#heroFotos .hero-foto-marco{background-image:url(/portada.webp);background-repeat:no-repeat;background-position:center;background-size:auto calc(100% - 28px)}
 .hero-eyebrow{
   font-family:"DM Mono","DM Mono Respaldo",monospace;font-size:10px;letter-spacing:.22em;
   text-transform:uppercase;color:var(--tinta-3);margin:0 0 14px;
@@ -1267,7 +1271,7 @@ try { if (localStorage.getItem('avl_cookies') === 'si') cargarPixel(); } catch(e
         <a href="#" data-contacto>Contáctanos</a>
       </div>
     </div>
-    <div class="hero-fotos" id="heroFotos"></div>
+    <div class="hero-fotos" id="heroFotos"><div class="hero-foto-marco"></div></div>
   </section>
 
   <section class="mist-banner oculto" id="bloqueMist" aria-labelledby="mistTitulo">
@@ -2005,6 +2009,9 @@ function pintarHeroFotos(){
   const imgA = contenedor.querySelector('.hf-a');
   const imgB = contenedor.querySelector('.hf-b');
   imgB.removeAttribute('loading'); // la segunda foto se carga cuando toca rotar, no antes
+  // Apenas llega la primera foto real, se quita la foto fija de fondo (portada.webp):
+  // en celular la foto va en 'contain' y la de fondo se asomaría a los lados.
+  imgA.addEventListener('load', () => { contenedor.querySelector('.hero-foto-marco').style.backgroundImage = 'none'; }, { once:true });
 
   // Asignación directa (no HTML), no lleva esc(): esc() es para texto que se
   // inserta como marcado, y aquí src/alt se ponen como propiedades del DOM.
