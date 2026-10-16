@@ -1149,6 +1149,7 @@ details[open] summary::after{content:"−"}
   max-width:calc(100vw - 36px);overflow:hidden;text-overflow:ellipsis;
 }
 .brindis.ver{opacity:1;transform:translateX(-50%) translateY(0)}
+.brindis.largo{white-space:normal;width:calc(100vw - 36px);max-width:420px;text-align:center;line-height:1.45;letter-spacing:.02em}
 
 /* ── Celular: letra legible y botones fáciles de tocar (12/10/2026) ─────────
    Textos de lectura de al menos 12,5 px y todo lo que se toca de ~44 px de alto
@@ -1701,12 +1702,13 @@ function guardarEncargos(){
 }
 
 let brindisTimer;
-function brindis(msg){
+function brindis(msg, ms){
   const b = $('#brindis');
   b.textContent = msg;
+  b.classList.toggle('largo', !!ms);
   b.classList.add('ver');
   clearTimeout(brindisTimer);
-  brindisTimer = setTimeout(() => b.classList.remove('ver'), 2300);
+  brindisTimer = setTimeout(() => b.classList.remove('ver'), ms || 2300);
 }
 
 /* ── visibilidad ────────────────────── */
@@ -1969,13 +1971,24 @@ function pintarMenuTipos(){
 // Quita del carrito productos que ya no existen o quedaron sin stock
 function limpiarCarritoFantasma(){
   let cambio = false;
+  const quitados = [], ajustados = [];
+  const nombre = p => p.nombre + (p.tono ? ' · ' + p.tono : '');
   Object.keys(CARRITO).forEach(id => {
     const p = PRODUCTOS.find(x => String(x.id) === String(id));
-    if (!p || (Number(p.stock) || 0) <= 0){ delete CARRITO[id]; cambio = true; return; }
+    if (!p || (Number(p.stock) || 0) <= 0){ delete CARRITO[id]; cambio = true; quitados.push(p ? nombre(p) : null); return; }
     const tope = topeDe(p);
-    if (CARRITO[id] > tope){ CARRITO[id] = tope; cambio = true; }
+    if (CARRITO[id] > tope){ CARRITO[id] = tope; cambio = true; ajustados.push(nombre(p) + ' (quedan ' + tope + ')'); }
   });
   if (cambio) guardarCarrito();
+  // Se le explica a la clienta por qué cambió su carrito guardado, en vez de quitarlo en silencio
+  if (!MODO_DEMO && (quitados.length || ajustados.length)) {
+    const conNombre = quitados.filter(Boolean);
+    const partes = [];
+    if (conNombre.length) partes.push('Se agotó y lo quitamos de tu carrito: ' + conNombre.join(', ') + '.');
+    if (conNombre.length < quitados.length) partes.push('Otro producto de tu carrito ya no está disponible y lo quitamos.'.replace('Otro', conNombre.length ? 'Otro' : 'Un'));
+    if (ajustados.length) partes.push('Ajustamos la cantidad de: ' + ajustados.join(', ') + '.');
+    setTimeout(() => brindis(partes.join(' '), 7000), 600);
+  }
 }
 
 /* ══════════════════════════════════════════════════════════════
