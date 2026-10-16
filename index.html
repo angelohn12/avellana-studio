@@ -1822,8 +1822,21 @@ async function cargarCatalogo(){
     if (Number(d.envioGratisDesde) > 0) CONFIG.ENVIO_GRATIS_DESDE = Number(d.envioGratisDesde);
     MAS_VENDIDOS = Array.isArray(d.masVendidos) ? d.masVendidos : [];
   } catch (e) {
-    // En producción, nunca mostrar "Vista de prueba" — solo avisar que hay un problema
-    // técnico y pedir que recarguen. El catálogo de ejemplo es solo para desarrollo.
+    // En la tienda real NUNCA se usa el catálogo de ejemplo: mostraba productos
+    // inventados, borraba el carrito guardado de la clienta (sus productos no
+    // existen en el ejemplo) y aceptaba "pedidos" que no se guardaban.
+    // Se avisa, se ofrece reintentar o escribir por WhatsApp, y el carrito queda intacto.
+    if (!/^(localhost|127\.0\.0\.1|)$/.test(location.hostname)) {
+      const caja = $('#cargando');
+      caja.removeAttribute('aria-busy');
+      caja.innerHTML = `<div class="sin-resultados" style="grid-column:1/-1;text-align:center;padding:32px 16px">
+        <h3 style="margin:0 0 8px">No pudimos cargar los productos</h3>
+        <p style="margin:0 0 16px;color:var(--tinta-2)">Puede ser la señal. Tu carrito sigue guardado.</p>
+        <button class="btn-grande" type="button" onclick="location.reload()">Intentar de nuevo</button>
+        <a class="btn-suave" style="display:block;margin-top:10px;text-decoration:none" href="https://wa.me/${esc(CONFIG.WHATSAPP)}?text=${encodeURIComponent('¡Hola! Quisiera hacer un pedido en Avellana Studio.')}" target="_blank" rel="noopener">Escribir por WhatsApp</a>
+      </div>`;
+      return;
+    }
     MODO_DEMO = true;
     PRODUCTOS = DEMO.slice();
     const banda = $('#bandaDemo');
@@ -2547,8 +2560,20 @@ function abrirHoja(titulo, html){
   // anima desde el estado cerrado en vez de saltar directo al abierto.
   velo.offsetHeight;
   requestAnimationFrame(() => velo.classList.add('abierta'));
+  // El botón "atrás" del celular cierra la ventana en vez de sacar a la clienta de la tienda
+  HOJA_ABIERTA_EN = Date.now();
+  if (!(history.state && history.state.hoja)) { try { history.pushState({ hoja: 1 }, ''); } catch(e){} }
 }
-function cerrarHoja(){
+let HOJA_ABIERTA_EN = 0;
+window.addEventListener('popstate', () => {
+  if ($('#velo').classList.contains('oculto')) return;
+  // Si se acaba de reabrir (cerró con ✕ y abrió otra al instante), no se cierra
+  if (Date.now() - HOJA_ABIERTA_EN < 600) { try { history.pushState({ hoja: 1 }, ''); } catch(e){} return; }
+  cerrarHoja(true);
+});
+function cerrarHoja(porAtras){
+  // Cerrada con la ✕ o tocando afuera: se quita la entrada que agregó abrirHoja
+  if (!porAtras && history.state && history.state.hoja) { try { history.back(); } catch(e){} }
   const velo = $('#velo');
   velo.classList.remove('abierta');
   document.body.style.overflow = '';
