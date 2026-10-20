@@ -1269,10 +1269,6 @@ try { if (localStorage.getItem('avl_cookies') === 'si') cargarPixel(); } catch(e
         <li><svg width="17" height="17" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2" stroke-linecap="round" stroke-linejoin="round" aria-hidden="true"><path d="M2 16l20-8-8 12-3-5-9 1Z"/></svg>Importados de EE. UU. por nosotros</li>
         <li><svg width="17" height="17" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2" stroke-linecap="round" stroke-linejoin="round" aria-hidden="true"><rect x="7" y="2" width="10" height="20" rx="2"/><path d="M11 18h2"/></svg>Confirmamos por WhatsApp · pago por SINPE Móvil</li>
       </ul>
-      <div class="hero-mayoreo-bloque" style="margin-top:14px">
-        <button class="hero-caja hero-caja-link" type="button" data-caja-abrir>Armar mi caja al por mayor</button>
-        <span class="hero-caja-nota">Desde 3 unidades de cada producto.</span>
-      </div>
       <div class="hero-trust">
         <a href="#infoTienda">¿Cómo funciona?</a>
         <a href="#quienes">Quiénes somos</a>
@@ -1337,7 +1333,6 @@ try { if (localStorage.getItem('avl_cookies') === 'si') cargarPixel(); } catch(e
     </button>
     <div class="menu-sub" id="menuTipos" hidden></div>
     <button class="menu-item oculto" id="menuMist" type="button" data-mist-abrir>Caja misteriosa <small id="menuMistDesde"></small></button>
-    <button class="menu-item" type="button" data-caja-abrir>Armar caja al por mayor</button>
     <button class="menu-item" type="button" data-encargo="">Pedir por encargo</button>
   </div>
   <div class="menu-grupo">
@@ -1413,17 +1408,6 @@ try { if (localStorage.getItem('avl_cookies') === 'si') cargarPixel(); } catch(e
         <p>Si hay cajas listas, tu entrega es inmediata. Si no, la caja va por encargo y llega en <span id="pieMistDias"></span> días hábiles.</p>
         <p>Haces el pedido acá y te escribimos por WhatsApp para confirmarlo y pedirte el pago por SINPE Móvil. <b>No armamos ni enviamos tu caja sin el pago completo.</b></p>
         <button class="btn-suave" type="button" style="margin-top:4px" data-mist-abrir>Quiero mi caja misteriosa</button>
-      </div>
-    </details>
-
-    <details>
-      <summary>Cajas al por mayor</summary>
-      <div class="detalle">
-        <p>Arma tu propia caja con los productos que quieras. <b>Cada producto lleva mínimo <span id="pieCajaMin"></span></b> (puedes combinar tonos del mismo producto) y todo se cobra a precio mayorista. Con 1 o 2 de un producto no aplica el precio mayorista.</p>
-        <p>Todos nuestros productos son <b>nuevos, sellados y originales</b>.</p>
-        <p>Lo que tenemos en mano sale de inmediato. Lo que no, lo mandamos a traer y tarda de <span id="pieCajaDias"></span> días hábiles: antes de confirmar te avisamos qué productos van por encargo, y puedes elegir «Solo entrega inmediata». Por lo que va por encargo pagas el <span id="pieCajaPct"></span>% al confirmar y el <span id="pieCajaResto"></span>% restante cuando llegue a Costa Rica; lo que está en stock se paga completo.</p>
-        <p>Haces el pedido acá y te escribimos por WhatsApp para confirmarlo y pedirte el pago por SINPE Móvil. <b>No enviamos una caja sin el pago completo.</b></p>
-        <button class="btn-suave" type="button" style="margin-top:4px" data-caja-abrir>Armar mi caja</button>
       </div>
     </details>
 
@@ -1531,7 +1515,8 @@ const LLAVE_CAJA = 'avellana_caja_v1';
 let PRODUCTOS = [];
 let CARRITO   = cargarCarrito();
 let ENCARGOS  = cargarEncargos(); // lista de texto libre — "carrito" de productos por encargo
-let CAJA      = cargarCaja();     // { idProducto: cantidad } — la caja al por mayor que está armando
+// «Armá tu caja» se quitó de la tienda (20/10/2026): se vacía la caja que hubiera quedado guardada
+let CAJA      = {}; try { localStorage.removeItem(LLAVE_CAJA); } catch(e) {} //     // { idProducto: cantidad } — la caja al por mayor que está armando
 let CAJA_SOLO_YA = false;         // "Solo entrega inmediata" en el armador
 let CAJA_BUSQUEDA = '';
 let CAJA_MARCAS = new Set();      // marcas elegidas para filtrar el armador (vacío = todas)
@@ -1819,7 +1804,7 @@ async function cargarCatalogo(){
     PRODUCTOS = d.productos.filter(estaPublicado);
     if (!PRODUCTOS.length) throw new Error('catálogo vacío');
     if (Number(d.minimoMayorista) >= 2) CONFIG.MINIMO_MAYOREO = Number(d.minimoMayorista);
-    $('#pieCajaMin').textContent = CONFIG.MINIMO_MAYOREO;
+    if ($('#pieCajaMin')) $('#pieCajaMin').textContent = CONFIG.MINIMO_MAYOREO;
     MISTERIOSA = d.misteriosa && Array.isArray(d.misteriosa.tamanos) && d.misteriosa.tamanos.length ? d.misteriosa : null;
     if (Number(d.envioGratisDesde) > 0) CONFIG.ENVIO_GRATIS_DESDE = Number(d.envioGratisDesde);
     MAS_VENDIDOS = Array.isArray(d.masVendidos) ? d.masVendidos : [];
@@ -2414,7 +2399,6 @@ function htmlDetalleProducto(p){
     ${p.medida ? `<div class="detalle-medida">${esc(p.medida)}</div>` : ''}
     ${p.descripcion ? `<p class="detalle-descripcion">${esc(p.descripcion)}</p>` : ''}
     <div class="detalle-control">${control}</div>
-    ${tieneMayoreo(p) ? `<button class="btn-suave" type="button" data-caja-con="${esc(p.id)}">Armar una caja con este producto</button>` : ''}
   </div>`;
 }
 
@@ -4344,9 +4328,9 @@ $$('.numerosWhats').forEach(el => { el.textContent = numerosWhatsapp(); });
 $('#pieEncargoDias').textContent = CONFIG.ENCARGO_DIAS_MIN + ' a ' + CONFIG.ENCARGO_DIAS_MAX;
 $('#pieEncargoPct').textContent  = CONFIG.ENCARGO_ADELANTO_PCT;
 $('#pieEncargoResto').textContent = 100 - CONFIG.ENCARGO_ADELANTO_PCT;
-$('#pieCajaPct').textContent = CONFIG.ENCARGO_ADELANTO_PCT;
-$('#pieCajaResto').textContent = 100 - CONFIG.ENCARGO_ADELANTO_PCT;
-$('#pieCajaDias').textContent = CONFIG.ENCARGO_DIAS_MIN + ' a ' + CONFIG.ENCARGO_DIAS_MAX;
+if ($('#pieCajaPct')) $('#pieCajaPct').textContent = CONFIG.ENCARGO_ADELANTO_PCT;
+if ($('#pieCajaResto')) $('#pieCajaResto').textContent = 100 - CONFIG.ENCARGO_ADELANTO_PCT;
+if ($('#pieCajaDias')) $('#pieCajaDias').textContent = CONFIG.ENCARGO_DIAS_MIN + ' a ' + CONFIG.ENCARGO_DIAS_MAX;
 $('#pieMistDias').textContent = CONFIG.ENCARGO_DIAS_MIN + ' a ' + CONFIG.ENCARGO_DIAS_MAX;
 cargarCatalogo();
 </script>
