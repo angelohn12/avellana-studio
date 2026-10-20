@@ -1209,6 +1209,15 @@ body:has(#velo:not(.oculto)) .aviso-cookies{display:none}
 @media (prefers-reduced-motion:reduce){*{animation:none !important;transition:none !important}}
 /* Marca 14/10/2026: titulares en DM Serif Display, cuerpo en DM Sans, logo en Poppins */
 .hero h1,.mist-banner h2,.mas-vendidos h2,.quienes h2,.hoja-barra h2,footer h2{font-family:"DM Serif Display","Playfair Respaldo",Georgia,serif;font-weight:400;letter-spacing:0}
+
+/* Cajas mixtas al por mayor (tabla en el pie) */
+.cm-tabla{width:100%;border-collapse:collapse;margin:8px 0 10px;font-variant-numeric:tabular-nums;font-size:13.5px}
+.cm-tabla th{font-weight:600;color:var(--tinta-3);font-size:12px;padding:6px 4px;text-align:right}
+.cm-tabla th:first-child,.cm-tabla td:first-child{text-align:left}
+.cm-tabla td{padding:9px 4px;border-top:1px solid var(--linea-suave);text-align:right;font-weight:600;white-space:nowrap}
+.cm-tabla td:first-child{white-space:normal;font-weight:600}
+.cm-tabla td small{display:block;font-weight:400;font-size:11.5px;color:var(--tinta-3)}
+.cm-tabla td.cm-cons{font-weight:400;color:var(--tinta-3);text-align:center;white-space:normal}
 </style>
 <!-- Meta Pixel (conjunto de datos «Avellana Studio»): SOLO se carga si la clienta acepta en el aviso de cookies -->
 <script>
@@ -1333,6 +1342,7 @@ try { if (localStorage.getItem('avl_cookies') === 'si') cargarPixel(); } catch(e
     </button>
     <div class="menu-sub" id="menuTipos" hidden></div>
     <button class="menu-item oculto" id="menuMist" type="button" data-mist-abrir>Caja misteriosa <small id="menuMistDesde"></small></button>
+    <a class="menu-item" href="#infoTienda" data-info="Caja mixta al por mayor">Caja mixta al por mayor <small>Desde ₡110.000</small></a>
     <button class="menu-item" type="button" data-encargo="">Pedir por encargo</button>
   </div>
   <div class="menu-grupo">
@@ -1397,6 +1407,23 @@ try { if (localStorage.getItem('avl_cookies') === 'si') cargarPixel(); } catch(e
         <p><b>Envío gratis por Correos</b> en compras al detalle desde <span id="pieEnvioGratis">₡50.000</span>. No aplica a cajas ni a compras al por mayor.</p>
         <p><b>Mensajería Uber Flash.</b> El costo varía según tu ubicación. Por WhatsApp te preguntamos si prefieres pedirlo tú misma o si lo pedimos nosotros — en ese caso te pedimos la dirección ahí mismo y te confirmamos el total.</p>
         <p>El envío se despacha una vez confirmado el pago.</p>
+      </div>
+    </details>
+
+    <details>
+      <summary>Caja mixta al por mayor</summary>
+      <div class="detalle">
+        <p>Cajas mixtas de maquillaje para revender o emprender, armadas por nosotras. Tú eliges el <b>tamaño</b> y la <b>gama</b>. Todo es <b>original, importado de EE. UU., nuevo y sellado</b>; no son productos de liquidación.</p>
+        <table class="cm-tabla">
+          <thead><tr><th></th><th>25 piezas</th><th>50 piezas</th><th>100 piezas</th></tr></thead>
+          <tbody>
+            <tr><td>Económica<small>Posibles marcas: e.l.f., Wet n Wild, Revolution</small></td><td>₡110.000<small>₡4.400 c/u</small></td><td>₡210.000<small>₡4.200 c/u</small></td><td>₡410.000<small>₡4.100 c/u</small></td></tr>
+            <tr><td>Media<small>Posibles marcas: NYX, Maybelline, L'Oréal</small></td><td>₡210.000<small>₡8.400 c/u</small></td><td>₡400.000<small>₡8.000 c/u</small></td><td>₡780.000<small>₡7.800 c/u</small></td></tr>
+            <tr><td>Premium<small>Posibles marcas: Rare Beauty, Fenty, Huda</small></td><td>₡430.000<small>₡17.200 c/u</small></td><td class="cm-cons" colspan="2">50 y 100 piezas: consúltanos</td></tr>
+          </tbody>
+        </table>
+        <p>Los productos exactos varían según la disponibilidad de cada compra. Mientras más grande la caja, más barata cada pieza.</p>
+        <a class="btn-suave" id="cmWhatsapp" style="margin-top:4px;display:inline-block;text-decoration:none" target="_blank" rel="noopener" href="https://wa.me/50670185274?text=Hola%2C%20me%20interesan%20las%20cajas%20al%20por%20mayor">Consultar por WhatsApp</a>
       </div>
     </details>
 
