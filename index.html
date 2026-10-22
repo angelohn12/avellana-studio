@@ -527,7 +527,8 @@ body.menu-abierto{overflow:hidden}
   transition:transform .62s cubic-bezier(.5,-.25,.65,1),opacity .62s ease-in}
 .btn-carrito.recibe{animation:recibe .5s var(--curva)}
 @keyframes recibe{0%{transform:scale(1)}30%{transform:scale(1.12) rotate(-4deg)}60%{transform:scale(.96) rotate(2deg)}100%{transform:none}}
-.ic-caja{width:22px;height:22px;flex:none;margin-right:10px;vertical-align:-5px;overflow:visible;color:var(--coral,#6E1D3B)}
+.mi-ic{display:inline-flex;align-items:center;text-align:left}
+.ic-caja{width:22px;height:22px;flex:none;margin-right:10px;overflow:visible;color:var(--coral,#6E1D3B)}
 .ic-caja .tapa{transform-box:fill-box;transform-origin:0% 100%;transition:transform .35s var(--curva)}
 .menu-item:hover .ic-caja .tapa,.menu-item:focus-visible .ic-caja .tapa{transform:translateY(-2px) rotate(-22deg)}
 #menuLateral.abierto .ic-caja .tapa{animation:tapa 1s var(--curva) .35s both}
@@ -1363,9 +1364,9 @@ try { if (localStorage.getItem('avl_cookies') === 'si') cargarPixel(); } catch(e
       <svg width="16" height="16" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2" stroke-linecap="round" stroke-linejoin="round" aria-hidden="true"><polyline points="6 9 12 15 18 9"/></svg>
     </button>
     <div class="menu-sub" id="menuTipos" hidden></div>
-    <button class="menu-item oculto" id="menuMist" type="button" data-mist-abrir><svg class="ic-caja ic-mist" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="1.7" stroke-linecap="round" stroke-linejoin="round" aria-hidden="true"><path d="M4 10h16v9a1 1 0 0 1-1 1H5a1 1 0 0 1-1-1z"/><path d="M12 10v10"/><text class="pregunta" x="12" y="6" text-anchor="middle" font-size="9" font-weight="700" fill="currentColor" stroke="none">?</text><path class="tapa" d="M3 7h18v3H3z"/></svg>Caja misteriosa <small id="menuMistDesde"></small></button>
-    <a class="menu-item" href="#infoTienda" data-info="Caja mixta al por mayor"><svg class="ic-caja" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="1.7" stroke-linecap="round" stroke-linejoin="round" aria-hidden="true"><path d="M4 10h16v9a1 1 0 0 1-1 1H5a1 1 0 0 1-1-1z"/><path d="M12 10v10"/><path class="tapa" d="M3 7h18v3H3z"/></svg>Caja mixta al por mayor <small>Desde ₡110.000</small></a>
-    <a class="menu-item" id="menuOutlet" href="#infoTienda" data-info="Avellana Outlet"><svg class="ic-caja" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="1.7" stroke-linecap="round" stroke-linejoin="round" aria-hidden="true"><path d="M4 10h16v9a1 1 0 0 1-1 1H5a1 1 0 0 1-1-1z"/><path d="M12 10v10"/><path class="tapa" d="M3 7h18v3H3z"/></svg>Avellana Outlet <small id="menuOutletDesde">Agotado por ahora</small></a>
+    <button class="menu-item oculto" id="menuMist" type="button" data-mist-abrir><span class="mi-ic"><span class="mi-ic"><span class="mi-ic"><svg class="ic-caja ic-mist" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="1.7" stroke-linecap="round" stroke-linejoin="round" aria-hidden="true"><path d="M4 10h16v9a1 1 0 0 1-1 1H5a1 1 0 0 1-1-1z"/><path d="M12 10v10"/><text class="pregunta" x="12" y="6" text-anchor="middle" font-size="9" font-weight="700" fill="currentColor" stroke="none">?</text><path class="tapa" d="M3 7h18v3H3z"/></svg>Caja misteriosa</span> <small id="menuMistDesde"></small></button>
+    <a class="menu-item" href="#infoTienda" data-info="Caja mixta al por mayor"><svg class="ic-caja" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="1.7" stroke-linecap="round" stroke-linejoin="round" aria-hidden="true"><path d="M4 10h16v9a1 1 0 0 1-1 1H5a1 1 0 0 1-1-1z"/><path d="M12 10v10"/><path class="tapa" d="M3 7h18v3H3z"/></svg>Caja mixta al por mayor</span> <small>Desde ₡110.000</small></a>
+    <a class="menu-item" id="menuOutlet" href="#infoTienda" data-info="Avellana Outlet"><svg class="ic-caja" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="1.7" stroke-linecap="round" stroke-linejoin="round" aria-hidden="true"><path d="M4 10h16v9a1 1 0 0 1-1 1H5a1 1 0 0 1-1-1z"/><path d="M12 10v10"/><path class="tapa" d="M3 7h18v3H3z"/></svg>Avellana Outlet</span> <small id="menuOutletDesde">Agotado por ahora</small></a>
     <button class="menu-item" type="button" data-encargo="">Pedir por encargo</button>
   </div>
   <div class="menu-grupo">
