@@ -518,6 +518,26 @@ body.menu-abierto{overflow:hidden}
   animation-delay:min(calc(var(--i,0) * 40ms), 380ms);
 }
 @keyframes asomar{from{opacity:0;transform:translateY(10px)}to{opacity:1;transform:none}}
+/* Animaciones 21/10/2026 — tarjetas que aparecen al bajar (una sola vez por
+   producto), foto que vuela al carrito, íconos de cajas en el menú. Todo se
+   apaga con "reducir movimiento" (regla general al final del CSS). */
+.prod.por-ver{opacity:0;transform:translateY(18px)}
+.prod.por-ver.visible{opacity:1;transform:none;transition:opacity .55s var(--curva),transform .55s var(--curva);transition-delay:calc(var(--d,0) * 70ms)}
+.vuela{position:fixed;z-index:9999;pointer-events:none;border-radius:12px;object-fit:cover;box-shadow:0 10px 30px rgba(59,15,31,.25);
+  transition:transform .62s cubic-bezier(.5,-.25,.65,1),opacity .62s ease-in}
+.btn-carrito.recibe{animation:recibe .5s var(--curva)}
+@keyframes recibe{0%{transform:scale(1)}30%{transform:scale(1.12) rotate(-4deg)}60%{transform:scale(.96) rotate(2deg)}100%{transform:none}}
+.mi-ic{display:flex;align-items:center;gap:10px;flex:1 1 auto;min-width:0;text-align:left}
+.ic-caja{width:22px;height:22px;flex:none;overflow:visible;color:var(--coral,#6E1D3B)}
+.ic-caja .tapa{transform-box:fill-box;transform-origin:0% 100%;transition:transform .35s var(--curva)}
+.menu-item:hover .ic-caja .tapa,.menu-item:focus-visible .ic-caja .tapa{transform:translateY(-2px) rotate(-22deg)}
+#menuLateral.abierto .ic-caja .tapa{animation:tapa 1s var(--curva) .35s both}
+@keyframes tapa{0%{transform:none}45%{transform:translateY(-3px) rotate(-26deg)}100%{transform:none}}
+.ic-caja .pregunta{opacity:0;transform-box:fill-box;transform-origin:50% 100%}
+#menuLateral.abierto .ic-mist{animation:tiembla .6s ease-in-out .3s 2}
+#menuLateral.abierto .ic-mist .pregunta,.menu-item:hover .ic-mist .pregunta{animation:asoma 1.4s var(--curva) .6s both}
+@keyframes tiembla{0%,100%{transform:none}25%{transform:rotate(-7deg)}75%{transform:rotate(7deg)}}
+@keyframes asoma{0%{opacity:0;transform:translateY(4px) scale(.6)}40%{opacity:1;transform:translateY(-5px) scale(1)}100%{opacity:1;transform:translateY(-3px)}}
 @media(hover:hover){
   .prod:hover .prod-img img{transform:scale(1.04)}
   .prod:hover .prod-nombre{color:var(--coral)}
@@ -1344,9 +1364,9 @@ try { if (localStorage.getItem('avl_cookies') === 'si') cargarPixel(); } catch(e
       <svg width="16" height="16" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2" stroke-linecap="round" stroke-linejoin="round" aria-hidden="true"><polyline points="6 9 12 15 18 9"/></svg>
     </button>
     <div class="menu-sub" id="menuTipos" hidden></div>
-    <button class="menu-item oculto" id="menuMist" type="button" data-mist-abrir>Caja misteriosa <small id="menuMistDesde"></small></button>
-    <a class="menu-item" href="#infoTienda" data-info="Caja mixta al por mayor">Caja mixta al por mayor <small>Desde ₡110.000</small></a>
-    <a class="menu-item" id="menuOutlet" href="#infoTienda" data-info="Avellana Outlet">Avellana Outlet <small id="menuOutletDesde">Agotado por ahora</small></a>
+    <button class="menu-item oculto" id="menuMist" type="button" data-mist-abrir><span class="mi-ic"><svg class="ic-caja ic-mist" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="1.7" stroke-linecap="round" stroke-linejoin="round" aria-hidden="true"><path d="M4 10h16v9a1 1 0 0 1-1 1H5a1 1 0 0 1-1-1z"/><path d="M12 10v10"/><text class="pregunta" x="12" y="6" text-anchor="middle" font-size="9" font-weight="700" fill="currentColor" stroke="none">?</text><path class="tapa" d="M3 7h18v3H3z"/></svg><span>Caja misteriosa</span></span> <small id="menuMistDesde"></small></button>
+    <a class="menu-item" href="#infoTienda" data-info="Caja mixta al por mayor"><span class="mi-ic"><svg class="ic-caja" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="1.7" stroke-linecap="round" stroke-linejoin="round" aria-hidden="true"><path d="M4 10h16v9a1 1 0 0 1-1 1H5a1 1 0 0 1-1-1z"/><path d="M12 10v10"/><path class="tapa" d="M3 7h18v3H3z"/></svg><span>Caja mixta al por mayor</span></span> <small>Desde ₡110.000</small></a>
+    <a class="menu-item" id="menuOutlet" href="#infoTienda" data-info="Avellana Outlet"><span class="mi-ic"><svg class="ic-caja" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="1.7" stroke-linecap="round" stroke-linejoin="round" aria-hidden="true"><path d="M4 10h16v9a1 1 0 0 1-1 1H5a1 1 0 0 1-1-1z"/><path d="M12 10v10"/><path class="tapa" d="M3 7h18v3H3z"/></svg><span>Avellana Outlet</span></span> <small id="menuOutletDesde">Agotado por ahora</small></a>
     <button class="menu-item" type="button" data-encargo="">Pedir por encargo</button>
   </div>
   <div class="menu-grupo">
@@ -2349,7 +2369,8 @@ function pintarGrilla(reanimar = false){
       ? `<div class="prod-tono prod-tono-multi" data-ver="${esc(p.id)}" role="button" tabindex="0" aria-label="Ver los ${grupo.variantes.length} tonos de ${esc(p.nombre)}">${grupo.variantes.length} tonos disponibles</div>`
       : (p.tono ? `<div class="prod-tono">Tono ${esc(p.tono)}</div>` : '');
 
-    return `<article class="prod ${est.hay ? '' : 'agotado'}${reanimar ? ' entrando' : ''}" style="--i:${i}">
+    const porVer = APARECER && !VISTOS.has(String(p.id));
+    return `<article class="prod ${est.hay ? '' : 'agotado'}${porVer ? ' por-ver' : (reanimar ? ' entrando' : '')}" data-pid="${esc(p.id)}" style="--i:${i}">
       <div class="prod-img" data-ver="${esc(p.id)}" role="button" tabindex="0" aria-label="Ver detalle de ${esc(p.nombre)}">${tarjetaFoto(p)}</div>
       <div class="prod-cuerpo">
         ${p.marca ? `<div class="prod-marca">${esc(p.marca)}</div>` : ''}
@@ -2366,6 +2387,7 @@ function pintarGrilla(reanimar = false){
          Ver más productos (${todos.length - grupos.length} más)
        </button>`
     : '');
+  observarTarjetas();
 }
 
 // Cambia qué tono está activo dentro de un grupo, sin tocar el carrito.
@@ -2476,6 +2498,58 @@ function refrescarDetalleAbierto(id){
 }
 
 /* ── carrito: operaciones ───────────── */
+// ---- Animaciones (21/10/2026) ----
+// Tarjetas: cada producto aparece suave la primera vez que entra en pantalla.
+// VISTOS evita que vuelva a esconderse cuando la grilla se repinta (cada clic
+// de cantidad la repinta).
+const APARECER = 'IntersectionObserver' in window && !window.matchMedia('(prefers-reduced-motion:reduce)').matches;
+const VISTOS = new Set();
+const observadorTarjetas = APARECER ? new IntersectionObserver((entradas) => {
+  let orden = 0;
+  entradas.forEach(en => {
+    if (!en.isIntersecting) return;
+    const t = en.target;
+    t.style.setProperty('--d', Math.min(orden++, 6));
+    t.classList.add('visible');
+    VISTOS.add(t.dataset.pid);
+    observadorTarjetas.unobserve(t);
+  });
+}, { rootMargin: '0px 0px -40px 0px' }) : null;
+function observarTarjetas(){
+  if (!observadorTarjetas) return;
+  document.querySelectorAll('.prod.por-ver:not(.visible)').forEach(t => observadorTarjetas.observe(t));
+}
+// Foto que vuela al carrito: sale de la tarjeta (o ficha) que se tocó.
+let ultimoToque = null;
+document.addEventListener('pointerdown', ev => { ultimoToque = ev.target; }, true);
+// Se mide ANTES de agregar: al agregar, la grilla se repinta y la tarjeta tocada ya no existe.
+function medirVuelo(){
+  const origen = ultimoToque && ultimoToque.closest && ultimoToque.closest('.prod, .hoja, .detalle-prod, [role="dialog"]');
+  const foto = origen && origen.querySelector('img');
+  if (!foto) return null;
+  const a = foto.getBoundingClientRect();
+  return a.width ? { src: foto.currentSrc || foto.src, a } : null;
+}
+function volarAlCarrito(vuelo){
+  const destino = $('#btnCarrito');
+  if (!destino) return;
+  const llegar = () => { destino.classList.remove('recibe'); void destino.offsetWidth; destino.classList.add('recibe'); };
+  const b = destino.getBoundingClientRect();
+  if (!vuelo || !APARECER || b.bottom < 0) { llegar(); return; }
+  const a = vuelo.a;
+  const lado = Math.min(a.width, a.height, 140);
+  const clon = document.createElement('img');
+  clon.src = vuelo.src; clon.alt = ''; clon.className = 'vuela';
+  Object.assign(clon.style, { width: lado + 'px', height: lado + 'px', left: (a.left + a.width / 2 - lado / 2) + 'px', top: (a.top + a.height / 2 - lado / 2) + 'px' });
+  document.body.appendChild(clon);
+  const dx = b.left + b.width / 2 - (a.left + a.width / 2), dy = b.top + b.height / 2 - (a.top + a.height / 2);
+  requestAnimationFrame(() => requestAnimationFrame(() => {
+    clon.style.transform = `translate(${dx}px, ${dy}px) scale(${24 / lado})`;
+    clon.style.opacity = '.4';
+  }));
+  setTimeout(() => { clon.remove(); llegar(); }, 640);
+}
+
 function agregar(id, n = 1){
   const p = PRODUCTOS.find(x => String(x.id) === String(id));
   if (!p) return;
@@ -2483,6 +2557,7 @@ function agregar(id, n = 1){
   const actual = CARRITO[id] || 0;
   const nuevo = Math.max(0, Math.min(tope, actual + n));
 
+  const vuelo = n > 0 ? medirVuelo() : null;
   if (n > 0 && nuevo === actual){
     brindis(actual >= topeMaximo(p)
       ? `Máximo ${topeMaximo(p)} por pedido`
@@ -2495,7 +2570,7 @@ function agregar(id, n = 1){
   pintarGrilla();
   actualizarBarra();
   refrescarDetalleAbierto(id);
-  if (nuevo > actual) { pulsarCarrito(); px('AddToCart', { content_ids:[String(p.id)], content_name:p.nombre, content_type:'product', value:(Number(p.precioVenta)||0)*(nuevo-actual), currency:'CRC' }); }
+  if (nuevo > actual) { volarAlCarrito(vuelo); pulsarCarrito(); px('AddToCart', { content_ids:[String(p.id)], content_name:p.nombre, content_type:'product', value:(Number(p.precioVenta)||0)*(nuevo-actual), currency:'CRC' }); }
   if (n > 0 && actual === 0) brindis('Agregado al carrito');
 }
 
