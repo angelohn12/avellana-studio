@@ -1461,6 +1461,7 @@ try { if (localStorage.getItem('avl_cookies') === 'si') cargarPixel(); } catch(e
       <summary>Avellana Outlet · lotes de liquidación</summary>
       <div class="detalle">
         <p><b>Lotes de maquillaje de liquidación</b> con piezas surtidas, ideales para revender o surtir tu negocio. Mientras más grande el lote, menor el precio por pieza.</p>
+        <p><b>Emprendedora:</b> marcas de farmacia para empezar a revender. <b>Premium:</b> marcas de gama alta. <b>Skincare:</b> cuidado de la piel.</p>
         <div class="outlet-galeria">
           <img src="outlet/caja-1.webp" width="720" height="720" loading="lazy" decoding="async" alt="Caja abierta con maquillaje surtido de NYX, e.l.f., L'Oréal y Wet n Wild">
           <img src="outlet/caja-2.webp" width="720" height="720" loading="lazy" decoding="async" alt="Lote de maquillaje surtido de e.l.f., NYX, Maybelline y Wet n Wild junto a una caja cerrada">
@@ -1469,7 +1470,11 @@ try { if (localStorage.getItem('avl_cookies') === 'si') cargarPixel(); } catch(e
         <p class="outlet-ref">Imágenes de referencia. El contenido de cada lote varía según la disponibilidad.</p>
         <table class="cm-tabla">
           <thead><tr><th>Lote</th><th>Precio</th><th>Entrega</th></tr></thead>
-          <tbody id="outletFilas"><tr><td>50, 100 y 500 piezas</td><td>—</td><td class="cm-cons">Agotado</td></tr></tbody>
+          <tbody id="outletFilas">
+            <tr><td>Caja Emprendedora<small>50, 100 y 500 piezas</small></td><td>—</td><td class="cm-cons">Agotado</td></tr>
+            <tr><td>Caja Premium<small>50, 100 y 500 piezas</small></td><td>—</td><td class="cm-cons">Agotado</td></tr>
+            <tr><td>Caja Skincare<small>50, 100 y 500 piezas</small></td><td>—</td><td class="cm-cons">Agotado</td></tr>
+          </tbody>
         </table>
         <p id="outletMarcas"><b>Posibles marcas a recibir:</b> NYX, e.l.f., Maybelline, entre otras.</p>
         <p>Las piezas son surtidas: no se eligen marcas, tonos ni productos. Al ser liquidación, algunos empaques pueden presentar detalles; con gusto respondemos cualquier consulta antes de tu compra. Pago por SINPE Móvil; los lotes por encargo se cancelan al 100 % por adelantado.</p>
@@ -1602,7 +1607,7 @@ let CAJA_ABIERTAS = new Set();    // productos con los tonos desplegados en el a
 let CAJA_RECIEN = '';             // producto que acaba de llegar al mínimo (para el efecto del precio)
 let MODO_PEDIDO = 'carrito';      // el checkout sirve para el carrito, la caja y la caja misteriosa
 let MAS_VENDIDOS = [];            // ids de los productos más vendidos (vacío = la sección no se muestra)
-let OUTLET = null;                // { activo, lotes: [{ piezas, precio, porPieza, disponible, agotado }], marcas }
+let OUTLET = null;                // { activo, tipos: [{ clave, nombre, piezas, lotes: [{ piezas, precio, porPieza, disponible, agotado }], marcas }] }
 let MISTERIOSA = null;            // { tamanos: [{ piezas, precio, valorMin, cupos }] } o null si no se ofrece
 let MIST = { piezas: 0, cantidad: 1, entrega: 'encargo' };   // lo que está eligiendo la clienta
 let CATEGORIA = 'Todo';
@@ -1883,7 +1888,7 @@ async function cargarCatalogo(){
     if (!PRODUCTOS.length) throw new Error('catálogo vacío');
     if (Number(d.minimoMayorista) >= 2) CONFIG.MINIMO_MAYOREO = Number(d.minimoMayorista);
     if ($('#pieCajaMin')) $('#pieCajaMin').textContent = CONFIG.MINIMO_MAYOREO;
-    OUTLET = d.outlet && Array.isArray(d.outlet.lotes) && d.outlet.lotes.length ? d.outlet : OUTLET;
+    OUTLET = d.outlet && Array.isArray(d.outlet.tipos) && d.outlet.tipos.length ? d.outlet : OUTLET;
     MISTERIOSA = d.misteriosa && Array.isArray(d.misteriosa.tamanos) && d.misteriosa.tamanos.length ? d.misteriosa : null;
     if (Number(d.envioGratisDesde) > 0) CONFIG.ENVIO_GRATIS_DESDE = Number(d.envioGratisDesde);
     MAS_VENDIDOS = Array.isArray(d.masVendidos) ? d.masVendidos : [];
@@ -2964,19 +2969,22 @@ function cerrarMenu(){
 // Precios calculados por el servidor desde el costo real; sin liquidación en
 // inventario los lotes salen agotados y sin precio.
 function pintarOutlet(){
-  if (!OUTLET) return;   // catálogo viejo o sin respuesta: queda el texto fijo del HTML
-  const conPrecio = OUTLET.lotes.filter(l => !l.agotado && l.precio > 0);
+  if (!OUTLET) return;   // catálogo viejo o sin respuesta: quedan las filas fijas del HTML
+  const lotes = OUTLET.tipos.flatMap(t => t.lotes);
+  const conPrecio = lotes.filter(l => !l.agotado && l.precio > 0);
   $('#menuOutletDesde').textContent = conPrecio.length
     ? 'Lotes desde ' + colones(Math.min(...conPrecio.map(l => l.precio)))
     : 'Agotado por ahora';
-  $('#outletFilas').innerHTML = OUTLET.lotes.map(l => `<tr>
-      <td>${l.piezas} piezas</td>
-      <td>${l.agotado ? '—' : colones(l.precio) + '<small>' + colones(l.porPieza) + ' c/u</small>'}</td>
-      <td class="cm-cons">${l.agotado ? 'Agotado' : (l.disponible ? 'Disponible' : 'Por encargo')}</td></tr>`).join('');
-  // Con liquidación en inventario se muestran las marcas que de verdad hay;
-  // sin inventario queda la lista fija del HTML.
-  if (OUTLET.marcas && OUTLET.marcas.length)
-    $('#outletMarcas').innerHTML = '<b>Posibles marcas a recibir:</b> ' + esc(OUTLET.marcas.join(', ')) + ', entre otras.';
+  // Un tipo sin inventario va en una sola fila «Agotado»; con inventario, una fila por tamaño
+  $('#outletFilas').innerHTML = OUTLET.tipos.map(t => t.lotes.every(l => l.agotado)
+    ? `<tr><td>${esc(t.nombre)}<small>${t.lotes.map(l => l.piezas).join(', ')} piezas</small></td><td>—</td><td class="cm-cons">Agotado</td></tr>`
+    : t.lotes.map((l, i) => `<tr>
+        <td>${i === 0 ? esc(t.nombre) + '<small>' : '<small>'}${l.piezas} piezas</small></td>
+        <td>${colones(l.precio)}<small>${colones(l.porPieza)} c/u</small></td>
+        <td class="cm-cons">${l.disponible ? 'Disponible' : 'Por encargo'}</td></tr>`).join('')).join('');
+  // Con inventario se muestran las marcas que de verdad hay; sin inventario queda la lista fija del HTML
+  const marcas = [...new Set(OUTLET.tipos.flatMap(t => t.marcas || []))].slice(0, 10);
+  if (marcas.length) $('#outletMarcas').innerHTML = '<b>Posibles marcas a recibir:</b> ' + esc(marcas.join(', ')) + ', entre otras.';
   const agotado = !conPrecio.length;
   $('#outletWhatsapp').textContent = agotado ? 'Avísenme cuando haya lotes' : 'Pedir un lote por WhatsApp';
   $('#outletWhatsapp').href = 'https://wa.me/' + CONFIG.WHATSAPP + '?text=' + encodeURIComponent(agotado
