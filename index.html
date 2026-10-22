@@ -2521,18 +2521,24 @@ function observarTarjetas(){
 // Foto que vuela al carrito: sale de la tarjeta (o ficha) que se tocó.
 let ultimoToque = null;
 document.addEventListener('pointerdown', ev => { ultimoToque = ev.target; }, true);
-function volarAlCarrito(){
-  const destino = $('#btnCarrito');
-  if (!destino) return;
+// Se mide ANTES de agregar: al agregar, la grilla se repinta y la tarjeta tocada ya no existe.
+function medirVuelo(){
   const origen = ultimoToque && ultimoToque.closest && ultimoToque.closest('.prod, .hoja, .detalle-prod, [role="dialog"]');
   const foto = origen && origen.querySelector('img');
+  if (!foto) return null;
+  const a = foto.getBoundingClientRect();
+  return a.width ? { src: foto.currentSrc || foto.src, a } : null;
+}
+function volarAlCarrito(vuelo){
+  const destino = $('#btnCarrito');
+  if (!destino) return;
   const llegar = () => { destino.classList.remove('recibe'); void destino.offsetWidth; destino.classList.add('recibe'); };
-  if (!foto || !APARECER) { llegar(); return; }
-  const a = foto.getBoundingClientRect(), b = destino.getBoundingClientRect();
-  if (!a.width || b.bottom < 0) { llegar(); return; }
+  const b = destino.getBoundingClientRect();
+  if (!vuelo || !APARECER || b.bottom < 0) { llegar(); return; }
+  const a = vuelo.a;
   const lado = Math.min(a.width, a.height, 140);
   const clon = document.createElement('img');
-  clon.src = foto.currentSrc || foto.src; clon.alt = ''; clon.className = 'vuela';
+  clon.src = vuelo.src; clon.alt = ''; clon.className = 'vuela';
   Object.assign(clon.style, { width: lado + 'px', height: lado + 'px', left: (a.left + a.width / 2 - lado / 2) + 'px', top: (a.top + a.height / 2 - lado / 2) + 'px' });
   document.body.appendChild(clon);
   const dx = b.left + b.width / 2 - (a.left + a.width / 2), dy = b.top + b.height / 2 - (a.top + a.height / 2);
@@ -2550,6 +2556,7 @@ function agregar(id, n = 1){
   const actual = CARRITO[id] || 0;
   const nuevo = Math.max(0, Math.min(tope, actual + n));
 
+  const vuelo = n > 0 ? medirVuelo() : null;
   if (n > 0 && nuevo === actual){
     brindis(actual >= topeMaximo(p)
       ? `Máximo ${topeMaximo(p)} por pedido`
@@ -2562,7 +2569,7 @@ function agregar(id, n = 1){
   pintarGrilla();
   actualizarBarra();
   refrescarDetalleAbierto(id);
-  if (nuevo > actual) { volarAlCarrito(); pulsarCarrito(); px('AddToCart', { content_ids:[String(p.id)], content_name:p.nombre, content_type:'product', value:(Number(p.precioVenta)||0)*(nuevo-actual), currency:'CRC' }); }
+  if (nuevo > actual) { volarAlCarrito(vuelo); pulsarCarrito(); px('AddToCart', { content_ids:[String(p.id)], content_name:p.nombre, content_type:'product', value:(Number(p.precioVenta)||0)*(nuevo-actual), currency:'CRC' }); }
   if (n > 0 && actual === 0) brindis('Agregado al carrito');
 }
 
