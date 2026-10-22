@@ -2552,7 +2552,8 @@ document.addEventListener('pointerover', ev => { if (ev.pointerType === 'mouse')
 document.addEventListener('pointerdown', animarCajaMenu);
 document.addEventListener('animationend', ev => {
   const ic = ev.target.closest && ev.target.closest('.ic-caja.anima');
-  if (ic && (ev.animationName === 'tapa' || ev.animationName === 'asoma')) ic.classList.remove('anima');
+  // la misteriosa termina con el «?», las demás con la tapa
+  if (ic && ev.animationName === (ic.classList.contains('ic-mist') ? 'asoma' : 'tapa')) ic.classList.remove('anima');
 });
 
 function volarAlCarrito(vuelo){
