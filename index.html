@@ -1343,7 +1343,7 @@ try { if (localStorage.getItem('avl_cookies') === 'si') cargarPixel(); } catch(e
     <div class="menu-sub" id="menuTipos" hidden></div>
     <button class="menu-item oculto" id="menuMist" type="button" data-mist-abrir>Caja misteriosa <small id="menuMistDesde"></small></button>
     <a class="menu-item" href="#infoTienda" data-info="Caja mixta al por mayor">Caja mixta al por mayor <small>Desde ₡110.000</small></a>
-    <a class="menu-item oculto" id="menuOutlet" href="#infoTienda" data-info="Avellana Outlet">Avellana Outlet <small id="menuOutletDesde">Lotes de liquidación</small></a>
+    <a class="menu-item" id="menuOutlet" href="#infoTienda" data-info="Avellana Outlet">Avellana Outlet <small id="menuOutletDesde">Agotado por ahora</small></a>
     <button class="menu-item" type="button" data-encargo="">Pedir por encargo</button>
   </div>
   <div class="menu-grupo">
@@ -1428,17 +1428,17 @@ try { if (localStorage.getItem('avl_cookies') === 'si') cargarPixel(); } catch(e
       </div>
     </details>
 
-    <details id="detOutlet" hidden>
+    <details id="detOutlet">
       <summary>Avellana Outlet · lotes de liquidación</summary>
       <div class="detalle">
         <p>Una línea aparte para quienes buscan volumen: <b>lotes de maquillaje de liquidación</b>, con piezas surtidas. Nuestro fuerte sigue siendo el maquillaje nuevo y sellado del catálogo.</p>
         <table class="cm-tabla">
           <thead><tr><th>Lote</th><th>Precio</th><th>Entrega</th></tr></thead>
-          <tbody id="outletFilas"></tbody>
+          <tbody id="outletFilas"><tr><td>50, 100 y 500 piezas</td><td>—</td><td class="cm-cons">Agotado</td></tr></tbody>
         </table>
         <p id="outletMarcas"></p>
         <p>Las piezas son surtidas: no se eligen marcas, tonos ni productos. Al ser liquidación, algunos empaques pueden presentar detalles; con gusto respondemos cualquier consulta antes de tu compra. Pago por SINPE Móvil; los lotes por encargo se cancelan al 100 % por adelantado.</p>
-        <a class="btn-suave" id="outletWhatsapp" style="margin-top:4px;display:inline-block;text-decoration:none" target="_blank" rel="noopener" href="#">Pedir un lote por WhatsApp</a>
+        <a class="btn-suave" id="outletWhatsapp" style="margin-top:4px;display:inline-block;text-decoration:none" target="_blank" rel="noopener" href="https://wa.me/50670185274?text=Hola%2C%20quisiera%20que%20me%20avisen%20cuando%20haya%20lotes%20disponibles%20en%20Avellana%20Outlet.">Avísenme cuando haya lotes</a>
       </div>
     </details>
 
@@ -1567,7 +1567,7 @@ let CAJA_ABIERTAS = new Set();    // productos con los tonos desplegados en el a
 let CAJA_RECIEN = '';             // producto que acaba de llegar al mínimo (para el efecto del precio)
 let MODO_PEDIDO = 'carrito';      // el checkout sirve para el carrito, la caja y la caja misteriosa
 let MAS_VENDIDOS = [];            // ids de los productos más vendidos (vacío = la sección no se muestra)
-let OUTLET = null;                // { lotes: [{ piezas, precio, porPieza, disponible }], marcas } o null si no hay liquidación
+let OUTLET = null;                // { activo, lotes: [{ piezas, precio, porPieza, disponible, agotado }], marcas }
 let MISTERIOSA = null;            // { tamanos: [{ piezas, precio, valorMin, cupos }] } o null si no se ofrece
 let MIST = { piezas: 0, cantidad: 1, entrega: 'encargo' };   // lo que está eligiendo la clienta
 let CATEGORIA = 'Todo';
@@ -1848,7 +1848,7 @@ async function cargarCatalogo(){
     if (!PRODUCTOS.length) throw new Error('catálogo vacío');
     if (Number(d.minimoMayorista) >= 2) CONFIG.MINIMO_MAYOREO = Number(d.minimoMayorista);
     if ($('#pieCajaMin')) $('#pieCajaMin').textContent = CONFIG.MINIMO_MAYOREO;
-    OUTLET = d.outlet && Array.isArray(d.outlet.lotes) && d.outlet.lotes.length ? d.outlet : null;
+    OUTLET = d.outlet && Array.isArray(d.outlet.lotes) && d.outlet.lotes.length ? d.outlet : OUTLET;
     MISTERIOSA = d.misteriosa && Array.isArray(d.misteriosa.tamanos) && d.misteriosa.tamanos.length ? d.misteriosa : null;
     if (Number(d.envioGratisDesde) > 0) CONFIG.ENVIO_GRATIS_DESDE = Number(d.envioGratisDesde);
     MAS_VENDIDOS = Array.isArray(d.masVendidos) ? d.masVendidos : [];
@@ -2845,21 +2845,25 @@ function cerrarMenu(){
   document.body.classList.remove('menu-abierto');
   $('#btnMenu').setAttribute('aria-expanded', 'false');
 }
-// Avellana Outlet: entrada del menú y apartado del pie, solo cuando hay lotes
-// de liquidación en inventario. Precios calculados por el servidor desde el costo real.
+// Avellana Outlet: entrada del menú y apartado del pie, siempre visibles.
+// Precios calculados por el servidor desde el costo real; sin liquidación en
+// inventario los lotes salen agotados y sin precio.
 function pintarOutlet(){
-  const o = $('#menuOutlet'), det = $('#detOutlet');
-  if (o) o.classList.toggle('oculto', !OUTLET);
-  if (det) det.hidden = !OUTLET;
-  if (!OUTLET) return;
-  const desde = Math.min(...OUTLET.lotes.map(l => l.precio));
-  $('#menuOutletDesde').textContent = 'Lotes desde ' + colones(desde);
+  if (!OUTLET) return;   // catálogo viejo o sin respuesta: queda el texto fijo del HTML
+  const conPrecio = OUTLET.lotes.filter(l => !l.agotado && l.precio > 0);
+  $('#menuOutletDesde').textContent = conPrecio.length
+    ? 'Lotes desde ' + colones(Math.min(...conPrecio.map(l => l.precio)))
+    : 'Agotado por ahora';
   $('#outletFilas').innerHTML = OUTLET.lotes.map(l => `<tr>
       <td>${l.piezas} piezas</td>
-      <td>${colones(l.precio)}<small>${colones(l.porPieza)} c/u</small></td>
-      <td class="cm-cons">${l.disponible ? 'Disponible' : 'Por encargo'}</td></tr>`).join('');
+      <td>${l.agotado ? '—' : colones(l.precio) + '<small>' + colones(l.porPieza) + ' c/u</small>'}</td>
+      <td class="cm-cons">${l.agotado ? 'Agotado' : (l.disponible ? 'Disponible' : 'Por encargo')}</td></tr>`).join('');
   $('#outletMarcas').textContent = OUTLET.marcas && OUTLET.marcas.length ? 'Marcas que pueden venir: ' + OUTLET.marcas.join(', ') + '.' : '';
-  $('#outletWhatsapp').href = 'https://wa.me/' + CONFIG.WHATSAPP + '?text=' + encodeURIComponent('Hola, me interesa un lote de Avellana Outlet.');
+  const agotado = !conPrecio.length;
+  $('#outletWhatsapp').textContent = agotado ? 'Avísenme cuando haya lotes' : 'Pedir un lote por WhatsApp';
+  $('#outletWhatsapp').href = 'https://wa.me/' + CONFIG.WHATSAPP + '?text=' + encodeURIComponent(agotado
+    ? 'Hola, quisiera que me avisen cuando haya lotes disponibles en Avellana Outlet.'
+    : 'Hola, me interesa un lote de Avellana Outlet.');
 }
 function pintarMenu(){
   const m = $('#menuMist');
