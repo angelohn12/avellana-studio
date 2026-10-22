@@ -1436,7 +1436,7 @@ try { if (localStorage.getItem('avl_cookies') === 'si') cargarPixel(); } catch(e
           <thead><tr><th>Lote</th><th>Precio</th><th>Entrega</th></tr></thead>
           <tbody id="outletFilas"><tr><td>50, 100 y 500 piezas</td><td>—</td><td class="cm-cons">Agotado</td></tr></tbody>
         </table>
-        <p id="outletMarcas"></p>
+        <p id="outletMarcas"><b>Posibles marcas a recibir:</b> NYX, e.l.f., Maybelline, entre otras.</p>
         <p>Las piezas son surtidas: no se eligen marcas, tonos ni productos. Al ser liquidación, algunos empaques pueden presentar detalles; con gusto respondemos cualquier consulta antes de tu compra. Pago por SINPE Móvil; los lotes por encargo se cancelan al 100 % por adelantado.</p>
         <a class="btn-suave" id="outletWhatsapp" style="margin-top:4px;display:inline-block;text-decoration:none" target="_blank" rel="noopener" href="https://wa.me/50670185274?text=Hola%2C%20quisiera%20que%20me%20avisen%20cuando%20haya%20lotes%20disponibles%20en%20Avellana%20Outlet.">Avísenme cuando haya lotes</a>
       </div>
@@ -2858,7 +2858,10 @@ function pintarOutlet(){
       <td>${l.piezas} piezas</td>
       <td>${l.agotado ? '—' : colones(l.precio) + '<small>' + colones(l.porPieza) + ' c/u</small>'}</td>
       <td class="cm-cons">${l.agotado ? 'Agotado' : (l.disponible ? 'Disponible' : 'Por encargo')}</td></tr>`).join('');
-  $('#outletMarcas').textContent = OUTLET.marcas && OUTLET.marcas.length ? 'Marcas que pueden venir: ' + OUTLET.marcas.join(', ') + '.' : '';
+  // Con liquidación en inventario se muestran las marcas que de verdad hay;
+  // sin inventario queda la lista fija del HTML.
+  if (OUTLET.marcas && OUTLET.marcas.length)
+    $('#outletMarcas').innerHTML = '<b>Posibles marcas a recibir:</b> ' + esc(OUTLET.marcas.join(', ')) + ', entre otras.';
   const agotado = !conPrecio.length;
   $('#outletWhatsapp').textContent = agotado ? 'Avísenme cuando haya lotes' : 'Pedir un lote por WhatsApp';
   $('#outletWhatsapp').href = 'https://wa.me/' + CONFIG.WHATSAPP + '?text=' + encodeURIComponent(agotado
