@@ -537,12 +537,7 @@ body.menu-abierto{overflow:hidden}
 .mi-ic{display:flex;align-items:center;gap:10px;flex:1 1 auto;min-width:0;text-align:left}
 .ic-caja{width:22px;height:22px;flex:none;overflow:visible;color:var(--coral,#6E1D3B)}
 .ic-caja .tapa{transform-box:fill-box;transform-origin:0% 100%;transition:transform .35s var(--curva)}
-.menu-item:hover .ic-caja .tapa,.menu-item:focus-visible .ic-caja .tapa{transform:translateY(-2px) rotate(-22deg)}
 #menuLateral.abierto .ic-caja .tapa{animation:tapa 1s var(--curva) .35s both}
-/* Cada vez que se pasa el mouse o se toca la opción, la caja se vuelve a abrir */
-.ic-caja.anima .tapa{animation:tapa .9s var(--curva) both !important}
-.ic-mist.anima{animation:tiembla .5s ease-in-out 2 !important}
-.ic-mist.anima .pregunta{animation:asoma 1.2s var(--curva) .2s both !important}
 @keyframes tapa{0%{transform:none}45%{transform:translateY(-3px) rotate(-26deg)}100%{transform:none}}
 .ic-caja .pregunta{opacity:0;transform-box:fill-box;transform-origin:50% 100%}
 #menuLateral.abierto .ic-mist{animation:tiembla .6s ease-in-out .3s 2}
@@ -2541,20 +2536,30 @@ function medirVuelo(){
   const a = foto.getBoundingClientRect();
   return a.width ? { src: foto.currentSrc || foto.src, a } : null;
 }
-// Íconos de cajas del menú: se animan en cada pasada del mouse o toque, no
-// solo la primera vez (pedido de Anyelo, 21/10/2026).
-function animarCajaMenu(ev){
-  const ic = ev.target.closest && ev.target.closest('.menu-item') && ev.target.closest('.menu-item').querySelector('.ic-caja');
-  if (!ic) return;
-  ic.classList.remove('anima'); void ic.getBoundingClientRect(); ic.classList.add('anima');
+// Íconos de cajas del menú: se animan en CADA pasada del mouse o toque.
+// Se usa element.animate() (una animación nueva cada vez): quitar y poner
+// una clase no siempre reinicia la animación y se quedaba quieta (21/10/2026).
+const MOV_TAPA = [{ transform: 'none' }, { transform: 'translateY(-3px) rotate(-26deg)', offset: .45 }, { transform: 'none' }];
+const MOV_TIEMBLA = [{ transform: 'none' }, { transform: 'rotate(-7deg)' }, { transform: 'rotate(7deg)' }, { transform: 'none' }];
+const MOV_PREGUNTA = [{ opacity: 0, transform: 'translateY(4px) scale(.6)' }, { opacity: 1, transform: 'translateY(-5px) scale(1)', offset: .4 }, { opacity: 0, transform: 'translateY(-4px)' }];
+function animarCajaMenu(item){
+  const ic = item && item.querySelector('.ic-caja');
+  if (!ic || !APARECER || !ic.animate) return;
+  const tapa = ic.querySelector('.tapa');
+  if (tapa.getAnimations && tapa.getAnimations().some(a => a.playState === 'running')) return;   // ya se está moviendo
+  tapa.animate(MOV_TAPA, { duration: 900, easing: 'cubic-bezier(.2,.8,.2,1)' });
+  if (ic.classList.contains('ic-mist')) {
+    ic.animate(MOV_TIEMBLA, { duration: 500, iterations: 2, easing: 'ease-in-out' });
+    const q = ic.querySelector('.pregunta'); if (q) q.animate(MOV_PREGUNTA, { duration: 1300, delay: 150, easing: 'cubic-bezier(.2,.8,.2,1)' });
+  }
 }
-document.addEventListener('pointerover', ev => { if (ev.pointerType === 'mouse') animarCajaMenu(ev); });
-document.addEventListener('pointerdown', animarCajaMenu);
-document.addEventListener('animationend', ev => {
-  const ic = ev.target.closest && ev.target.closest('.ic-caja.anima');
-  // la misteriosa termina con el «?», las demás con la tapa
-  if (ic && ev.animationName === (ic.classList.contains('ic-mist') ? 'asoma' : 'tapa')) ic.classList.remove('anima');
+document.addEventListener('pointerover', ev => {
+  if (ev.pointerType !== 'mouse') return;
+  const item = ev.target.closest && ev.target.closest('.menu-item');
+  // solo al ENTRAR a la opción (no al moverse entre sus partes)
+  if (item && !(ev.relatedTarget && item.contains(ev.relatedTarget))) animarCajaMenu(item);
 });
+document.addEventListener('pointerdown', ev => { const item = ev.target.closest && ev.target.closest('.menu-item'); if (item) animarCajaMenu(item); });
 
 function volarAlCarrito(vuelo){
   const destino = $('#btnCarrito');
