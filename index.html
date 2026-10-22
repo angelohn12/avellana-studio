@@ -539,6 +539,10 @@ body.menu-abierto{overflow:hidden}
 .ic-caja .tapa{transform-box:fill-box;transform-origin:0% 100%;transition:transform .35s var(--curva)}
 .menu-item:hover .ic-caja .tapa,.menu-item:focus-visible .ic-caja .tapa{transform:translateY(-2px) rotate(-22deg)}
 #menuLateral.abierto .ic-caja .tapa{animation:tapa 1s var(--curva) .35s both}
+/* Cada vez que se pasa el mouse o se toca la opción, la caja se vuelve a abrir */
+.ic-caja.anima .tapa{animation:tapa .9s var(--curva) both !important}
+.ic-mist.anima{animation:tiembla .5s ease-in-out 2 !important}
+.ic-mist.anima .pregunta{animation:asoma 1.2s var(--curva) .2s both !important}
 @keyframes tapa{0%{transform:none}45%{transform:translateY(-3px) rotate(-26deg)}100%{transform:none}}
 .ic-caja .pregunta{opacity:0;transform-box:fill-box;transform-origin:50% 100%}
 #menuLateral.abierto .ic-mist{animation:tiembla .6s ease-in-out .3s 2}
@@ -2537,6 +2541,20 @@ function medirVuelo(){
   const a = foto.getBoundingClientRect();
   return a.width ? { src: foto.currentSrc || foto.src, a } : null;
 }
+// Íconos de cajas del menú: se animan en cada pasada del mouse o toque, no
+// solo la primera vez (pedido de Anyelo, 21/10/2026).
+function animarCajaMenu(ev){
+  const ic = ev.target.closest && ev.target.closest('.menu-item') && ev.target.closest('.menu-item').querySelector('.ic-caja');
+  if (!ic) return;
+  ic.classList.remove('anima'); void ic.getBoundingClientRect(); ic.classList.add('anima');
+}
+document.addEventListener('pointerover', ev => { if (ev.pointerType === 'mouse') animarCajaMenu(ev); });
+document.addEventListener('pointerdown', animarCajaMenu);
+document.addEventListener('animationend', ev => {
+  const ic = ev.target.closest && ev.target.closest('.ic-caja.anima');
+  if (ic && (ev.animationName === 'tapa' || ev.animationName === 'asoma')) ic.classList.remove('anima');
+});
+
 function volarAlCarrito(vuelo){
   const destino = $('#btnCarrito');
   if (!destino) return;
