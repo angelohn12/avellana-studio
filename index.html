@@ -271,6 +271,13 @@ header{
 @media(max-width:360px){
   .acciones-header .txt-carrito{display:none}
 }
+/* Con la lista de encargos activa, en celular los dos botones con texto no
+   caben al lado del logo: bajaban a otra línea y tapaban el título. Quedan
+   solo ícono + número (21/10/2026). */
+@media(max-width:480px){
+  .acciones-header:has(#btnEncargos:not(.oculto)) .txt-carrito,
+  .acciones-header:has(#btnEncargos:not(.oculto)) .txt-encargos{display:none}
+}
 
 /* ── confianza: portada y pedido ────── */
 .hero-confianza{
@@ -1277,9 +1284,9 @@ try { if (localStorage.getItem('avl_cookies') === 'si') cargarPixel(); } catch(e
         <svg width="15" height="15" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2" stroke-linecap="round" stroke-linejoin="round" aria-hidden="true"><path d="M21 8 12 3 3 8l9 5 9-5Z"/><path d="M3 8v8l9 5 9-5V8"/><path d="M12 13v8"/></svg>
         Mi caja <span class="n" id="numCaja">0</span>
       </button>
-      <button class="btn-carrito btn-encargos oculto" id="btnEncargos" type="button">
+      <button class="btn-carrito btn-encargos oculto" id="btnEncargos" type="button" aria-label="Lista de encargos">
         <svg width="15" height="15" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2" stroke-linecap="round" stroke-linejoin="round" aria-hidden="true"><path d="M21 8v13H3V8"/><path d="M1 3h22v5H1z"/><path d="M10 12h4"/></svg>
-        Encargos <span class="n" id="numEncargos">0</span>
+        <span class="txt-encargos">Encargos</span> <span class="n" id="numEncargos">0</span>
       </button>
       <button class="btn-carrito" id="btnCarrito" type="button" aria-label="Carrito">
         <svg width="15" height="15" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2" stroke-linecap="round" stroke-linejoin="round" aria-hidden="true"><path d="M6 2 3 6v14a2 2 0 0 0 2 2h14a2 2 0 0 0 2-2V6l-3-4Z"/><path d="M3 6h18"/><path d="M16 10a4 4 0 0 1-8 0"/></svg>
