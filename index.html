@@ -1344,6 +1344,7 @@ try { if (localStorage.getItem('avl_cookies') === 'si') cargarPixel(); } catch(e
     <button class="menu-item oculto" id="menuMist" type="button" data-mist-abrir>Caja misteriosa <small id="menuMistDesde"></small></button>
     <a class="menu-item" href="#infoTienda" data-info="Caja mixta al por mayor">Caja mixta al por mayor <small>Desde ₡110.000</small></a>
     <button class="menu-item" type="button" data-encargo="">Pedir por encargo</button>
+    <a class="menu-item oculto" id="menuOutlet" href="outlet.html">Avellana Outlet <small>Lotes de liquidación</small></a>
   </div>
   <div class="menu-grupo">
     <p class="menu-rotulo">Ayuda</p>
@@ -1552,6 +1553,7 @@ let CAJA_ABIERTAS = new Set();    // productos con los tonos desplegados en el a
 let CAJA_RECIEN = '';             // producto que acaba de llegar al mínimo (para el efecto del precio)
 let MODO_PEDIDO = 'carrito';      // el checkout sirve para el carrito, la caja y la caja misteriosa
 let MAS_VENDIDOS = [];            // ids de los productos más vendidos (vacío = la sección no se muestra)
+let OUTLET = false;               // true = hay lotes de liquidación: el menú enlaza a Avellana Outlet
 let MISTERIOSA = null;            // { tamanos: [{ piezas, precio, valorMin, cupos }] } o null si no se ofrece
 let MIST = { piezas: 0, cantidad: 1, entrega: 'encargo' };   // lo que está eligiendo la clienta
 let CATEGORIA = 'Todo';
@@ -1832,6 +1834,7 @@ async function cargarCatalogo(){
     if (!PRODUCTOS.length) throw new Error('catálogo vacío');
     if (Number(d.minimoMayorista) >= 2) CONFIG.MINIMO_MAYOREO = Number(d.minimoMayorista);
     if ($('#pieCajaMin')) $('#pieCajaMin').textContent = CONFIG.MINIMO_MAYOREO;
+    OUTLET = !!d.outlet;
     MISTERIOSA = d.misteriosa && Array.isArray(d.misteriosa.tamanos) && d.misteriosa.tamanos.length ? d.misteriosa : null;
     if (Number(d.envioGratisDesde) > 0) CONFIG.ENVIO_GRATIS_DESDE = Number(d.envioGratisDesde);
     MAS_VENDIDOS = Array.isArray(d.masVendidos) ? d.masVendidos : [];
@@ -2831,6 +2834,8 @@ function cerrarMenu(){
 function pintarMenu(){
   const m = $('#menuMist');
   if (m) m.classList.toggle('oculto', !MISTERIOSA);
+  const o = $('#menuOutlet');   // solo aparece cuando hay lotes de liquidación en inventario
+  if (o) o.classList.toggle('oculto', !OUTLET);
   if (MISTERIOSA){
     const desde = Math.min(...MISTERIOSA.tamanos.map(t => t.precio));
     $('#menuMistDesde').textContent = 'Desde ' + colones(desde);
