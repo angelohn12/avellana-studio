@@ -68,14 +68,10 @@ const CONFIG = {
   // Endpoint del Apps Script (el mismo del dashboard)
   API: 'https://script.google.com/macros/s/AKfycbxQVdDsH_Qgg9MnRgb0rDyzYPkvRESEi2FGD-ENHeT9L7CMbZl_xTaVxDs0wfNe3tflMg/exec',
 
-  // Los dos números desde los que les escribimos a las clientas (Anyelo y
-  // Belén). Hay que nombrar los DOS en todos lados: una clienta pensó que su
-  // pedido no había entrado porque la página decía que le iba a escribir el
-  // 7018 5274 y le escribieron desde el 6161 3486.
-  WHATSAPP: '50670185274',          // sin espacios ni guiones, con el 506
-  WHATSAPP_VISIBLE: '7018 5274',
-  WHATSAPP_2: '50661613486',
-  WHATSAPP_2_VISIBLE: '6161 3486',
+  // Número oficial de WhatsApp Business de Avellana. Los números SINPE
+  // (7018 5274 y 6161 3486) son solo para pagos, no para WhatsApp.
+  WHATSAPP: '50671663526',          // sin espacios ni guiones, con el 506
+  WHATSAPP_VISIBLE: '7166 3526',
 
   RETIRO: 'San José, Goicoechea, Calle Blancos, Barrio Montelimar, avenida 43, frente a la Escuela de Natación Montelimar',
 
@@ -1414,7 +1410,7 @@ try { if (localStorage.getItem('avl_cookies') === 'si') cargarPixel(); } catch(e
         <ol>
           <li>Elige tus productos y agrégalos al carrito.</li>
           <li>Confirma el pedido con tu nombre y WhatsApp. Tu pedido queda registrado y apartamos tus productos.</li>
-          <li>Te escribimos por WhatsApp, desde el <b class="numerosWhats"></b> (cualquiera de los dos es nuestro), para confirmar tu pedido y el método de entrega.</li>
+          <li>Te escribimos por WhatsApp, desde el <b class="numerosWhats"></b>, para confirmar tu pedido y el método de entrega.</li>
           <li>Ahí mismo te pasamos el monto exacto y el número para pagar por SINPE Móvil. Si retiras en nuestro punto, también puedes pagar en efectivo al retirar.</li>
           <li>Cuando verificamos el pago, coordinamos la entrega o el envío. Si es por Correos, te pasamos la guía.</li>
         </ol>
@@ -1453,7 +1449,7 @@ try { if (localStorage.getItem('avl_cookies') === 'si') cargarPixel(); } catch(e
           </tbody>
         </table>
         <p>Los productos exactos varían según la disponibilidad de cada compra. Mientras más grande la caja, más barata cada pieza.</p>
-        <a class="btn-suave" id="cmWhatsapp" style="margin-top:4px;display:inline-block;text-decoration:none" target="_blank" rel="noopener" href="https://wa.me/50670185274?text=Hola%2C%20me%20interesan%20las%20cajas%20al%20por%20mayor">Consultar por WhatsApp</a>
+        <a class="btn-suave" id="cmWhatsapp" style="margin-top:4px;display:inline-block;text-decoration:none" target="_blank" rel="noopener" href="https://wa.me/50671663526?text=Hola%2C%20me%20interesan%20las%20cajas%20al%20por%20mayor">Consultar por WhatsApp</a>
       </div>
     </details>
 
@@ -1478,7 +1474,7 @@ try { if (localStorage.getItem('avl_cookies') === 'si') cargarPixel(); } catch(e
         </table>
         <p id="outletMarcas"><b>Posibles marcas a recibir:</b> NYX, e.l.f., Maybelline, entre otras.</p>
         <p>Las piezas son surtidas: no se eligen marcas, tonos ni productos. Al ser liquidación, algunos empaques pueden presentar detalles; con gusto respondemos cualquier consulta antes de tu compra. Pago por SINPE Móvil; los lotes por encargo se cancelan al 100 % por adelantado.</p>
-        <a class="btn-suave" id="outletWhatsapp" style="margin-top:4px;display:inline-block;text-decoration:none" target="_blank" rel="noopener" href="https://wa.me/50670185274?text=Hola%2C%20quisiera%20que%20me%20avisen%20cuando%20haya%20lotes%20disponibles%20en%20Avellana%20Outlet.">Avísenme cuando haya lotes</a>
+        <a class="btn-suave" id="outletWhatsapp" style="margin-top:4px;display:inline-block;text-decoration:none" target="_blank" rel="noopener" href="https://wa.me/50671663526?text=Hola%2C%20quisiera%20que%20me%20avisen%20cuando%20haya%20lotes%20disponibles%20en%20Avellana%20Outlet.">Avísenme cuando haya lotes</a>
       </div>
     </details>
 
@@ -1691,8 +1687,8 @@ function mayoreoHtml(p, conTonos){
   return `<div class="prod-mayoreo">Al por mayor ${antes}<b>${colones(p.precioMayorista)}</b>${tag} c/u desde ${CONFIG.MINIMO_MAYOREO}${conTonos ? ' <span>· puedes combinar tonos</span>' : ''}</div>`;
 }
 
-// "7018 5274 o el 6161 3486" — para los textos de "te escribimos desde…"
-const numerosWhatsapp = () => CONFIG.WHATSAPP_VISIBLE + ' o el ' + CONFIG.WHATSAPP_2_VISIBLE;
+// "7166 3526" — para los textos de "te escribimos desde…"
+const numerosWhatsapp = () => CONFIG.WHATSAPP_VISIBLE;
 
 // Teléfono de la clienta en 8 dígitos. Acepta que lo escriba con +506 o
 // 506 adelante (antes eso se rechazaba con "Escribe un número de 8 dígitos").
@@ -2742,7 +2738,7 @@ function cerrarHoja(porAtras){
   cierreTimer = setTimeout(() => velo.classList.add('oculto'), 300);
 }
 
-/* ── Contáctanos: hoja con los dos WhatsApp (Anyelo y Belén) y botón flotante ──
+/* ── Contáctanos: hoja con el WhatsApp de la tienda y botón flotante ──
    El botón flotante se acomoda arriba de la barra del carrito cuando esta aparece. */
 function abrirContacto(){
   const msj = encodeURIComponent('¡Hola! Quisiera más información sobre Avellana Studio.');
@@ -2752,9 +2748,7 @@ function abrirContacto(){
        <span class="contacto-num">${esc(visible)}</span></a>`;
   abrirHoja('Contáctanos', `
     <p style="margin:0 0 4px;color:var(--tinta-2);font-size:14px">Escríbenos por WhatsApp para dudas, tonos, disponibilidad o pedidos. Respondemos de ${esc(CONFIG.HORA_ATENCION)}.</p>
-    ${fila('Anyelo', CONFIG.WHATSAPP_VISIBLE, CONFIG.WHATSAPP)}
-    ${fila('Belén', CONFIG.WHATSAPP_2_VISIBLE, CONFIG.WHATSAPP_2)}
-    <p class="nota-datos" style="margin-top:16px">Cualquiera de los dos números es de la tienda: te atendemos igual.</p>`);
+    ${fila('Avellana Studio', CONFIG.WHATSAPP_VISIBLE, CONFIG.WHATSAPP)}`);
 }
 function acomodarContacto(){
   const btn = $('#btnContacto'), barra = $('#barraAbajo');
@@ -3397,7 +3391,7 @@ function mostrarErrorEnvio(form, mensaje){
 }
 
 function mensajeErrorEnvio(err, queEs){
-  const contacto = `escríbenos al <b>${esc(CONFIG.WHATSAPP_VISIBLE)}</b> o al <b>${esc(CONFIG.WHATSAPP_2_VISIBLE)}</b>`;
+  const contacto = `escríbenos al <b>${esc(CONFIG.WHATSAPP_VISIBLE)}</b>`;
   if (err && err.delServidor){
     return `<b>No se pudo hacer ${queEs}:</b> ${esc(err.message)}. Revísalo y prueba de nuevo, o ${contacto}.`;
   }
@@ -3515,7 +3509,7 @@ function verConfirmacion(numero, pedido){
 
       <div class="pasos">
         <div class="paso"><i>1</i><p>${esMist ? '<b>Ya quedó guardada.</b> Vamos a escoger tus piezas: todo nuevo, sellado y original.' : (esCaja ? '<b>Ya quedó guardada.</b> Revisamos tu caja producto por producto.' : '<b>Ya quedó guardado.</b> Revisamos que todo esté en stock.')}</p></div>
-        <div class="paso"><i>2</i><p><b>Te escribimos por WhatsApp</b> desde el <b>${esc(numerosWhatsapp())}</b> (cualquiera de los dos es nuestro), en horario de ${esc(CONFIG.HORA_ATENCION)}. Si pediste fuera de ese horario no pierdes nada esperando: tu ${esCaja ? 'caja' : 'pedido'} ya está guardad${esCaja ? 'a' : 'o'}.</p></div>
+        <div class="paso"><i>2</i><p><b>Te escribimos por WhatsApp</b> desde el <b>${esc(numerosWhatsapp())}</b>, en horario de ${esc(CONFIG.HORA_ATENCION)}. Si pediste fuera de ese horario no pierdes nada esperando: tu ${esCaja ? 'caja' : 'pedido'} ya está guardad${esCaja ? 'a' : 'o'}.</p></div>
         <div class="paso"><i>3</i><p>${pasoPago}</p></div>
         <div class="paso"><i>4</i><p>${pasoEntrega}</p></div>
       </div>
@@ -3529,12 +3523,10 @@ function verConfirmacion(numero, pedido){
 
       ${MODO_DEMO ? `<div class="aviso"><b>Vista de prueba.</b> Este pedido no se guardó en ningún lado — la tienda todavía no está conectada.</div>` : ''}
 
-      <p style="margin:18px 0 8px;font-size:12.5px;color:var(--tinta-2);text-align:center">¿Quieres adelantar la conversación? Escríbenos a cualquiera de los dos números:</p>
-      <div class="wa-dos">
+      <p style="margin:18px 0 8px;font-size:12.5px;color:var(--tinta-2);text-align:center">¿Quieres adelantar la conversación? Escríbenos por WhatsApp:</p>
+      <div>
         <a class="btn-grande" style="display:block;text-align:center;text-decoration:none"
            href="https://wa.me/${esc(CONFIG.WHATSAPP)}?text=${texto}" target="_blank" rel="noopener">Escribir por WhatsApp · ${esc(CONFIG.WHATSAPP_VISIBLE)}</a>
-        <a class="btn-grande" style="display:block;text-align:center;text-decoration:none"
-           href="https://wa.me/${esc(CONFIG.WHATSAPP_2)}?text=${texto}" target="_blank" rel="noopener">Escribir por WhatsApp · ${esc(CONFIG.WHATSAPP_2_VISIBLE)}</a>
       </div>
       <button class="btn-suave" type="button" id="seguirComprando">Volver a la tienda</button>
     </div>`;
@@ -3851,7 +3843,7 @@ function verConfirmacionEncargo(productos){
 
       <div class="pasos">
         <div class="paso"><i>1</i><p><b>Ya quedó guardado.</b> Revisamos precio y tiempo de entrega de cada producto.</p></div>
-        <div class="paso"><i>2</i><p><b>Te escribimos por WhatsApp</b> desde el <b>${esc(numerosWhatsapp())}</b> (cualquiera de los dos es nuestro), en horario de ${esc(CONFIG.HORA_ATENCION)}, para confirmarte todo.</p></div>
+        <div class="paso"><i>2</i><p><b>Te escribimos por WhatsApp</b> desde el <b>${esc(numerosWhatsapp())}</b>, en horario de ${esc(CONFIG.HORA_ATENCION)}, para confirmarte todo.</p></div>
         <div class="paso"><i>3</i><p><b>Ahí coordinamos</b> el tiempo de entrega y el pago: el <b>${CONFIG.ENCARGO_ADELANTO_PCT}%</b> al confirmar y el <b>${100 - CONFIG.ENCARGO_ADELANTO_PCT}%</b> restante cuando llegue a Costa Rica. Hasta ese momento no pagas nada.</p></div>
       </div>
 
@@ -4514,7 +4506,7 @@ const DEMO = [
 
 /* ── arranque ───────────────────────── */
 $('#pieRetiro').textContent = CONFIG.RETIRO + '.';
-$('#pieWhats').textContent  = 'WhatsApp ' + CONFIG.WHATSAPP_VISIBLE + ' · ' + CONFIG.WHATSAPP_2_VISIBLE;
+$('#pieWhats').textContent  = 'WhatsApp ' + CONFIG.WHATSAPP_VISIBLE;
 $$('.numerosWhats').forEach(el => { el.textContent = numerosWhatsapp(); });
 $('#pieEncargoDias').textContent = CONFIG.ENCARGO_DIAS_MIN + ' a ' + CONFIG.ENCARGO_DIAS_MAX;
 $('#pieEncargoPct').textContent  = CONFIG.ENCARGO_ADELANTO_PCT;
