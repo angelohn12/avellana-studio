@@ -1810,6 +1810,13 @@ function estadoStock(p){
   return { clase:'e-ok', texto:'Entrega inmediata', hay:true };
 }
 
+// Los otros tonos del mismo producto que todavía tienen unidades libres
+// (stock menos lo que ya está en el carrito).
+function otrosTonosLibres(p){
+  return grupoDeProducto(p).variantes.filter(v =>
+    String(v.id) !== String(p.id) && estadoStock(v).hay && topeDe(v) - (CARRITO[v.id] || 0) > 0);
+}
+
 // En la tarjeta de un producto con varios tonos, "Quedan 2" parecía el total
 // del producto. Se dice de qué tono son (el que agrega el botón +) y cuántas
 // hay entre todos los tonos con stock.
@@ -2377,7 +2384,7 @@ function pintarGrilla(reanimar = false){
       control = `<div class="paso-cant">
           <button type="button" data-menos="${esc(p.id)}" aria-label="Quitar una unidad">−</button>
           <span>${enCarrito}</span>
-          <button type="button" data-mas="${esc(p.id)}" aria-label="Agregar una unidad" ${enCarrito >= tope ? 'disabled' : ''}>+</button>
+          <button type="button" data-mas="${esc(p.id)}" aria-label="Agregar una unidad" ${enCarrito >= tope && !otrosTonosLibres(p).length ? 'disabled' : ''}>+</button>
         </div>`;
     } else {
       control = `<button class="btn-agregar" type="button" data-agregar="${esc(p.id)}">Agregar</button>`;
@@ -2441,7 +2448,7 @@ function htmlDetalleProducto(p){
     control = `<div class="paso-cant">
         <button type="button" data-menos="${esc(p.id)}" aria-label="Quitar una unidad">−</button>
         <span>${enCarrito}</span>
-        <button type="button" data-mas="${esc(p.id)}" aria-label="Agregar una unidad" ${enCarrito >= tope ? 'disabled' : ''}>+</button>
+        <button type="button" data-mas="${esc(p.id)}" aria-label="Agregar una unidad" ${enCarrito >= tope && !otrosTonosLibres(p).length ? 'disabled' : ''}>+</button>
       </div>`;
   } else {
     control = `<button class="btn-agregar" type="button" data-agregar="${esc(p.id)}">Agregar</button>`;
@@ -2607,6 +2614,16 @@ function agregar(id, n = 1){
 
   const vuelo = n > 0 ? medirVuelo() : null;
   if (n > 0 && nuevo === actual){
+    // Se acabó ESTE tono pero hay otros con stock: decirlo y abrir la ficha
+    // para elegir, en vez de dejar creer que del producto solo había esas.
+    const otros = actual < topeMaximo(p) ? otrosTonosLibres(p) : [];
+    if (otros.length && p.tono){
+      const lista = otros.map(v => `${topeDe(v) - (CARRITO[v.id] || 0)} en ${v.tono}`).join(', ');
+      brindis(`Del tono ${p.tono} no quedan más. Hay ${lista}: elige otro tono.`, 4500);
+      const abierta = $('#hojaCuerpo [data-detalle-grupo]');
+      if (!abierta || abierta.dataset.detalleGrupo !== grupoDeProducto(p).clave) verProducto(p.id);
+      return;
+    }
     brindis(actual >= topeMaximo(p)
       ? `Máximo ${topeMaximo(p)} por pedido`
       : 'No queda más de este producto');
