@@ -1810,6 +1810,18 @@ function estadoStock(p){
   return { clase:'e-ok', texto:'Entrega inmediata', hay:true };
 }
 
+// En la tarjeta de un producto con varios tonos, "Quedan 2" parecía el total
+// del producto. Se dice de qué tono son (el que agrega el botón +) y cuántas
+// hay entre todos los tonos con stock.
+function estadoStockTarjeta(p, grupo){
+  const est = estadoStock(p);
+  if (grupo.variantes.length < 2 || est.clase !== 'e-pocas' || !p.tono) return est;
+  const conStock = grupo.variantes.filter(v => estadoStock(v).hay);
+  const total = conStock.reduce((s, v) => s + (Number(v.stock) || 0), 0);
+  const texto = est.texto + ' en tono ' + p.tono + (conStock.length > 1 ? ' · ' + total + ' en total' : '');
+  return Object.assign({}, est, { texto });
+}
+
 /* ══════════════════════════════════════════════════════════════
    CARGA DEL CATÁLOGO
    ══════════════════════════════════════════════════════════════ */
@@ -2389,7 +2401,7 @@ function pintarGrilla(reanimar = false){
         ${selector}
         <div class="prod-precio">${precioHtml(p)}</div>
         ${mayoreoHtml(p, false)}
-        <span class="etiqueta ${est.clase}">${est.texto}</span>
+        <span class="etiqueta ${est.clase}">${estadoStockTarjeta(p, grupo).texto}</span>
         ${control}
       </div>
     </article>`;
