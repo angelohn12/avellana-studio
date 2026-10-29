@@ -1,0 +1,15 @@
+{
+  "name": "Avellana Equipo",
+  "short_name": "Avellana",
+  "description": "Precios, stock, ventas y textos de Avellana Studio en el celular",
+  "start_url": "/equipo/",
+  "scope": "/equipo/",
+  "display": "standalone",
+  "orientation": "portrait",
+  "background_color": "#3B0F1F",
+  "theme_color": "#3B0F1F",
+  "icons": [
+    { "src": "/apple-touch-icon.png", "sizes": "180x180", "type": "image/png" },
+    { "src": "/icon-512.png", "sizes": "512x512", "type": "image/png" }
+  ]
+}
