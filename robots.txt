@@ -1,6 +1,5 @@
 User-agent: *
 Allow: /
-Disallow: /equipo/
 Disallow: /avisos/
 
 Sitemap: https://avellana-studio.pages.dev/sitemap.xml
