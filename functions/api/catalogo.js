@@ -32,10 +32,11 @@
 // Mismo patrón que /api/proxy de belleza-panel — no reinventar si se toca.
 
 const APPS_SCRIPT_URL = 'https://script.google.com/macros/s/AKfycbxQVdDsH_Qgg9MnRgb0rDyzYPkvRESEi2FGD-ENHeT9L7CMbZl_xTaVxDs0wfNe3tflMg/exec';
-const FRESCURA_MS = 2 * 60 * 1000;          // hasta acá la copia es "fresca"
-const ESPERA_MAX_MS = 4000;                 // sin copia: lo máximo que se espera a Apps Script
-const VIDA_EN_BORDE_S = 24 * 60 * 60;       // cuánto Cloudflare conserva la copia
-const NAVEGADOR_S = 60;                     // cuánto la reutiliza el navegador de la clienta
+const FRESCURA_MS = 60 * 1000;              // hasta acá la copia es "fresca": se entrega tal cual
+const TOPE_RENOVAR_DETRAS_MS = 3 * 60 * 1000; // entre 1 y 3 min: se entrega ya y se renueva por detrás
+const ESPERA_MAX_MS = 12000;                // copia más vieja (o sin copia): se espera a Apps Script (tarda 4-6 s)
+const VIDA_EN_BORDE_S = 24 * 60 * 60;       // cuánto Cloudflare conserva la copia (solo como plan B)
+const NAVEGADOR_S = 30;                     // cuánto la reutiliza el navegador de la clienta
 
 export async function onRequest(context) {
   const { request } = context;
@@ -54,47 +55,73 @@ export async function onRequest(context) {
   // seguidas disparen 20 pedidos a Apps Script a la vez.
   const marcaKey = new Request(url.origin + '/__catalogo_renovando', { method: 'GET' });
 
+  // REGLA (05/11/2026): el stock que ve la clienta tiene que estar al día. Una copia de
+  // más de 3 minutos NUNCA se entrega como si fuera buena: se espera a Apps Script
+  // (4-6 s) y solo si no responde se entrega la copia vieja MARCADA (x-catalogo: viejo
+  // o respaldo), para que la tienda siga reintentando hasta tener la fresca.
+  // Caso real: la tienda mostró una vaselina "disponible" que ya estaba vendida porque
+  // una visita sin copia en el borde cayó al respaldo de hacía una semana.
+
   // 1. ¿Hay algo guardado en el borde de Cloudflare?
   const cachedResp = await cache.match(cacheKey);
-  if (cachedResp) {
-    const edad = Date.now() - Number(cachedResp.headers.get('x-cacheado-en') || 0);
+  const edad = cachedResp ? Date.now() - Number(cachedResp.headers.get('x-cacheado-en') || 0) : Infinity;
 
-    // 1a. Fresca: directo, sin tocar Apps Script
-    if (edad < FRESCURA_MS) return paraNavegador(cachedResp);
+  // 1a. Fresca: directo, sin tocar Apps Script
+  if (cachedResp && edad < FRESCURA_MS) return paraNavegador(cachedResp, 'fresco');
 
-    // 1b. Vieja pero de hoy: se entrega ya y se renueva por detrás
+  // 1b. De hace pocos minutos: se entrega ya y se renueva por detrás
+  if (cachedResp && edad < TOPE_RENOVAR_DETRAS_MS) {
     if (!(await cache.match(marcaKey))) {
       context.waitUntil((async () => {
         await cache.put(marcaKey, new Response('1', { headers: { 'cache-control': 'public, max-age=25' } }));
-        try { await renovar(cache, cacheKey); } catch (err) { /* la copia vieja sigue sirviendo */ }
+        try { await renovar(cache, cacheKey); } catch (err) { /* la copia sigue sirviendo unos minutos */ }
       })());
     }
-    return paraNavegador(cachedResp);
+    return paraNavegador(cachedResp, 'fresco');
   }
 
-  // 2. Sin copia en el borde: se le da a Apps Script hasta ESPERA_MAX_MS.
-  //    La lectura no se cancela si se pasa: sigue por detrás y deja la copia
-  //    guardada para la próxima visita.
-  context.waitUntil(cache.put(marcaKey, new Response('1', { headers: { 'cache-control': 'public, max-age=25' } })));
-  const lectura = renovar(cache, cacheKey);
-  context.waitUntil(lectura.catch(() => {}));
-  const aTiempo = await Promise.race([
-    lectura.then(text => ({ text }), err => ({ err })),
-    new Promise(r => setTimeout(() => r({ tarde: true }), ESPERA_MAX_MS))
-  ]);
-  if (aTiempo.text) return paraNavegador(new Response(aTiempo.text, { headers: { 'content-type': 'application/json' } }));
+  // 2. Copia vieja o sin copia: se espera a Apps Script hasta ESPERA_MAX_MS. La lectura
+  //    no se cancela si se pasa: sigue por detrás y deja la copia guardada.
+  const yaRenovando = !!(await cache.match(marcaKey));
+  let lectura = null;
+  let aTiempo;
+  if (!yaRenovando) {
+    context.waitUntil(cache.put(marcaKey, new Response('1', { headers: { 'cache-control': 'public, max-age=25' } })));
+    lectura = renovar(cache, cacheKey);
+    context.waitUntil(lectura.catch(() => {}));
+    aTiempo = await Promise.race([
+      lectura.then(text => ({ text }), err => ({ err })),
+      new Promise(r => setTimeout(() => r({ tarde: true }), ESPERA_MAX_MS))
+    ]);
+  } else {
+    // Otra visita ya está pidiendo la copia nueva: se espera a que aparezca
+    aTiempo = await esperarCopiaNueva(cache, cacheKey, Date.now());
+  }
+  if (aTiempo.text) return paraNavegador(new Response(aTiempo.text, { headers: { 'content-type': 'application/json' } }), 'fresco');
 
-  // 3. Apps Script tardó o falló: copia de respaldo publicada con la tienda
+  // 3. Apps Script tardó o falló: lo más reciente que haya, SIEMPRE marcado como viejo
+  if (cachedResp) return paraNavegador(cachedResp, 'viejo');
   const respaldo = await leerRespaldo(context, url);
   if (respaldo) return respaldo;
-  if (aTiempo.tarde) {
+  if (lectura) {
     // Sin respaldo: no queda más que esperar la lectura en curso
     try {
       const text = await lectura;
-      return paraNavegador(new Response(text, { headers: { 'content-type': 'application/json' } }));
+      return paraNavegador(new Response(text, { headers: { 'content-type': 'application/json' } }), 'fresco');
     } catch (err) { aTiempo.err = err; }
   }
   return json({ ok: false, error: 'no se pudo cargar el catálogo: ' + (aTiempo.err && aTiempo.err.message || String(aTiempo.err)) }, 502);
+}
+
+// Sondea el borde hasta que aparezca una copia más nueva que "desde" (la está guardando
+// otra visita) o se acabe la espera.
+async function esperarCopiaNueva(cache, cacheKey, desde) {
+  while (Date.now() - desde < ESPERA_MAX_MS) {
+    await new Promise(r => setTimeout(r, 600));
+    const c = await cache.match(cacheKey);
+    if (c && Number(c.headers.get('x-cacheado-en') || 0) >= desde - 2000) return { text: await c.text() };
+  }
+  return { tarde: true };
 }
 
 // catalogo-respaldo.json: copia del catálogo que se publica con la tienda.
@@ -123,11 +150,12 @@ async function renovar(cache, cacheKey) {
   return text;
 }
 
-// Lo que ve el navegador: una copia con vida corta, sin importar cuánto
-// viva la copia en el borde.
-function paraNavegador(resp) {
+// Lo que ve el navegador: una copia con vida corta. Si la copia es vieja o de respaldo
+// (estado != 'fresco') no se guarda en el navegador y se marca en x-catalogo.
+function paraNavegador(resp, estado) {
   const h = new Headers(resp.headers);
-  h.set('cache-control', 'public, max-age=' + NAVEGADOR_S);
+  h.set('cache-control', estado === 'fresco' ? 'public, max-age=' + NAVEGADOR_S : 'no-store');
+  h.set('x-catalogo', estado || 'fresco');
   return new Response(resp.body, { status: resp.status, headers: h });
 }
 

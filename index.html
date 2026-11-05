@@ -1860,7 +1860,9 @@ const CATALOGO_CACHE_KEY = 'avellanaCatalogoCache';
 // 5 min en vez de 1 — el catálogo no cambia tan seguido, y así la tienda
 // no depende de que el backend (Apps Script, a veces lento) responda rápido
 // en cada visita dentro de esa ventana.
-const CATALOGO_CACHE_MS = 5 * 60 * 1000;
+const CATALOGO_CACHE_MS = 60 * 1000;   // 05/11/2026: antes 5 min; el stock tiene que estar al día
+let CATALOGO_VIEJO = false;            // true si solo se pudo mostrar una copia vieja/de respaldo
+let ULTIMA_CARGA_CATALOGO = 0;         // cuándo se cargó por última vez un catálogo fresco
 
 // Un solo intento de fetch al catálogo, con límite de tiempo. Sin este
 // límite, una conexión lenta o trabada deja a la clienta viendo el
@@ -1879,7 +1881,9 @@ async function intentarCargarCatalogo(){
     const d = await r.json();
     // Copia de respaldo (Apps Script no respondió a tiempo): sirve para mostrar
     // la tienda ya, pero no se guarda — la próxima página trae la fresca.
-    if (d && r.headers.get('x-catalogo') === 'respaldo') d._respaldo = true;
+    // 'viejo' = copia de hace más de 3 min que el servidor no pudo renovar a tiempo.
+    const estadoCopia = r.headers.get('x-catalogo');
+    if (d && (estadoCopia === 'respaldo' || estadoCopia === 'viejo')) d._respaldo = true;
     return d;
   } catch (errFetch) {
     if (controlador.signal.aborted) throw Object.assign(new Error('tiempo agotado'), { agotado: true });
@@ -1914,6 +1918,17 @@ async function cargarCatalogo(){
           agotado = agotado || !!segundoError.agotado;
           throw segundoError;
         });
+      }
+      // Copia vieja o de respaldo: NO se muestra como si fuera la real (podría decir que hay
+      // algo que ya se vendió). Se deja el esqueleto de carga y se reintenta unos segundos
+      // hasta que llegue la copia fresca; si no llega, se muestra la que hay con un aviso.
+      if (d && d._respaldo) {
+        const desde = Date.now();
+        while (d && d._respaldo && Date.now() - desde < 30000) {
+          await new Promise(r => setTimeout(r, 3500));
+          try { d = await intentarCargarCatalogo(); } catch (e2) { /* se sigue con la copia que hay */ }
+        }
+        CATALOGO_VIEJO = !!(d && d._respaldo);
       }
       // Solo se guarda una respuesta buena: un error (502) guardado haría que recargar no sirva por 5 min
       if (d && d.ok && !d._respaldo) { try { sessionStorage.setItem(CATALOGO_CACHE_KEY, JSON.stringify({ t: Date.now(), d })); } catch (e1) { /* idem */ } }
@@ -1973,7 +1988,54 @@ async function cargarCatalogo(){
   // Google: abre la ficha de ese producto apenas carga el catálogo.
   const pedido = new URLSearchParams(location.search).get('p');
   if (pedido && !MODO_DEMO) verProducto(pedido);
+
+  // Disponibilidad al día (05/11/2026): si solo hubo una copia vieja se avisa y se sigue
+  // reintentando; y si la clienta deja la pestaña un rato, al volver se vuelve a leer.
+  if (!MODO_DEMO){
+    if (!CATALOGO_VIEJO) ULTIMA_CARGA_CATALOGO = Date.now();
+    else {
+      const banda = $('#bandaDemo');
+      banda.textContent = 'Mostramos una copia guardada del catálogo: la disponibilidad puede no estar al día y la confirmamos por WhatsApp.';
+      banda.classList.remove('oculto');
+      let intentos = 0;
+      const t = setInterval(async () => {
+        intentos++;
+        if (await actualizarProductosEnVivo() || intentos >= 20) clearInterval(t);
+      }, 15000);
+    }
+  }
 }
+
+// Vuelve a leer el catálogo y repinta con el stock real. Devuelve true si llegó una copia fresca.
+async function actualizarProductosEnVivo(){
+  try {
+    const d = await intentarCargarCatalogo();
+    if (!d || !d.ok || d._respaldo || !Array.isArray(d.productos)) return false;
+    const lista = d.productos.filter(estaPublicado);
+    if (!lista.length) return false;
+    PRODUCTOS = lista;
+    MAS_VENDIDOS = Array.isArray(d.masVendidos) ? d.masVendidos : MAS_VENDIDOS;
+    if (Number(d.envioGratisDesde) > 0) CONFIG.ENVIO_GRATIS_DESDE = Number(d.envioGratisDesde);
+    CATALOGO_VIEJO = false;
+    ULTIMA_CARGA_CATALOGO = Date.now();
+    try { sessionStorage.setItem(CATALOGO_CACHE_KEY, JSON.stringify({ t: Date.now(), d })); } catch (e1) { /* idem */ }
+    const banda = $('#bandaDemo');
+    if (banda) banda.classList.add('oculto');
+    asignarTipos();
+    limpiarCarritoFantasma();
+    pintarFiltros();
+    pintarMasVendidos();
+    pintarGrilla(false);
+    actualizarBarra();
+    return true;
+  } catch (e) { return false; }
+}
+
+// Al volver a la pestaña después de un rato, se lee de nuevo para que el stock no quede viejo
+document.addEventListener('visibilitychange', () => {
+  if (document.visibilityState !== 'visible' || MODO_DEMO || !ULTIMA_CARGA_CATALOGO) return;
+  if (Date.now() - ULTIMA_CARGA_CATALOGO > 90 * 1000) actualizarProductosEnVivo();
+});
 
 /* ── tipos de producto ───────────────────
    La hoja solo trae "Maquillaje" o "Cuidado personal"; para poder elegir "labios", "rostro"…
