@@ -474,6 +474,23 @@ body.menu-abierto{overflow:hidden}
 }
 .atajo-precio:hover{border-color:var(--coral);color:var(--coral)}
 .atajo-precio[aria-pressed="true"]{background:var(--tinta);color:#FFF;border-color:var(--tinta)}
+/* Botón grande «Entrega inmediata»: solo lo que hay en inventario */
+.btn-entrega-ya{
+  display:flex;align-items:center;gap:12px;width:100%;margin:14px 0 0;padding:12px 16px;min-height:56px;
+  background:var(--papel);color:var(--coral);border:1.5px solid var(--coral);border-radius:var(--radio-chico);
+  text-align:left;cursor:pointer;
+  transition:background .16s var(--curva), color .16s var(--curva);
+}
+.btn-entrega-ya svg{flex:0 0 auto}
+.btn-entrega-ya .ey-txt{flex:1 1 auto;display:flex;flex-direction:column;gap:2px;min-width:0}
+.btn-entrega-ya .ey-t1{font-size:14px;font-weight:600;letter-spacing:.01em}
+.btn-entrega-ya .ey-t2{font-size:12px;font-weight:400;opacity:.85}
+.btn-entrega-ya .ey-n{flex:0 0 auto;font-family:"DM Mono","DM Mono Respaldo",monospace;font-size:12px;font-weight:500;padding:4px 9px;border-radius:999px;border:1px solid currentColor}
+.btn-entrega-ya:hover{background:var(--hueso)}
+.btn-entrega-ya[aria-pressed="true"]{background:var(--coral);color:#FFF}
+.btn-entrega-ya[aria-pressed="true"]:hover{background:var(--coral)}
+.btn-entrega-ya[aria-pressed="true"] .ey-t2{opacity:.9}
+.btn-entrega-ya + .atajos-precio{margin-top:10px}
 .select-filtro{
   flex:1 1 130px;min-width:0;appearance:none;-webkit-appearance:none;
   border:1px solid var(--linea);border-radius:var(--radio-chico);
@@ -1331,6 +1348,12 @@ try { if (localStorage.getItem('avl_cookies') === 'si') cargarPixel(); } catch(e
     <input type="search" id="buscar" placeholder="Buscar un producto o marca…" aria-label="Buscar productos">
   </div>
 
+  <button class="btn-entrega-ya oculto" id="btnEntregaYa" type="button" aria-pressed="false" data-entrega-ya>
+    <svg width="22" height="22" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="1.9" stroke-linecap="round" stroke-linejoin="round" aria-hidden="true"><path d="M13 2 4 14h7l-1 8 9-12h-7l1-8Z"/></svg>
+    <span class="ey-txt"><span class="ey-t1">Entrega inmediata</span><span class="ey-t2">Lo que tenemos en inventario</span></span>
+    <span class="ey-n" id="nEntregaYa"></span>
+  </button>
+
   <div class="atajos-precio" id="atajosPrecio" role="group" aria-label="Atajos por precio"></div>
 
   <div class="filtros" id="filtros" role="group" aria-label="Filtrar por categoría"></div>
@@ -1610,6 +1633,7 @@ let CATEGORIA = 'Todo';
 let BUSQUEDA  = '';
 let MARCA  = 'Todas';
 let PRECIO = 'todos';
+let ENTREGA_YA = false;           // botón «Entrega inmediata»: solo lo que hay en inventario
 
 const RANGOS_PRECIO = [
   { id:'todos',  label:'Cualquier precio' },
@@ -2010,8 +2034,8 @@ function tiposConConteo(){
 }
 
 // Deja el catálogo mostrando solo lo elegido (marca y/o tipo) y baja a la lista
-function aplicarVista({ marca = 'Todas', tipo = 'Todo' } = {}){
-  MARCA = marca; CATEGORIA = tipo; PRECIO = 'todos'; BUSQUEDA = '';
+function aplicarVista({ marca = 'Todas', tipo = 'Todo', ya = false } = {}){
+  MARCA = marca; CATEGORIA = tipo; PRECIO = 'todos'; BUSQUEDA = ''; ENTREGA_YA = ya;
   $('#buscar').value = '';
   $('#filtroMarca').value = MARCA;
   $('#filtroPrecio').value = PRECIO;
@@ -2237,7 +2261,16 @@ function actualizarFiltrosActivos(){
   $$('#atajosPrecio .atajo-precio').forEach(b => b.setAttribute('aria-pressed', b.dataset.precio === PRECIO));
   $('#filtroMarca').classList.toggle('activo', MARCA !== 'Todas');
   $('#filtroPrecio').classList.toggle('activo', PRECIO !== 'todos');
-  const hayFiltro = MARCA !== 'Todas' || PRECIO !== 'todos' || CATEGORIA !== 'Todo' || BUSQUEDA.trim() !== '';
+  // «Entrega inmediata»: cuántos productos (agrupando tonos) hay en inventario ahora
+  const btnYa = $('#btnEntregaYa');
+  if (btnYa){
+    const hayYa = new Set();
+    PRODUCTOS.forEach(p => { if (estadoStock(p).hay) hayYa.add(claveGrupo(p)); });
+    btnYa.classList.toggle('oculto', hayYa.size === 0 && !ENTREGA_YA);
+    btnYa.setAttribute('aria-pressed', String(ENTREGA_YA));
+    $('#nEntregaYa').textContent = hayYa.size + (hayYa.size === 1 ? ' producto' : ' productos');
+  }
+  const hayFiltro = MARCA !== 'Todas' || PRECIO !== 'todos' || CATEGORIA !== 'Todo' || BUSQUEDA.trim() !== '' || ENTREGA_YA;
   $('#btnLimpiarFiltros').classList.toggle('oculto', !hayFiltro);
 }
 
@@ -2247,6 +2280,7 @@ function productosVisibles(){
   return PRODUCTOS.filter(p => {
     if (CATEGORIA !== 'Todo' && p.categoria !== CATEGORIA) return false;
     if (MARCA !== 'Todas' && (p.marca || '') !== MARCA) return false;
+    if (ENTREGA_YA && !estadoStock(p).hay) return false;
     if (rango) {
       const precio = precioFinal(p);
       if (rango.min != null && precio < rango.min) return false;
@@ -2355,6 +2389,13 @@ function pintarGrilla(reanimar = false){
   const grupos = todos.slice(0, limiteGrilla);
   const g = $('#grilla');
 
+  if (!todos.length && ENTREGA_YA){
+    g.innerHTML = `<div class="vacio"><strong>No hay entrega inmediata con estos filtros</strong>
+      Quita «Entrega inmediata» para ver todo, o pídelo por encargo.
+      <button class="btn-suave" type="button" style="margin-top:14px" data-entrega-ya>Ver todo el catálogo</button>
+    </div>`;
+    return;
+  }
   if (!todos.length){
     g.innerHTML = `<div class="vacio"><strong>No encontramos nada</strong>
       Prueba con otra palabra, o pídelo por encargo y te decimos si podemos conseguirlo.
@@ -4357,7 +4398,7 @@ function pedirMist(){
    EVENTOS
    ══════════════════════════════════════════════════════════════ */
 document.addEventListener('click', (ev) => {
-  const t = ev.target.closest('[data-agregar],[data-mas],[data-menos],[data-quitar],[data-encargo],[data-encargo-libre],[data-quitar-encargo],[data-encargo-mas],[data-encargo-menos],[data-tono-abrir],[data-tono-id],[data-elegir-marca],[data-ver-marca],[data-ver-tipo],[data-menu-tipos],[data-cat],[data-precio],[data-copiar],[data-ver],[data-caja-marcas],[data-caja-marca],[data-caja-mas],[data-caja-menos],[data-caja-fam],[data-caja-abrir],[data-caja-con],[data-caja-continuar],[data-caja-vaciar],[data-caja-seguir],[data-caja-solo-ya],[data-caja-editar],[data-caja-todo],[data-mist-abrir],[data-mist-tam],[data-mist-entrega],[data-mist-mas],[data-mist-menos],[data-mist-pedir],#btnCaja,#btnBarraCaja,#irCheckout,#irEncargos,#seguirComprando,#btnCarrito,#btnVerCarrito,#btnEncargos,#btnBarraEncargos,#btnCerrar,#btnLimpiarFiltros,#verMasProductos');
+  const t = ev.target.closest('[data-agregar],[data-mas],[data-menos],[data-quitar],[data-encargo],[data-encargo-libre],[data-quitar-encargo],[data-encargo-mas],[data-encargo-menos],[data-tono-abrir],[data-tono-id],[data-elegir-marca],[data-ver-marca],[data-ver-tipo],[data-menu-tipos],[data-cat],[data-precio],[data-entrega-ya],[data-copiar],[data-ver],[data-caja-marcas],[data-caja-marca],[data-caja-mas],[data-caja-menos],[data-caja-fam],[data-caja-abrir],[data-caja-con],[data-caja-continuar],[data-caja-vaciar],[data-caja-seguir],[data-caja-solo-ya],[data-caja-editar],[data-caja-todo],[data-mist-abrir],[data-mist-tam],[data-mist-entrega],[data-mist-mas],[data-mist-menos],[data-mist-pedir],#btnCaja,#btnBarraCaja,#irCheckout,#irEncargos,#seguirComprando,#btnCarrito,#btnVerCarrito,#btnEncargos,#btnBarraEncargos,#btnCerrar,#btnLimpiarFiltros,#verMasProductos');
   if (!t) return;
 
   // Caja misteriosa
@@ -4434,6 +4475,13 @@ document.addEventListener('click', (ev) => {
     guardarCarrito(); pintarGrilla(); actualizarBarra(); verCarrito();
     return;
   }
+  if (t.dataset.entregaYa !== undefined){
+    // Botón grande: alterna entre «solo lo que hay en inventario» y todo el catálogo
+    ENTREGA_YA = !ENTREGA_YA;
+    actualizarFiltrosActivos();
+    pintarGrilla(true);
+    return;
+  }
   if (t.dataset.precio){
     // Tocar el atajo activo lo apaga
     PRECIO = PRECIO === t.dataset.precio ? 'todos' : t.dataset.precio;
@@ -4450,7 +4498,7 @@ document.addEventListener('click', (ev) => {
     return;
   }
   if (t.id === 'btnLimpiarFiltros'){
-    CATEGORIA = 'Todo'; MARCA = 'Todas'; PRECIO = 'todos'; BUSQUEDA = '';
+    CATEGORIA = 'Todo'; MARCA = 'Todas'; PRECIO = 'todos'; BUSQUEDA = ''; ENTREGA_YA = false;
     $('#buscar').value = '';
     $$('#filtros .chip').forEach(c => c.setAttribute('aria-pressed', c.dataset.cat === CATEGORIA));
     $('#filtroMarca').value = MARCA;
