@@ -1,0 +1,126 @@
+name: Monitor de la tienda
+
+# Revisa cada 15 minutos, desde la nube de GitHub (no depende de ninguna compu encendida),
+# que la tienda, el panel y el catálogo estén arriba y que el stock que ve la clienta
+# coincida con el de la hoja. Si algo falla, esta ejecución sale en rojo y GitHub manda
+# un correo al dueño del repositorio.
+on:
+  schedule:
+    - cron: '*/15 * * * *'
+  workflow_dispatch:
+
+permissions:
+  contents: read
+
+jobs:
+  revisar:
+    runs-on: ubuntu-latest
+    timeout-minutes: 12
+    steps:
+      - name: Revisar tienda, catalogo y panel
+        run: |
+          python3 - <<'PY'
+          import json, os, sys, time, urllib.request, urllib.error
+
+          TIENDA = 'https://avellana-studio.pages.dev'
+          PANEL = 'https://belleza-panel.pages.dev'
+          APPS = ('https://script.google.com/macros/s/AKfycbxQVdDsH_Qgg9MnRgb0rDyzYPkvRESEi2FGD-ENHeT9L7CMbZl_xTaVxDs0wfNe3tflMg/exec'
+                  '?accion=catalogo')
+          UA = {'User-Agent': 'Mozilla/5.0 (monitor-avellana)'}
+          problemas = []
+          avisos = []
+
+          def get(url, timeout=45):
+              req = urllib.request.Request(url, headers=UA)
+              try:
+                  r = urllib.request.urlopen(req, timeout=timeout)
+                  return r.status, dict(r.headers), r.read()
+              except urllib.error.HTTPError as e:
+                  return e.code, dict(e.headers), e.read()
+              except Exception as e:
+                  return 0, {}, str(e).encode()
+
+          def json_ok(cuerpo):
+              try:
+                  d = json.loads(cuerpo)
+                  return d if d.get('ok') and isinstance(d.get('productos'), list) and len(d['productos']) > 500 else None
+              except Exception:
+                  return None
+
+          # 1. La tienda abre
+          st, _, cuerpo = get(TIENDA + '/')
+          if st != 200 or b'Avellana' not in cuerpo:
+              problemas.append(f'La tienda no abre bien (estado {st}).')
+
+          # 2. El catálogo de la tienda responde FRESCO (hasta 3 intentos: en frío tarda unos segundos)
+          sitio = None
+          detalle = ''
+          for i in range(3):
+              st, h, cuerpo = get(TIENDA + '/api/catalogo', timeout=60)
+              estado = {k.lower(): v for k, v in h.items()}.get('x-catalogo', '')
+              d = json_ok(cuerpo)
+              if st == 200 and d and estado == 'fresco':
+                  sitio = d
+                  break
+              detalle = f'estado {st}, x-catalogo={estado or "(vacío)"}, catálogo válido={bool(d)}'
+              time.sleep(20)
+          if not sitio:
+              problemas.append('El catálogo de la tienda no responde con datos frescos: ' + detalle)
+
+          # 3. La hoja (Apps Script) responde
+          hoja = None
+          for i in range(2):
+              st, _, cuerpo = get(APPS, timeout=90)
+              hoja = json_ok(cuerpo) if st == 200 else None
+              if hoja:
+                  break
+              time.sleep(15)
+          if not hoja:
+              problemas.append('El backend (Apps Script) no respondió el catálogo.')
+
+          # 4. El stock que ve la clienta = el de la hoja (la copia del borde puede tener hasta
+          #    3 min, por eso si hay diferencia se espera y se vuelve a comparar)
+          def diferencias(a, b):
+              sa = {p['id']: (p.get('nombre'), float(p.get('stock') or 0)) for p in a['productos']}
+              sb = {p['id']: (p.get('nombre'), float(p.get('stock') or 0)) for p in b['productos']}
+              out = []
+              for k in set(sa) | set(sb):
+                  va, vb = sa.get(k), sb.get(k)
+                  if (va[1] if va else None) != (vb[1] if vb else None):
+                      out.append((k, (va or vb)[0], va[1] if va else 'no está', vb[1] if vb else 'no está'))
+              return out
+
+          if sitio and hoja:
+              dif = diferencias(sitio, hoja)
+              if dif:
+                  time.sleep(210)
+                  st1, h1, c1 = get(TIENDA + '/api/catalogo', timeout=60)
+                  st2, _, c2 = get(APPS, timeout=90)
+                  s2, h2 = json_ok(c1), json_ok(c2)
+                  if s2 and h2:
+                      dif = diferencias(s2, h2)
+                  if dif:
+                      lista = '; '.join(f'#{k} {str(n)[:40]}: tienda={a}, hoja={b}' for k, n, a, b in dif[:8])
+                      problemas.append(f'El stock de la tienda NO coincide con la hoja en {len(dif)} producto(s): {lista}')
+
+          # 5. La copia de respaldo es válida (plan B si Google se cae)
+          st, _, cuerpo = get(TIENDA + '/catalogo-respaldo.json')
+          if st != 200 or not json_ok(cuerpo):
+              problemas.append('catalogo-respaldo.json no es válido.')
+
+          # 6. El panel responde (detrás de Cloudflare Access solo se ve la puerta de acceso)
+          st, _, _ = get(PANEL + '/')
+          if st not in (200, 401, 403):
+              problemas.append(f'El panel no responde bien (estado {st}).')
+
+          resumen = ['# Monitor de la tienda', '']
+          if problemas:
+              resumen += ['**Problemas:**'] + ['- ' + p for p in problemas]
+          else:
+              resumen += ['Todo en orden: tienda, catálogo fresco, stock igual al de la hoja, respaldo y panel.']
+          texto = '\n'.join(resumen)
+          print(texto)
+          if os.environ.get('GITHUB_STEP_SUMMARY'):
+              open(os.environ['GITHUB_STEP_SUMMARY'], 'a', encoding='utf-8').write(texto + '\n')
+          sys.exit(1 if problemas else 0)
+          PY
