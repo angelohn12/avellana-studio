@@ -1313,7 +1313,7 @@ try { if (localStorage.getItem('avl_cookies') === 'si') cargarPixel(); } catch(e
     <div>
       <p class="hero-eyebrow">Belleza que florece · Costa Rica</p>
       <h1>Maquillaje y skincare, <em>traído para ti</em></h1>
-      <p>Elige lo tuyo, haz tu pedido y escríbenos por WhatsApp para confirmarlo.</p>
+      <p>Elige lo tuyo, haz tu pedido y confírmalo escribiéndonos por WhatsApp.</p>
       <a class="hero-caja hero-ver" href="#explorar" data-elegir-marca>Ver productos</a>
       <ul class="hero-confianza" aria-label="Por qué comprar en Avellana">
         <li><svg width="17" height="17" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2" stroke-linecap="round" stroke-linejoin="round" aria-hidden="true"><path d="M12 3 4 6v6c0 4.5 3.4 8 8 9 4.6-1 8-4.5 8-9V6l-8-3Z"/><path d="m9 12 2 2 4-4"/></svg>Productos originales y sellados</li>
@@ -1412,7 +1412,7 @@ try { if (localStorage.getItem('avl_cookies') === 'si') cargarPixel(); } catch(e
     <h2 id="quienesTitulo">Quiénes somos</h2>
     <p>Somos <b>Anyelo y Belén</b>, estudiantes universitarios y apasionados por los negocios. Creamos Avellana Studio para ofrecer maquillaje de calidad a un precio justo en Costa Rica, con un servicio al cliente cercano y responsable.</p>
     <p>Importamos nuestros productos desde Estados Unidos: todos son nuevos, sellados y originales.</p>
-    <p>Así trabajamos: escríbenos por WhatsApp para confirmar tu pedido, y pagas por SINPE Móvil (o en efectivo si retiras), verificamos tu pago y te lo enviamos por Correos de Costa Rica, por mensajería privada (Uber Flash u otras apps de entrega, con costo a cotizar) o lo retiras en nuestro punto.</p>
+    <p>Así trabajamos: confirmas tu pedido escribiéndonos por WhatsApp, pagas por SINPE Móvil (o en efectivo si retiras), verificamos tu pago y te lo enviamos por Correos de Costa Rica, por mensajería privada (Uber Flash u otras apps de entrega, con costo a cotizar) o lo retiras en nuestro punto.</p>
     <p>Si tu producto llega dañado o con defecto de fábrica, escríbenos dentro del día siguiente y lo resolvemos.</p>
     <ul class="q-puntos">
       <li>Pago por SINPE Móvil o efectivo</li>
@@ -1433,7 +1433,7 @@ try { if (localStorage.getItem('avl_cookies') === 'si') cargarPixel(); } catch(e
         <ol>
           <li>Elige tus productos y agrégalos al carrito.</li>
           <li>Confirma el pedido con tu nombre y WhatsApp. Tu pedido queda registrado y apartamos tus productos.</li>
-          <li>Escríbenos al <b class="numerosWhats"></b> para confirmar tu pedido y el método de entrega.</li>
+          <li>Puedes escribirnos al <b class="numerosWhats"></b> para confirmar tu pedido y el método de entrega.</li>
           <li>Allí te indicamos el monto total y el número de SINPE Móvil para pagar. Si retiras en nuestro punto, también puedes pagar en efectivo al retirar.</li>
           <li>Cuando verificamos el pago, coordinamos la entrega o el envío. Si es por Correos, te pasamos la guía.</li>
         </ol>
@@ -1507,7 +1507,7 @@ try { if (localStorage.getItem('avl_cookies') === 'si') cargarPixel(); } catch(e
         <p>Tú eliges <b>cuántas piezas</b> y el tamaño de tu caja. Nosotras escogemos los productos: la sorpresa se revela al abrirla.</p>
         <p>Todo es <b>nuevo, sellado y original</b>, sin repetir productos. Cada tamaño tiene precio fijo y te decimos cuánto valdrían esas piezas compradas al detalle en la tienda: siempre pagas menos.</p>
         <p>Si hay cajas listas, tu entrega es inmediata. Si no, la caja va por encargo y llega en <span id="pieMistDias"></span> días hábiles.</p>
-        <p>Haces el pedido acá y escríbenos por WhatsApp para confirmarlo. Allí te indicamos el pago por SINPE Móvil. <b>No armamos ni enviamos tu caja sin el pago completo.</b></p>
+        <p>Haces el pedido acá y lo confirmas escribiéndonos por WhatsApp. Allí te indicamos el pago por SINPE Móvil. <b>No armamos ni enviamos tu caja sin el pago completo.</b></p>
         <button class="btn-suave" type="button" style="margin-top:4px" data-mist-abrir>Quiero mi caja misteriosa</button>
       </div>
     </details>
@@ -1520,7 +1520,7 @@ try { if (localStorage.getItem('avl_cookies') === 'si') cargarPixel(); } catch(e
           <li>Busca "Pedir por encargo" en cualquier producto agotado, o escribe tú el que quieras — se va agregando a tu <b>lista de encargos</b> (arriba a la derecha).</li>
           <li>Agrega todos los que quieras: no hay que mandarlos uno por uno.</li>
           <li>Cuando termines, abre tu lista, pon tu nombre y WhatsApp una sola vez, y mándala completa.</li>
-          <li>Escríbenos por WhatsApp para confirmar precio y tiempo de cada uno antes de pedirte nada.</li>
+          <li>Puedes escribirnos por WhatsApp para confirmar precio y tiempo de cada uno antes de pedirte nada.</li>
         </ol>
         <p>Los encargos tardan de <span id="pieEncargoDias"></span> días hábiles en llegar. Para encargarlos pedimos el <b><span id="pieEncargoPct"></span>%</b> del valor al confirmar y el <b><span id="pieEncargoResto"></span>%</b> restante cuando el producto ya esté en Costa Rica, antes de entregártelo. Todo se confirma por WhatsApp antes de que pagues nada.</p>
         <button class="btn-suave" type="button" style="margin-top:4px" data-encargo="">Pedir algo por encargo</button>
@@ -3274,7 +3274,7 @@ function verCheckout(){
       </div>
 
       <div class="aviso" id="avisoFormaPago">
-        <b>Cómo se paga.</b> Al confirmar, tu pedido queda registrado . Escríbenos al <b>${esc(numerosWhatsapp())}</b> para confirmarlo y pedirte el pago por SINPE Móvil. Hasta ese momento no pagas nada.
+        <b>Cómo se paga.</b> Al confirmar, tu pedido queda registrado . Puedes escribirnos al <b>${esc(numerosWhatsapp())}</b> para confirmarlo y pedirte el pago por SINPE Móvil. Hasta ese momento no pagas nada.
       </div>
 
       <p class="linea-confianza">Productos originales y sellados, importados de EE. UU. por nosotros.</p>
@@ -3636,7 +3636,7 @@ function verConfirmacion(numero, pedido){
 
       <div class="pasos">
         <div class="paso"><i>1</i><p>${esMist ? '<b>Ya quedó guardada.</b> Vamos a escoger tus piezas: todo nuevo, sellado y original.' : (esCaja ? '<b>Ya quedó guardada.</b> Revisamos tu caja producto por producto.' : '<b>Ya quedó guardado.</b> Revisamos que todo esté en stock.')}</p></div>
-        <div class="paso"><i>2</i><p><b>Escríbenos por WhatsApp</b> al <b>${esc(numerosWhatsapp())}</b>, en horario de ${esc(CONFIG.HORA_ATENCION)}, para confirmar tu pedido. Si pediste fuera de ese horario no pierdes nada esperando: tu ${esCaja ? 'caja' : 'pedido'} ya está guardad${esCaja ? 'a' : 'o'}.</p></div>
+        <div class="paso"><i>2</i><p><b>Puedes escribirnos por WhatsApp</b> al <b>${esc(numerosWhatsapp())}</b>, en horario de ${esc(CONFIG.HORA_ATENCION)}, para confirmar tu pedido. Si pediste fuera de ese horario no pierdes nada esperando: tu ${esCaja ? 'caja' : 'pedido'} ya está guardad${esCaja ? 'a' : 'o'}.</p></div>
         <div class="paso"><i>3</i><p>${pasoPago}</p></div>
         <div class="paso"><i>4</i><p>${pasoEntrega}</p></div>
       </div>
@@ -3895,7 +3895,7 @@ function verCheckoutEncargo(){
       </div>
 
       <div class="aviso" id="avisoFormaPago">
-        <b>Esto es una solicitud: todavía no pagas.</b> Escríbenos al <b>${esc(numerosWhatsapp())}</b>
+        <b>Esto es una solicitud: todavía no pagas.</b> Puedes escribirnos al <b>${esc(numerosWhatsapp())}</b>
         para confirmar disponibilidad, precio y tiempo de entrega. Si seguimos adelante, se paga el <b>${CONFIG.ENCARGO_ADELANTO_PCT}%</b>
         al confirmar y el <b>${100 - CONFIG.ENCARGO_ADELANTO_PCT}%</b> restante cuando el producto ya esté en Costa Rica.
       </div>
@@ -3970,7 +3970,7 @@ function verConfirmacionEncargo(productos){
 
       <div class="pasos">
         <div class="paso"><i>1</i><p><b>Ya quedó guardado.</b> Revisamos precio y tiempo de entrega de cada producto.</p></div>
-        <div class="paso"><i>2</i><p><b>Escríbenos por WhatsApp</b> al <b>${esc(numerosWhatsapp())}</b>, en horario de ${esc(CONFIG.HORA_ATENCION)}, para confirmar todo.</p></div>
+        <div class="paso"><i>2</i><p><b>Puedes escribirnos por WhatsApp</b> al <b>${esc(numerosWhatsapp())}</b>, en horario de ${esc(CONFIG.HORA_ATENCION)}, para confirmar todo.</p></div>
         <div class="paso"><i>3</i><p><b>Ahí coordinamos</b> el tiempo de entrega y el pago: el <b>${CONFIG.ENCARGO_ADELANTO_PCT}%</b> al confirmar y el <b>${100 - CONFIG.ENCARGO_ADELANTO_PCT}%</b> restante cuando llegue a Costa Rica. Hasta ese momento no pagas nada.</p></div>
       </div>
 
