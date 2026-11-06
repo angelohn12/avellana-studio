@@ -3336,18 +3336,18 @@ function refrescarTotales(){
   const aviso = $('#avisoFormaPago');
   if (aviso) {
     aviso.innerHTML = e.modo === 'retiro'
-      ? `<b>Cómo se paga.</b> Al confirmar, escríbenos al <b>${esc(numerosWhatsapp())}</b> para confirmar tu pedido. Ahí te decimos el monto para pagar por <b>SINPE Móvil</b>. También puedes pagar en <b>efectivo</b> al retirar.`
-      : `<b>Cómo se paga.</b> Al confirmar, escríbenos al <b>${esc(numerosWhatsapp())}</b> para confirmar tu pedido. Ahí te decimos el monto para pagar por <b>SINPE Móvil</b>. Despachamos cuando verificamos el pago.`;
+      ? `<b>Cómo se paga.</b> Al confirmar, escríbenos al <b>${esc(numerosWhatsapp())}</b> para confirmar tu pedido. Allí te indicamos el monto total a pagar por <b>SINPE Móvil</b>. También puedes pagar en <b>efectivo</b> al retirar.`
+      : `<b>Cómo se paga.</b> Al confirmar, escríbenos al <b>${esc(numerosWhatsapp())}</b> para confirmar tu pedido. Allí te indicamos el monto total a pagar por <b>SINPE Móvil</b>. Despachamos cuando verificamos el pago.`;
     if (enModoMist()) {
       // La misteriosa se arma después, con el pago hecho: nunca antes
       const inmediata = MIST.entrega === 'inmediata';
-      aviso.innerHTML = `<b>Cómo se paga.</b> Al confirmar, escríbenos al <b>${esc(numerosWhatsapp())}</b> para confirmar tu caja. Ahí te decimos el monto para pagar por <b>SINPE Móvil</b>. <b>No armamos ni enviamos tu caja sin el pago completo.</b>` +
+      aviso.innerHTML = `<b>Cómo se paga.</b> Al confirmar, escríbenos al <b>${esc(numerosWhatsapp())}</b> para confirmar tu caja. Allí te indicamos el monto total a pagar por <b>SINPE Móvil</b>. <b>No armamos ni enviamos tu caja sin el pago completo.</b>` +
         (inmediata ? '<br><br><b>Entrega inmediata:</b> la tenemos lista, la coordinamos apenas verifiquemos el pago.'
           : `<br><br><b>Va por encargo:</b> llega en ${CONFIG.ENCARGO_DIAS_MIN} a ${CONFIG.ENCARGO_DIAS_MAX} días hábiles.`);
     } else if (enModoCaja()) {
       // Una caja nunca sale (ni se pide lo que va por encargo) sin el pago completo
       const enc = piezasPorEncargo();
-      aviso.innerHTML = `<b>Cómo se paga.</b> Al confirmar, escríbenos al <b>${esc(numerosWhatsapp())}</b> para confirmar tu caja. Ahí te decimos el monto para pagar por <b>SINPE Móvil</b>. <b>No enviamos una caja sin el pago completo.</b>` +
+      aviso.innerHTML = `<b>Cómo se paga.</b> Al confirmar, escríbenos al <b>${esc(numerosWhatsapp())}</b> para confirmar tu caja. Allí te indicamos el monto total a pagar por <b>SINPE Móvil</b>. <b>No enviamos una caja sin el pago completo.</b>` +
         (enc ? `<br><br><b>${enc} ${enc === 1 ? 'pieza va' : 'piezas van'} por encargo:</b> tardan de ${CONFIG.ENCARGO_DIAS_MIN} a ${CONFIG.ENCARGO_DIAS_MAX} días hábiles en llegar. Por ${enc === 1 ? 'ella' : 'ellas'} pagas el <b>${CONFIG.ENCARGO_ADELANTO_PCT}%</b> al confirmar y el <b>${100 - CONFIG.ENCARGO_ADELANTO_PCT}%</b> restante cuando lleguen a Costa Rica; lo que está en stock se paga completo.` : '');
     } else if (hayMayoreoEnCarrito()) {
       // Al por mayor no hay pagos en partes: se paga completo antes del envío,
