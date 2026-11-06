@@ -71,7 +71,7 @@ const CONFIG = {
   // Número oficial de WhatsApp Business de Avellana. Los números SINPE
   // (7018 5274 y 6161 3486) son solo para pagos, no para WhatsApp.
   WHATSAPP: '50671663526',          // sin espacios ni guiones, con el 506
-  WHATSAPP_VISIBLE: '7166 3526',
+  WHATSAPP_VISIBLE: '7166-3526',
 
   RETIRO: 'San José, Goicoechea, Calle Blancos, Barrio Montelimar, avenida 43, frente a la Escuela de Natación Montelimar',
 
@@ -1433,7 +1433,7 @@ try { if (localStorage.getItem('avl_cookies') === 'si') cargarPixel(); } catch(e
         <ol>
           <li>Elige tus productos y agrégalos al carrito.</li>
           <li>Confirma el pedido con tu nombre y WhatsApp. Tu pedido queda registrado y apartamos tus productos.</li>
-          <li>Te escribimos por WhatsApp, desde el <b class="numerosWhats"></b> (cualquiera de los dos es nuestro), para confirmar tu pedido y el método de entrega.</li>
+          <li>Escríbenos al <b class="numerosWhats"></b> para confirmar tu pedido y el método de entrega.</li>
           <li>Ahí mismo te pasamos el monto exacto y el número para pagar por SINPE Móvil. Si retiras en nuestro punto, también puedes pagar en efectivo al retirar.</li>
           <li>Cuando verificamos el pago, coordinamos la entrega o el envío. Si es por Correos, te pasamos la guía.</li>
         </ol>
@@ -1711,7 +1711,7 @@ function mayoreoHtml(p, conTonos){
   return `<div class="prod-mayoreo">Al por mayor ${antes}<b>${colones(p.precioMayorista)}</b>${tag} c/u desde ${CONFIG.MINIMO_MAYOREO}${conTonos ? ' <span>· puedes combinar tonos</span>' : ''}</div>`;
 }
 
-// "7166 3526" — para los textos de "te escribimos desde…"
+// "7166-3526" — para los textos de "te escribimos desde…"
 const numerosWhatsapp = () => CONFIG.WHATSAPP_VISIBLE;
 
 // Teléfono de la clienta en 8 dígitos. Acepta que lo escriba con +506 o
@@ -3274,8 +3274,7 @@ function verCheckout(){
       </div>
 
       <div class="aviso" id="avisoFormaPago">
-        <b>Cómo se paga.</b> Al confirmar, tu pedido queda registrado y te escribimos por WhatsApp (<b>${esc(numerosWhatsapp())}</b>)
-        para confirmarlo y pedirte el pago por SINPE Móvil. Hasta ese momento no pagas nada.
+        <b>Cómo se paga.</b> Al confirmar, tu pedido queda registrado . Escríbenos al <b>${esc(numerosWhatsapp())}</b> para confirmarlo y pedirte el pago por SINPE Móvil. Hasta ese momento no pagas nada.
       </div>
 
       <p class="linea-confianza">Productos originales y sellados, importados de EE. UU. por nosotros.</p>
@@ -3337,22 +3336,18 @@ function refrescarTotales(){
   const aviso = $('#avisoFormaPago');
   if (aviso) {
     aviso.innerHTML = e.modo === 'retiro'
-      ? `<b>Cómo se paga.</b> Al confirmar, te escribimos por WhatsApp (<b>${esc(numerosWhatsapp())}</b>) para confirmar tu pedido
-         y pedirte el pago por <b>SINPE Móvil</b>. También puedes pagar en <b>efectivo</b> al retirar.`
-      : `<b>Cómo se paga.</b> Al confirmar, te escribimos por WhatsApp (<b>${esc(numerosWhatsapp())}</b>) para confirmar tu pedido
-         y pedirte el pago por <b>SINPE Móvil</b>. Despachamos cuando verificamos el pago.`;
+      ? `<b>Cómo se paga.</b> Al confirmar, escríbenos al <b>${esc(numerosWhatsapp())}</b> para confirmar tu pedido. Te pasamos el pago por <b>SINPE Móvil</b>. También puedes pagar en <b>efectivo</b> al retirar.`
+      : `<b>Cómo se paga.</b> Al confirmar, escríbenos al <b>${esc(numerosWhatsapp())}</b> para confirmar tu pedido. Te pasamos el pago por <b>SINPE Móvil</b>. Despachamos cuando verificamos el pago.`;
     if (enModoMist()) {
       // La misteriosa se arma después, con el pago hecho: nunca antes
       const inmediata = MIST.entrega === 'inmediata';
-      aviso.innerHTML = `<b>Cómo se paga.</b> Al confirmar, te escribimos por WhatsApp (<b>${esc(numerosWhatsapp())}</b>) para confirmar tu caja
-         y pedirte el pago por <b>SINPE Móvil</b>. <b>No armamos ni enviamos tu caja sin el pago completo.</b>` +
+      aviso.innerHTML = `<b>Cómo se paga.</b> Al confirmar, escríbenos al <b>${esc(numerosWhatsapp())}</b> para confirmar tu caja. Te pasamos el pago por <b>SINPE Móvil</b>. <b>No armamos ni enviamos tu caja sin el pago completo.</b>` +
         (inmediata ? '<br><br><b>Entrega inmediata:</b> la tenemos lista, la coordinamos apenas verifiquemos el pago.'
           : `<br><br><b>Va por encargo:</b> llega en ${CONFIG.ENCARGO_DIAS_MIN} a ${CONFIG.ENCARGO_DIAS_MAX} días hábiles.`);
     } else if (enModoCaja()) {
       // Una caja nunca sale (ni se pide lo que va por encargo) sin el pago completo
       const enc = piezasPorEncargo();
-      aviso.innerHTML = `<b>Cómo se paga.</b> Al confirmar, te escribimos por WhatsApp (<b>${esc(numerosWhatsapp())}</b>) para confirmar tu caja
-         y pedirte el pago por <b>SINPE Móvil</b>. <b>No enviamos una caja sin el pago completo.</b>` +
+      aviso.innerHTML = `<b>Cómo se paga.</b> Al confirmar, escríbenos al <b>${esc(numerosWhatsapp())}</b> para confirmar tu caja. Te pasamos el pago por <b>SINPE Móvil</b>. <b>No enviamos una caja sin el pago completo.</b>` +
         (enc ? `<br><br><b>${enc} ${enc === 1 ? 'pieza va' : 'piezas van'} por encargo:</b> tardan de ${CONFIG.ENCARGO_DIAS_MIN} a ${CONFIG.ENCARGO_DIAS_MAX} días hábiles en llegar. Por ${enc === 1 ? 'ella' : 'ellas'} pagas el <b>${CONFIG.ENCARGO_ADELANTO_PCT}%</b> al confirmar y el <b>${100 - CONFIG.ENCARGO_ADELANTO_PCT}%</b> restante cuando lleguen a Costa Rica; lo que está en stock se paga completo.` : '');
     } else if (hayMayoreoEnCarrito()) {
       // Al por mayor no hay pagos en partes: se paga completo antes del envío,
@@ -3641,7 +3636,7 @@ function verConfirmacion(numero, pedido){
 
       <div class="pasos">
         <div class="paso"><i>1</i><p>${esMist ? '<b>Ya quedó guardada.</b> Vamos a escoger tus piezas: todo nuevo, sellado y original.' : (esCaja ? '<b>Ya quedó guardada.</b> Revisamos tu caja producto por producto.' : '<b>Ya quedó guardado.</b> Revisamos que todo esté en stock.')}</p></div>
-        <div class="paso"><i>2</i><p><b>Te escribimos por WhatsApp</b> desde el <b>${esc(numerosWhatsapp())}</b> (cualquiera de los dos es nuestro), en horario de ${esc(CONFIG.HORA_ATENCION)}. Si pediste fuera de ese horario no pierdes nada esperando: tu ${esCaja ? 'caja' : 'pedido'} ya está guardad${esCaja ? 'a' : 'o'}.</p></div>
+        <div class="paso"><i>2</i><p><b>Escríbenos por WhatsApp</b> al <b>${esc(numerosWhatsapp())}</b>, en horario de ${esc(CONFIG.HORA_ATENCION)}, para confirmar tu pedido. Si pediste fuera de ese horario no pierdes nada esperando: tu ${esCaja ? 'caja' : 'pedido'} ya está guardad${esCaja ? 'a' : 'o'}.</p></div>
         <div class="paso"><i>3</i><p>${pasoPago}</p></div>
         <div class="paso"><i>4</i><p>${pasoEntrega}</p></div>
       </div>
@@ -3900,7 +3895,7 @@ function verCheckoutEncargo(){
       </div>
 
       <div class="aviso" id="avisoFormaPago">
-        <b>Esto es una solicitud: todavía no pagas.</b> Te escribimos por WhatsApp desde el <b>${esc(numerosWhatsapp())}</b>
+        <b>Esto es una solicitud: todavía no pagas.</b> Escríbenos al <b>${esc(numerosWhatsapp())}</b>
         para confirmar disponibilidad, precio y tiempo de entrega. Si seguimos adelante, se paga el <b>${CONFIG.ENCARGO_ADELANTO_PCT}%</b>
         al confirmar y el <b>${100 - CONFIG.ENCARGO_ADELANTO_PCT}%</b> restante cuando el producto ya esté en Costa Rica.
       </div>
@@ -3975,7 +3970,7 @@ function verConfirmacionEncargo(productos){
 
       <div class="pasos">
         <div class="paso"><i>1</i><p><b>Ya quedó guardado.</b> Revisamos precio y tiempo de entrega de cada producto.</p></div>
-        <div class="paso"><i>2</i><p><b>Te escribimos por WhatsApp</b> desde el <b>${esc(numerosWhatsapp())}</b> (cualquiera de los dos es nuestro), en horario de ${esc(CONFIG.HORA_ATENCION)}, para confirmarte todo.</p></div>
+        <div class="paso"><i>2</i><p><b>Escríbenos por WhatsApp</b> al <b>${esc(numerosWhatsapp())}</b>, en horario de ${esc(CONFIG.HORA_ATENCION)}, para confirmar todo.</p></div>
         <div class="paso"><i>3</i><p><b>Ahí coordinamos</b> el tiempo de entrega y el pago: el <b>${CONFIG.ENCARGO_ADELANTO_PCT}%</b> al confirmar y el <b>${100 - CONFIG.ENCARGO_ADELANTO_PCT}%</b> restante cuando llegue a Costa Rica. Hasta ese momento no pagas nada.</p></div>
       </div>
 
