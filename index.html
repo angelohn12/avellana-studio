@@ -88,6 +88,8 @@ const CONFIG = {
   MAX_MISTERIOSAS: 3,               // cajas misteriosas por pedido (igual que el servidor)
   MINIMO_MAYOREO: 3,                // unidades del mismo producto (sumando tonos) para precio
                                     // mayorista — se reemplaza por el que manda el servidor
+  MINIMO_SURTIDO: 5,                // O BIEN: unidades en total (cualquier producto) para que todo el
+                                    // carrito pase a mayorista — también lo manda el servidor
 
   DIAS_DEFECTO: 1,                  // plazo para reportar defecto de fábrica
   INSTAGRAM: 'avellana.sstudio',
@@ -1281,7 +1283,7 @@ try { if (localStorage.getItem('avl_cookies') === 'si') cargarPixel(); } catch(e
 
 <div id="bandaDemo" class="banda-demo oculto"></div>
 
-<aside class="franja" aria-label="Avisos de la tienda"><div class="franja-pista" id="franjaPista"><div class="franja-grupo"><span>Envíos a todo el país</span><span>Retiro gratis en San José</span><span>Envío gratis por Correos desde ₡50.000</span><span>Al por mayor desde 3 unidades</span></div></div></aside>
+<aside class="franja" aria-label="Avisos de la tienda"><div class="franja-pista" id="franjaPista"><div class="franja-grupo"><span>Envíos a todo el país</span><span>Retiro gratis en San José</span><span>Envío gratis por Correos desde ₡50.000</span><span>Al por mayor desde 5 productos surtidos</span></div></div></aside>
 
 <header>
   <div class="wrap barra">
@@ -1692,7 +1694,12 @@ function unidadesMayoreoEnCarrito(clave){
     return a + (x && tieneMayoreo(x) && claveGrupo(x) === clave ? n : 0);
   }, 0);
 }
-const aplicaMayoreo = (p) => tieneMayoreo(p) && unidadesMayoreoEnCarrito(claveGrupo(p)) >= CONFIG.MINIMO_MAYOREO;
+// Unidades en total en el carrito (cualquier producto)
+const unidadesTotalesCarrito = () => Object.values(CARRITO).reduce((a, n) => a + (Number(n) || 0), 0);
+// Mayorista si lleva el mínimo del mismo producto (tonos suman) O el mínimo
+// surtido en total (Anyelo, 19/11/2026). Igual que el servidor.
+const aplicaMayoreo = (p) => tieneMayoreo(p) &&
+  (unidadesMayoreoEnCarrito(claveGrupo(p)) >= CONFIG.MINIMO_MAYOREO || unidadesTotalesCarrito() >= CONFIG.MINIMO_SURTIDO);
 // Precio por unidad que se cobra en el carrito (mayorista si ya llegó al mínimo)
 const precioCarrito = (p) => aplicaMayoreo(p) ? Number(p.precioMayorista) : precioFinal(p);
 // El tope de 3 es para compras al detalle; con precio mayorista se puede pedir en cantidad
@@ -1708,7 +1715,7 @@ function mayoreoHtml(p, conTonos){
   const antes = pct > 0 && Number(p.precioMayoristaBase) > Number(p.precioMayorista)
     ? `<s class="mayoreo-antes">${colones(p.precioMayoristaBase)}</s> ` : '';
   const tag = antes ? ` <span class="tag-descuento">-${pct}%</span>` : '';
-  return `<div class="prod-mayoreo">Al por mayor ${antes}<b>${colones(p.precioMayorista)}</b>${tag} c/u desde ${CONFIG.MINIMO_MAYOREO}${conTonos ? ' <span>· puedes combinar tonos</span>' : ''}</div>`;
+  return `<div class="prod-mayoreo">Al por mayor ${antes}<b>${colones(p.precioMayorista)}</b>${tag} c/u desde ${CONFIG.MINIMO_MAYOREO} iguales o ${CONFIG.MINIMO_SURTIDO} productos surtidos${conTonos ? ' <span>· puedes combinar tonos</span>' : ''}</div>`;
 }
 
 // "7166-3526" — para los textos de "te escribimos desde…"
@@ -1941,6 +1948,7 @@ async function cargarCatalogo(){
     PRODUCTOS = d.productos.filter(estaPublicado);
     if (!PRODUCTOS.length) throw new Error('catálogo vacío');
     if (Number(d.minimoMayorista) >= 2) CONFIG.MINIMO_MAYOREO = Number(d.minimoMayorista);
+    if (Number(d.minimoMayoristaSurtido) >= 2) CONFIG.MINIMO_SURTIDO = Number(d.minimoMayoristaSurtido);
     if ($('#pieCajaMin')) $('#pieCajaMin').textContent = CONFIG.MINIMO_MAYOREO;
     OUTLET = d.outlet && Array.isArray(d.outlet.tipos) && d.outlet.tipos.length ? d.outlet : OUTLET;
     MISTERIOSA = d.misteriosa && Array.isArray(d.misteriosa.tamanos) && d.misteriosa.tamanos.length ? d.misteriosa : null;
@@ -3001,7 +3009,11 @@ function verCarrito(){
     if (!tieneMayoreo(p) || aplicaMayoreo(p) || pistasDadas.has(clave)) return '';
     pistasDadas.add(clave);
     const falta = CONFIG.MINIMO_MAYOREO - unidadesMayoreoEnCarrito(clave);
-    return `<div class="lc-pista">Agrega ${falta} más de este producto (cualquier tono) y pagas ${colones(p.precioMayorista)} c/u</div>`;
+    const faltaTotal = CONFIG.MINIMO_SURTIDO - unidadesTotalesCarrito();
+    const otra = faltaTotal > 0 && faltaTotal < falta
+      ? `Agrega ${faltaTotal} producto${faltaTotal === 1 ? '' : 's'} más (el que quieras)`
+      : `Agrega ${falta} más de este producto (cualquier tono)`;
+    return `<div class="lc-pista">${otra} y pagas ${colones(p.precioMayorista)} c/u</div>`;
   };
   const html = `
     ${avisoMayoreoHtml(lineas.map(({ p, n }) => ({ p, n, mayor: aplicaMayoreo(p) })))}
@@ -3139,7 +3151,7 @@ function pintarFranja(){
     'Envíos a todo el país',
     'Retiro gratis en San José',
     'Envío gratis por Correos desde ' + colones(CONFIG.ENVIO_GRATIS_DESDE),
-    'Al por mayor desde ' + CONFIG.MINIMO_MAYOREO + ' unidades'
+    'Al por mayor desde ' + CONFIG.MINIMO_SURTIDO + ' productos surtidos'
   ];
   const grupo = (adorno) => '<div class="franja-grupo"' + (adorno ? ' aria-hidden="true"' : '') + '>' +
     [0, 1, 2].map(v => mensajes.map(t =>
