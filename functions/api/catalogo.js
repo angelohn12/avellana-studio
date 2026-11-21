@@ -38,7 +38,16 @@ const ESPERA_MAX_MS = 12000;                // copia más vieja (o sin copia): s
 const VIDA_EN_BORDE_S = 24 * 60 * 60;       // cuánto Cloudflare conserva la copia (solo como plan B)
 const NAVEGADOR_S = 30;                     // cuánto la reutiliza el navegador de la clienta
 
+// Indicador de diagnóstico (x-kv): dice si la función ve el KV y si el último guardado falló.
+let KV_ULTIMO = 'sin-intentos';
 export async function onRequest(context) {
+  const r = await atender(context);
+  const h = new Headers(r.headers);
+  h.set('x-kv', (context.env && context.env.CATALOGO ? 'enlazado' : 'sin-binding') + '; ' + KV_ULTIMO);
+  return new Response(r.body, { status: r.status, headers: h });
+}
+
+async function atender(context) {
   const { request } = context;
 
   if (request.method !== 'GET') {
@@ -167,10 +176,11 @@ async function guardarKV(env, text) {
   try {
     if (!env || !env.CATALOGO) return;
     const t = Number(await env.CATALOGO.get('catalogo_t')) || 0;
-    if (Date.now() - t < 4 * 60 * 1000) return;
+    if (Date.now() - t < 4 * 60 * 1000) { KV_ULTIMO = 'reciente'; return; }
     await env.CATALOGO.put('catalogo', text, { expirationTtl: 7 * 24 * 3600 });
     await env.CATALOGO.put('catalogo_t', String(Date.now()), { expirationTtl: 7 * 24 * 3600 });
-  } catch (err) { /* KV es un extra: si falla, la tienda sigue igual */ }
+    KV_ULTIMO = 'guardado';
+  } catch (err) { KV_ULTIMO = 'error: ' + String(err && err.message || err).slice(0, 80); /* KV es un extra: si falla, la tienda sigue igual */ }
 }
 
 // Lo que ve el navegador: una copia con vida corta. Si la copia es vieja o de respaldo
