@@ -1876,6 +1876,15 @@ let ULTIMA_CARGA_CATALOGO = 0;         // cuándo se cargó por última vez un c
 // esqueleto de carga PARA SIEMPRE — el fetch nunca llega a fallar, así
 // que nunca cae al catálogo de ejemplo. Se corta a los 20s (de sobra
 // para lo lento que a veces responde el Sheet).
+// El catálogo manda cada descripción una sola vez (descripciones[]) y cada producto
+// apunta a la suya con dx; acá se vuelve a poner en p.descripcion. Una copia vieja con
+// la descripción dentro de cada producto (sin descripciones[]) se deja tal cual.
+function expandirCatalogo(d){
+  if (!d || !Array.isArray(d.descripciones) || !Array.isArray(d.productos)) return d;
+  d.productos.forEach(p => { if (p.descripcion === undefined) p.descripcion = p.dx >= 0 ? (d.descripciones[p.dx] || '') : ''; });
+  return d;
+}
+
 async function intentarCargarCatalogo(){
   const controlador = new AbortController();
   const corte = setTimeout(() => controlador.abort(), 20000);
@@ -1886,6 +1895,7 @@ async function intentarCargarCatalogo(){
     // Script responda rápido en cada visita. Ver functions/api/catalogo.js.
     const r = await fetch('/api/catalogo', { method:'GET', signal: controlador.signal });
     const d = await r.json();
+    expandirCatalogo(d);
     // Copia de respaldo (Apps Script no respondió a tiempo): sirve para mostrar
     // la tienda ya, pero no se guarda — la próxima página trae la fresca.
     // 'viejo' = copia de hace más de 3 min que el servidor no pudo renovar a tiempo.

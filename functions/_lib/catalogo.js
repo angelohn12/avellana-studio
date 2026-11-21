@@ -6,6 +6,8 @@ export async function leerCatalogo(origin) {
   const r = await fetch(origin + '/api/catalogo');
   const d = await r.json();
   if (!d || !d.ok || !Array.isArray(d.productos)) throw new Error('sin catálogo');
+  // Cada descripción llega una sola vez (descripciones[] + dx por producto)
+  if (Array.isArray(d.descripciones)) d.productos.forEach(p => { if (p.descripcion === undefined) p.descripcion = p.dx >= 0 ? (d.descripciones[p.dx] || '') : ''; });
   return d.productos.filter(estaPublicado);
 }
 
