@@ -1930,12 +1930,10 @@ async function cargarCatalogo(){
       // algo que ya se vendió). Se deja el esqueleto de carga y se reintenta unos segundos
       // hasta que llegue la copia fresca; si no llega, se muestra la que hay con un aviso.
       if (d && d._respaldo) {
-        const desde = Date.now();
-        while (d && d._respaldo && Date.now() - desde < 30000) {
-          await new Promise(r => setTimeout(r, 3500));
-          try { d = await intentarCargarCatalogo(); } catch (e2) { /* se sigue con la copia que hay */ }
-        }
-        CATALOGO_VIEJO = !!(d && d._respaldo);
+        // 20/11/2026: ya NO se espera con el esqueleto: la tienda se pinta al instante con
+        // la copia que haya (marcada) y la fresca llega en segundos por detrás
+        // (actualizarProductosEnVivo). Comprar queda en pausa hasta verificar (ver agregar).
+        CATALOGO_VIEJO = true;
       }
       // Solo se guarda una respuesta buena: un error (502) guardado haría que recargar no sirva por 5 min
       if (d && d.ok && !d._respaldo) { try { sessionStorage.setItem(CATALOGO_CACHE_KEY, JSON.stringify({ t: Date.now(), d })); } catch (e1) { /* idem */ } }
@@ -2003,13 +2001,16 @@ async function cargarCatalogo(){
     if (!CATALOGO_VIEJO) ULTIMA_CARGA_CATALOGO = Date.now();
     else {
       const banda = $('#bandaDemo');
-      banda.textContent = 'Mostramos una copia guardada del catálogo: la disponibilidad puede no estar al día y la confirmamos por WhatsApp.';
+      banda.textContent = 'Estamos actualizando la disponibilidad… un momento. Lo que ves puede no estar al día; se confirma por WhatsApp.';
       banda.classList.remove('oculto');
       let intentos = 0;
-      const t = setInterval(async () => {
+      const esperas = [2500, 3000, 4000, 5000, 8000];   // rápido al principio, luego cada 15 s
+      const reintentar = async () => {
         intentos++;
-        if (await actualizarProductosEnVivo() || intentos >= 20) clearInterval(t);
-      }, 15000);
+        if (await actualizarProductosEnVivo() || intentos >= 24) return;
+        setTimeout(reintentar, esperas[intentos] || 15000);
+      };
+      setTimeout(reintentar, esperas[0]);
     }
   }
 }
@@ -2713,6 +2714,12 @@ function volarAlCarrito(vuelo){
 }
 
 function agregar(id, n = 1){
+  if (n > 0 && CATALOGO_VIEJO && !MODO_DEMO){
+    // Copia vieja en pantalla: se verifica el stock real antes de dejar agregar
+    brindis('Confirmando disponibilidad…', 2500);
+    actualizarProductosEnVivo().then(ok => { if (ok) agregar(id, n); else brindis('Todavía confirmando la disponibilidad. Probá en unos segundos.', 3500); });
+    return;
+  }
   const p = PRODUCTOS.find(x => String(x.id) === String(id));
   if (!p) return;
   const tope = topeDe(p);

@@ -80,37 +80,27 @@ export async function onRequest(context) {
     return paraNavegador(cachedResp, 'fresco');
   }
 
-  // 2. Copia vieja o sin copia: se espera a Apps Script hasta ESPERA_MAX_MS. La lectura
-  //    no se cancela si se pasa: sigue por detrás y deja la copia guardada.
+  // 2. (20/11/2026) NUNCA se hace esperar a la clienta. Copia vieja o sin copia: se entrega
+  //    AL INSTANTE lo que haya, marcado ('viejo' o 'respaldo'), y la lectura de la copia
+  //    nueva corre por detrás. La tienda pinta ya y se corrige sola en segundos; comprar
+  //    queda en pausa hasta que llegue la fresca (ver agregar() en index.html).
   const yaRenovando = !!(await cache.match(marcaKey));
-  let lectura = null;
-  let aTiempo;
   if (!yaRenovando) {
-    context.waitUntil(cache.put(marcaKey, new Response('1', { headers: { 'cache-control': 'public, max-age=25' } })));
-    lectura = renovar(cache, cacheKey);
-    context.waitUntil(lectura.catch(() => {}));
-    aTiempo = await Promise.race([
-      lectura.then(text => ({ text }), err => ({ err })),
-      new Promise(r => setTimeout(() => r({ tarde: true }), ESPERA_MAX_MS))
-    ]);
-  } else {
-    // Otra visita ya está pidiendo la copia nueva: se espera a que aparezca
-    aTiempo = await esperarCopiaNueva(cache, cacheKey, Date.now());
+    context.waitUntil((async () => {
+      await cache.put(marcaKey, new Response('1', { headers: { 'cache-control': 'public, max-age=25' } }));
+      try { await renovar(cache, cacheKey); } catch (err) { /* se reintenta en la próxima visita */ }
+    })());
   }
-  if (aTiempo.text) return paraNavegador(new Response(aTiempo.text, { headers: { 'content-type': 'application/json' } }), 'fresco');
-
-  // 3. Apps Script tardó o falló: lo más reciente que haya, SIEMPRE marcado como viejo
   if (cachedResp) return paraNavegador(cachedResp, 'viejo');
   const respaldo = await leerRespaldo(context, url);
   if (respaldo) return respaldo;
-  if (lectura) {
-    // Sin respaldo: no queda más que esperar la lectura en curso
-    try {
-      const text = await lectura;
-      return paraNavegador(new Response(text, { headers: { 'content-type': 'application/json' } }), 'fresco');
-    } catch (err) { aTiempo.err = err; }
+  // Sin copia y sin respaldo (no debería pasar): no queda más que esperar a Apps Script
+  try {
+    const text = await renovar(cache, cacheKey);
+    return paraNavegador(new Response(text, { headers: { 'content-type': 'application/json' } }), 'fresco');
+  } catch (err) {
+    return json({ ok: false, error: 'no se pudo cargar el catálogo: ' + (err && err.message || String(err)) }, 502);
   }
-  return json({ ok: false, error: 'no se pudo cargar el catálogo: ' + (aTiempo.err && aTiempo.err.message || String(aTiempo.err)) }, 502);
 }
 
 // Sondea el borde hasta que aparezca una copia más nueva que "desde" (la está guardando
