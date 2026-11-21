@@ -63,8 +63,20 @@ export async function onRequest(context) {
   // una visita sin copia en el borde cayó al respaldo de hacía una semana.
 
   // 1. ¿Hay algo guardado en el borde de Cloudflare?
-  const cachedResp = await cache.match(cacheKey);
-  const edad = cachedResp ? Date.now() - Number(cachedResp.headers.get('x-cacheado-en') || 0) : Infinity;
+  const cachedLocal = await cache.match(cacheKey);
+  const edadLocal = cachedLocal ? Date.now() - Number(cachedLocal.headers.get('x-cacheado-en') || 0) : Infinity;
+
+  // KV (opcional): si el borde de ESTE centro de datos no tiene copia buena, se mira la copia
+  // compartida por todos los centros (Cloudflare KV, binding CATALOGO). Sin binding no hace nada.
+  let cachedResp = cachedLocal, edad = edadLocal;
+  if (context.env && context.env.CATALOGO && (!cachedLocal || edadLocal >= TOPE_RENOVAR_DETRAS_MS)) {
+    const kv = await leerKV(context.env);
+    if (kv && (!cachedLocal || kv.t > Number(cachedLocal.headers.get('x-cacheado-en') || 0))) {
+      cachedResp = new Response(kv.text, { headers: { 'content-type': 'application/json', 'x-cacheado-en': String(kv.t) } });
+      edad = Date.now() - kv.t;
+      context.waitUntil(cache.put(cacheKey, new Response(kv.text, { headers: { 'content-type': 'application/json', 'cache-control': 'public, max-age=' + VIDA_EN_BORDE_S, 'x-cacheado-en': String(kv.t) } })));
+    }
+  }
 
   // 1a. Fresca: directo, sin tocar Apps Script
   if (cachedResp && edad < FRESCURA_MS) return paraNavegador(cachedResp, 'fresco');
@@ -74,7 +86,7 @@ export async function onRequest(context) {
     if (!(await cache.match(marcaKey))) {
       context.waitUntil((async () => {
         await cache.put(marcaKey, new Response('1', { headers: { 'cache-control': 'public, max-age=25' } }));
-        try { await renovar(cache, cacheKey); } catch (err) { /* la copia sigue sirviendo unos minutos */ }
+        try { await renovar(cache, cacheKey, context.env); } catch (err) { /* la copia sigue sirviendo unos minutos */ }
       })());
     }
     return paraNavegador(cachedResp, 'fresco');
@@ -88,7 +100,7 @@ export async function onRequest(context) {
   if (!yaRenovando) {
     context.waitUntil((async () => {
       await cache.put(marcaKey, new Response('1', { headers: { 'cache-control': 'public, max-age=25' } }));
-      try { await renovar(cache, cacheKey); } catch (err) { /* se reintenta en la próxima visita */ }
+      try { await renovar(cache, cacheKey, context.env); } catch (err) { /* se reintenta en la próxima visita */ }
     })());
   }
   if (cachedResp) return paraNavegador(cachedResp, 'viejo');
@@ -96,7 +108,7 @@ export async function onRequest(context) {
   if (respaldo) return respaldo;
   // Sin copia y sin respaldo (no debería pasar): no queda más que esperar a Apps Script
   try {
-    const text = await renovar(cache, cacheKey);
+    const text = await renovar(cache, cacheKey, context.env);
     return paraNavegador(new Response(text, { headers: { 'content-type': 'application/json' } }), 'fresco');
   } catch (err) {
     return json({ ok: false, error: 'no se pudo cargar el catálogo: ' + (err && err.message || String(err)) }, 502);
@@ -126,7 +138,7 @@ async function leerRespaldo(context, url) {
 }
 
 // Pide el catálogo a Apps Script, lo valida y lo guarda en el borde.
-async function renovar(cache, cacheKey) {
+async function renovar(cache, cacheKey, env) {
   const text = await fetchFollow(APPS_SCRIPT_URL + '?accion=catalogo', { method: 'GET' });
   const data = JSON.parse(text); // valida que sea JSON de verdad antes de guardarlo
   if (!data || !data.ok || !Array.isArray(data.productos)) throw new Error('respuesta sin catálogo válido');
@@ -137,7 +149,28 @@ async function renovar(cache, cacheKey) {
       'x-cacheado-en': String(Date.now())
     }
   }));
+  await guardarKV(env, text);
   return text;
+}
+
+// Cloudflare KV (opcional): copia compartida por TODOS los centros de datos. El plan gratis
+// permite 1.000 escrituras al día, así que solo se escribe si la copia de KV tiene más de 4 min.
+async function leerKV(env) {
+  try {
+    const t = Number(await env.CATALOGO.get('catalogo_t')) || 0;
+    if (!t) return null;
+    const text = await env.CATALOGO.get('catalogo');
+    return text ? { text, t } : null;
+  } catch (err) { return null; }
+}
+async function guardarKV(env, text) {
+  try {
+    if (!env || !env.CATALOGO) return;
+    const t = Number(await env.CATALOGO.get('catalogo_t')) || 0;
+    if (Date.now() - t < 4 * 60 * 1000) return;
+    await env.CATALOGO.put('catalogo', text, { expirationTtl: 7 * 24 * 3600 });
+    await env.CATALOGO.put('catalogo_t', String(Date.now()), { expirationTtl: 7 * 24 * 3600 });
+  } catch (err) { /* KV es un extra: si falla, la tienda sigue igual */ }
 }
 
 // Lo que ve el navegador: una copia con vida corta. Si la copia es vieja o de respaldo
