@@ -1240,6 +1240,12 @@ details[open] summary::after{content:"−"}
 .contacto-opcion small{display:block;font-weight:400;font-size:12.5px;color:var(--tinta-3);margin-top:2px}
 .contacto-opcion:hover{border-color:var(--coral)}
 .contacto-num{font-variant-numeric:tabular-nums;color:var(--coral);white-space:nowrap}
+/* «¿Prefieres escribirnos?»: WhatsApp dentro del carrito, el pedido y la ficha (22/11/2026) */
+.bloque-wa{margin:18px 0 4px;padding:14px 14px 12px;border:1px solid var(--linea);border-radius:var(--radio-chico);background:var(--papel);text-align:center}
+.bloque-wa>span{display:block;font-size:13.5px;font-weight:600;color:var(--tinta);margin-bottom:10px}
+.bloque-wa .btn-wa{display:flex;align-items:center;justify-content:center;gap:8px;min-height:46px;border-radius:999px;background:#1F7A4D;color:#FFF;font-size:14px;font-weight:600;text-decoration:none}
+.bloque-wa .btn-wa:hover{background:#17623D}
+.bloque-wa small{display:block;margin-top:8px;font-size:12px;color:var(--tinta-3)}
 
 /* Aviso de cookies (consentimiento del píxel de Meta) */
 .aviso-cookies{position:fixed;left:12px;right:12px;bottom:12px;z-index:2147483000;max-width:520px;margin:0 auto;
@@ -2627,6 +2633,7 @@ function htmlDetalleProducto(p){
     ${p.medida ? `<div class="detalle-medida">${esc(p.medida)}</div>` : ''}
     ${p.descripcion ? `<p class="detalle-descripcion">${esc(p.descripcion)}</p>` : ''}
     <div class="detalle-control">${control}</div>
+    ${bloqueWhatsApp('¡Hola! Quisiera información de: ' + (p.marca ? p.marca + ' ' : '') + p.nombre + (p.tono ? ', tono ' + p.tono : '') + '. ¿Tienen disponible?', '¿Dudas de este producto? Pregúntanos')}
   </div>`;
 }
 
@@ -2912,6 +2919,19 @@ function abrirContacto(){
     <p style="margin:0 0 4px;color:var(--tinta-2);font-size:14px">Escríbenos por WhatsApp para dudas, tonos, disponibilidad o pedidos. Respondemos de ${esc(CONFIG.HORA_ATENCION)}.</p>
     ${fila('Avellana Studio', CONFIG.WHATSAPP_VISIBLE, CONFIG.WHATSAPP)}`);
 }
+// Enlace de WhatsApp con el mensaje ya escrito (carrito, producto o encargos)
+function enlaceWhatsApp(texto){ return 'https://wa.me/' + CONFIG.WHATSAPP + '?text=' + encodeURIComponent(texto); }
+function bloqueWhatsApp(texto, titulo){
+  return `<div class="bloque-wa"><span>${titulo}</span>
+    <a class="btn-wa" href="${esc(enlaceWhatsApp(texto))}" target="_blank" rel="noopener"><svg width="18" height="18" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2" stroke-linecap="round" stroke-linejoin="round" aria-hidden="true"><path d="M21 11.5a8.4 8.4 0 0 1-9 8.4 8.5 8.5 0 0 1-3.8-.9L3 20l1.1-5A8.4 8.4 0 1 1 21 11.5Z"/></svg>Escríbenos por WhatsApp</a>
+    <small>Te respondemos de ${esc(CONFIG.HORA_ATENCION)}. Tu pedido se confirma por ahí.</small></div>`;
+}
+function textoCarritoWA(){
+  const ls = lineasCarrito();
+  if (!ls.length) return '¡Hola! Quisiera más información sobre Avellana Studio.';
+  return '¡Hola! Quisiera hacer este pedido:\n' + ls.map(({ p, n }) => `• ${n} × ${p.nombre}${p.tono ? ' · ' + p.tono : ''} — ${colones(precioCarrito(p) * n)}`).join('\n') +
+    `\nTotal en productos: ${colones(subtotal())}\n¿Me confirman disponibilidad y cómo pago?`;
+}
 function acomodarContacto(){
   const btn = $('#btnContacto'), barra = $('#barraAbajo');
   if (!btn || !barra) return;
@@ -3064,7 +3084,8 @@ function verCarrito(){
       ${filaEnvioCarrito()}
     </div>
     <button class="btn-grande" type="button" id="irCheckout">Continuar</button>
-    <button class="btn-suave" type="button" id="seguirComprando">Seguir viendo productos</button>`;
+    <button class="btn-suave" type="button" id="seguirComprando">Seguir viendo productos</button>
+    ${bloqueWhatsApp(textoCarritoWA(), '¿Prefieres hacer tu pedido por WhatsApp?')}`;
   abrirHoja('Tu carrito', html);
   if (!OMITIR_REVISION_STOCK) revisarStockCarrito();
 }
@@ -3318,6 +3339,7 @@ function verCheckout(){
 
       <button class="btn-grande" type="submit" id="btnConfirmar">${botonPedido()}</button>
       <p class="nota-datos">Usamos estos datos únicamente para coordinar y entregar tu pedido.</p>
+      ${bloqueWhatsApp(textoCarritoWA(), '¿Dudas antes de confirmar? Escríbenos')}
     </form>`;
   abrirHoja(tituloPedido(), html);
   prepararFormulario();
@@ -3902,7 +3924,8 @@ function verEncargos(){
       ${sinPrecio ? `<div class="r-fila"><span>Con precio por confirmar</span><span>${sinPrecio}</span></div>` : ''}
     </div>` : ''}
     <button class="btn-grande" type="button" id="irEncargos">Continuar</button>
-    <button class="btn-suave" type="button" data-encargo-libre>Seguir agregando</button>`;
+    <button class="btn-suave" type="button" data-encargo-libre>Seguir agregando</button>
+    ${bloqueWhatsApp('¡Hola! Quisiera pedir por encargo:\n' + ENCARGOS.map(e => `• ${e.cantidad} × ${e.texto}`).join('\n') + '\n¿Me confirman precio y tiempo de llegada?', '¿Quieres confirmar precio y tiempo antes de enviar?')}`;
   abrirHoja('Tu lista de encargos', html);
 }
 
