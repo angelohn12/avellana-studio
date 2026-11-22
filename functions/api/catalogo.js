@@ -40,10 +40,12 @@ const NAVEGADOR_S = 30;                     // cuánto la reutiliza el navegador
 
 // Indicador de diagnóstico (x-kv): dice si la función ve el KV y si el último guardado falló.
 let KV_ULTIMO = 'sin-intentos';
+let ORIGEN = '';
 export async function onRequest(context) {
   const r = await atender(context);
   const h = new Headers(r.headers);
   h.set('x-kv', (context.env && context.env.CATALOGO ? 'enlazado' : 'sin-binding') + '; ' + KV_ULTIMO);
+  h.set('x-origen', ORIGEN);
   return new Response(r.body, { status: r.status, headers: h });
 }
 
@@ -86,6 +88,8 @@ async function atender(context) {
       context.waitUntil(cache.put(cacheKey, new Response(kv.text, { headers: { 'content-type': 'application/json', 'cache-control': 'public, max-age=' + VIDA_EN_BORDE_S, 'x-cacheado-en': String(kv.t) } })));
     }
   }
+
+  ORIGEN = (cachedResp === cachedLocal ? 'borde' : 'kv') + ' edad=' + (isFinite(edad) ? Math.round(edad / 1000) + 's' : 'sin-copia') + ' local=' + (isFinite(edadLocal) ? Math.round(edadLocal / 1000) + 's' : 'no');
 
   // 1a. Fresca: directo, sin tocar Apps Script
   if (cachedResp && edad < FRESCURA_MS) return paraNavegador(cachedResp, 'fresco');
