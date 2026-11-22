@@ -1872,7 +1872,7 @@ const CATALOGO_CACHE_KEY = 'avellanaCatalogoCache';
 // 5 min en vez de 1 — el catálogo no cambia tan seguido, y así la tienda
 // no depende de que el backend (Apps Script, a veces lento) responda rápido
 // en cada visita dentro de esa ventana.
-const CATALOGO_CACHE_MS = 60 * 1000;   // 05/11/2026: antes 5 min; el stock tiene que estar al día
+const CATALOGO_CACHE_MS = 30 * 1000;   // 05/11/2026: antes 5 min; el stock tiene que estar al día
 let CATALOGO_VIEJO = false;            // true si solo se pudo mostrar una copia vieja/de respaldo
 let ULTIMA_CARGA_CATALOGO = 0;         // cuándo se cargó por última vez un catálogo fresco
 

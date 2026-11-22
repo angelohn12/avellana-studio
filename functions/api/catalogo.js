@@ -32,8 +32,8 @@
 // Mismo patrón que /api/proxy de belleza-panel — no reinventar si se toca.
 
 const APPS_SCRIPT_URL = 'https://script.google.com/macros/s/AKfycbxQVdDsH_Qgg9MnRgb0rDyzYPkvRESEi2FGD-ENHeT9L7CMbZl_xTaVxDs0wfNe3tflMg/exec';
-const FRESCURA_MS = 60 * 1000;              // hasta acá la copia es "fresca": se entrega tal cual
-const TOPE_RENOVAR_DETRAS_MS = 3 * 60 * 1000; // entre 1 y 3 min: se entrega ya y se renueva por detrás
+const FRESCURA_MS = 30 * 1000;              // hasta acá la copia es "fresca": se entrega tal cual
+const TOPE_RENOVAR_DETRAS_MS = 90 * 1000; // entre 1 y 3 min: se entrega ya y se renueva por detrás
 const ESPERA_MAX_MS = 12000;                // copia más vieja (o sin copia): se espera a Apps Script (tarda 4-6 s)
 const VIDA_EN_BORDE_S = 24 * 60 * 60;       // cuánto Cloudflare conserva la copia (solo como plan B)
 const NAVEGADOR_S = 30;                     // cuánto la reutiliza el navegador de la clienta
@@ -180,7 +180,7 @@ async function guardarKV(env, text) {
   try {
     if (!env || !env.CATALOGO) return;
     const t = Number(await env.CATALOGO.get('catalogo_t')) || 0;
-    if (Date.now() - t < 4 * 60 * 1000) { KV_ULTIMO = 'reciente'; return; }
+    if (Date.now() - t < 2 * 60 * 1000) { KV_ULTIMO = 'reciente'; return; }
     await env.CATALOGO.put('catalogo', text, { expirationTtl: 7 * 24 * 3600 });
     await env.CATALOGO.put('catalogo_t', String(Date.now()), { expirationTtl: 7 * 24 * 3600 });
     KV_ULTIMO = 'guardado';
