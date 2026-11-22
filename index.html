@@ -3027,9 +3027,10 @@ function verCarrito(){
     pistasDadas.add(clave);
     const falta = CONFIG.MINIMO_MAYOREO - unidadesMayoreoEnCarrito(clave);
     const faltaTotal = CONFIG.MINIMO_SURTIDO - unidadesTotalesCarrito();
-    const otra = faltaTotal > 0 && faltaTotal < falta
-      ? `Agrega ${faltaTotal} producto${faltaTotal === 1 ? '' : 's'} más (el que quieras)`
-      : `Agrega ${falta} más de este producto (cualquier tono)`;
+    // Siempre las DOS formas de llegar al mayorista: 3 iguales, o 5 productos en total (mezclados)
+    const mismo = `${falta} más de este producto (cualquier tono)`;
+    const mezcla = `${faltaTotal} producto${faltaTotal === 1 ? '' : 's'} más (los que quieras)`;
+    const otra = faltaTotal > 0 ? `Agrega ${mismo}, o ${mezcla},` : `Agrega ${mismo}`;
     return `<div class="lc-pista">${otra} y pagas ${colones(p.precioMayorista)} c/u</div>`;
   };
   const html = `
