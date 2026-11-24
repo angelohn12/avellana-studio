@@ -88,6 +88,7 @@ const CONFIG = {
   MAX_MISTERIOSAS: 3,               // cajas misteriosas por pedido (igual que el servidor)
   MINIMO_MAYOREO: 3,                // unidades del mismo producto (sumando tonos) para precio
                                     // mayorista — se reemplaza por el que manda el servidor
+  ESCALONES: [{ desde: 50, pct: 5 }, { desde: 100, pct: 8 }, { desde: 150, pct: 10 }],   // el servidor la manda en el catálogo
   MINIMO_SURTIDO: 5,                // O BIEN: unidades en total (cualquier producto) para que todo el
                                     // carrito pase a mayorista — también lo manda el servidor
 
@@ -1476,14 +1477,17 @@ try { if (localStorage.getItem('avl_cookies') === 'si') cargarPixel(); } catch(e
       <summary>Caja mixta al por mayor</summary>
       <div class="detalle">
         <p>Cajas mixtas de maquillaje para revender o emprender, armadas por nosotras. Tú eliges el <b>tamaño</b> y la <b>gama</b>. Todo es <b>original, importado de EE. UU., nuevo y sellado</b>; no son productos de liquidación.</p>
+        <p style="margin:0 0 4px"><b>Mientras más piezas, menos pagas.</b> Si eliges tú los productos: desde 5 piezas (o 3 iguales) pagas el precio al por mayor de cada uno, y el precio baja <b>5 %</b> desde 50 piezas, <b>8 %</b> desde 100 y <b>10 %</b> desde 150.</p>
         <table class="cm-tabla">
-          <thead><tr><th></th><th>25 piezas</th><th>50 piezas</th><th>100 piezas</th></tr></thead>
+          <thead><tr><th>Caja mixta armada por nosotras</th><th>Económica</th><th>Media</th><th>Premium</th></tr></thead>
           <tbody>
-            <tr><td>Económica<small>Posibles marcas: e.l.f., Wet n Wild, Revolution</small></td><td>₡110.000<small>₡4.400 c/u</small></td><td>₡210.000<small>₡4.200 c/u</small></td><td>₡410.000<small>₡4.100 c/u</small></td></tr>
-            <tr><td>Media<small>Posibles marcas: NYX, Maybelline, L'Oréal</small></td><td>₡210.000<small>₡8.400 c/u</small></td><td>₡400.000<small>₡8.000 c/u</small></td><td>₡780.000<small>₡7.800 c/u</small></td></tr>
-            <tr><td>Premium<small>Posibles marcas: Rare Beauty, Fenty, Huda</small></td><td>₡430.000<small>₡17.200 c/u</small></td><td class="cm-cons" colspan="2">50 y 100 piezas: consúltanos</td></tr>
+            <tr><td>25 piezas</td><td class="cm-cons">elige tú (precio al por mayor)</td><td>₡210.000<small>₡8.400 c/u</small></td><td>₡430.000<small>₡17.200 c/u</small></td></tr>
+            <tr><td>50 piezas</td><td>₡275.000<small>₡5.500 c/u</small></td><td>₡400.000<small>₡8.000 c/u</small></td><td class="cm-cons">consúltanos</td></tr>
+            <tr><td>100 piezas</td><td>₡500.000<small>₡5.000 c/u</small></td><td>₡780.000<small>₡7.800 c/u</small></td><td class="cm-cons">consúltanos</td></tr>
+            <tr><td>150 piezas</td><td>₡675.000<small>₡4.500 c/u</small></td><td class="cm-cons">consúltanos</td><td class="cm-cons">consúltanos</td></tr>
           </tbody>
         </table>
+        <p style="font-size:12.5px;color:var(--tinta-3);margin:0 0 6px">Posibles marcas — Económica: e.l.f., Wet n Wild, Revolution · Media: NYX, Maybelline, L'Oréal · Premium: Rare Beauty, Fenty, Huda.</p>
         <p>Los productos exactos varían según la disponibilidad de cada compra. Mientras más grande la caja, más barata cada pieza.</p>
         <a class="btn-suave" id="cmWhatsapp" style="margin-top:4px;display:inline-block;text-decoration:none" target="_blank" rel="noopener" href="https://wa.me/50671663526?text=Hola%2C%20me%20interesan%20las%20cajas%20al%20por%20mayor">Consultar por WhatsApp</a>
       </div>
@@ -1712,7 +1716,16 @@ const unidadesTotalesCarrito = () => Object.values(CARRITO).reduce((a, n) => a +
 const aplicaMayoreo = (p) => tieneMayoreo(p) &&
   (unidadesMayoreoEnCarrito(claveGrupo(p)) >= CONFIG.MINIMO_MAYOREO || unidadesTotalesCarrito() >= CONFIG.MINIMO_SURTIDO);
 // Precio por unidad que se cobra en el carrito (mayorista si ya llegó al mínimo)
-const precioCarrito = (p) => aplicaMayoreo(p) ? Number(p.precioMayorista) : precioFinal(p);
+// Escalera por cantidad (23/11/2026): con 50 / 100 / 150 piezas al por mayor el precio mayorista de cada
+// producto baja 5 / 8 / 10 %. El servidor manda el precio ya calculado de cada escalón (p.escMay).
+const unidadesMayoristasCarrito = () => lineasCarrito().reduce((a, { p, n }) => a + (aplicaMayoreo(p) ? n : 0), 0);
+function escalonDe(unidades){ let idx = -1; CONFIG.ESCALONES.forEach((e, i) => { if (unidades >= e.desde) idx = i; }); return idx; }
+function precioMayoristaCarrito(p){
+  const idx = escalonDe(unidadesMayoristasCarrito());
+  const v = Array.isArray(p.escMay) ? Number(p.escMay[idx]) : 0;
+  return idx >= 0 && v > 0 ? v : Number(p.precioMayorista);
+}
+const precioCarrito = (p) => aplicaMayoreo(p) ? precioMayoristaCarrito(p) : precioFinal(p);
 // El tope de 3 es para compras al detalle; con precio mayorista se puede pedir en cantidad
 const topeMaximo = (p) => tieneMayoreo(p) ? CONFIG.MAX_POR_PRODUCTO_MAYOREO : CONFIG.MAX_POR_PRODUCTO;
 const topeDe = (p) => Math.min(topeMaximo(p), Number(p.stock) || 0);
@@ -1968,6 +1981,7 @@ async function cargarCatalogo(){
     if (!PRODUCTOS.length) throw new Error('catálogo vacío');
     if (Number(d.minimoMayorista) >= 2) CONFIG.MINIMO_MAYOREO = Number(d.minimoMayorista);
     if (Number(d.minimoMayoristaSurtido) >= 2) CONFIG.MINIMO_SURTIDO = Number(d.minimoMayoristaSurtido);
+    if (Array.isArray(d.escalonesMayoreo) && d.escalonesMayoreo.length) CONFIG.ESCALONES = d.escalonesMayoreo;
     if ($('#pieCajaMin')) $('#pieCajaMin').textContent = CONFIG.MINIMO_MAYOREO;
     OUTLET = d.outlet && Array.isArray(d.outlet.tipos) && d.outlet.tipos.length ? d.outlet : OUTLET;
     MISTERIOSA = d.misteriosa && Array.isArray(d.misteriosa.tamanos) && d.misteriosa.tamanos.length ? d.misteriosa : null;
@@ -2045,6 +2059,7 @@ async function actualizarProductosEnVivo(){
     if (!lista.length) return false;
     PRODUCTOS = lista;
     MAS_VENDIDOS = Array.isArray(d.masVendidos) ? d.masVendidos : MAS_VENDIDOS;
+    if (Array.isArray(d.escalonesMayoreo) && d.escalonesMayoreo.length) CONFIG.ESCALONES = d.escalonesMayoreo;
     if (Number(d.envioGratisDesde) > 0) CONFIG.ENVIO_GRATIS_DESDE = Number(d.envioGratisDesde);
     CATALOGO_VIEJO = false;
     ULTIMA_CARGA_CATALOGO = Date.now();
@@ -3061,7 +3076,7 @@ function verCarrito(){
   const nEncAviso = totalEncargos();
   const html = `
     <div class="aviso-tipo"><span class="at-icono" aria-hidden="true">🛍️</span><div><b>Este carrito es solo de entrega inmediata</b> (productos que tenemos en mano).${nEncAviso ? `<br>Además tienes <b>${nEncAviso} ${nEncAviso === 1 ? 'producto' : 'productos'} por encargo</b> en otra lista: se piden aparte y llegan en ${CONFIG.ENCARGO_DIAS_MIN} a ${CONFIG.ENCARGO_DIAS_MAX} días hábiles.<button type="button" id="verMisEncargos">Ver mis encargos</button>` : `<br>Los productos por encargo se piden aparte y llegan en ${CONFIG.ENCARGO_DIAS_MIN} a ${CONFIG.ENCARGO_DIAS_MAX} días hábiles.`}</div></div>
-    ${avisoMayoreoHtml(lineas.map(({ p, n }) => ({ p, n, mayor: aplicaMayoreo(p) })))}
+    ${avisoMayoreoHtml(lineas.map(({ p, n }) => ({ p, n, mayor: aplicaMayoreo(p) })), true)}
     ${lineas.map(({p, n}) => {
       const mayor = aplicaMayoreo(p);
       const etiqueta = mayor
@@ -3765,15 +3780,22 @@ function textoEncargoParaEnviar(e){
 }
 
 // Aviso visible cuando ya aplica el precio mayorista: cuánto se ahorra
-function avisoMayoreoHtml(lineas){
+function avisoMayoreoHtml(lineas, conEscalera){
   let ahorro = 0, aplica = false;
   lineas.forEach(({ p, n, mayor }) => {
     if (!mayor) return;
     aplica = true;
-    ahorro += (precioFinal(p) - Number(p.precioMayorista)) * n;
+    ahorro += (precioFinal(p) - (conEscalera ? precioCarrito(p) : Number(p.precioMayorista))) * n;
   });
   if (!aplica) return '';
-  return `<div class="aviso-mayoreo"><span class="am-icono">✓</span><span><b>Precio mayorista aplicado.</b>${ahorro > 0 ? ` Ahorras ${colones(ahorro)} en este pedido.` : ''}</span></div>`;
+  // Escalera por cantidad: en qué escalón va y cuánto falta para el siguiente (solo en el carrito)
+  let escalera = '';
+  if (conEscalera){
+    const u = unidadesMayoristasCarrito(), idx = escalonDe(u), sig = CONFIG.ESCALONES[idx + 1];
+    if (idx >= 0) escalera += `<br><b>Descuento por cantidad: −${CONFIG.ESCALONES[idx].pct} %</b> en cada pieza (${u} piezas).`;
+    if (sig) escalera += `<br>Con <b>${sig.desde - u} ${sig.desde - u === 1 ? 'pieza más' : 'piezas más'}</b> (${sig.desde}) pagas <b>−${sig.pct} %</b> en cada una.`;
+  }
+  return `<div class="aviso-mayoreo"><span class="am-icono">✓</span><span><b>Precio mayorista aplicado.</b>${ahorro > 0 ? ` Ahorras ${colones(ahorro)} en este pedido.` : ''}${escalera}</span></div>`;
 }
 
 function actualizarBadgeEncargos(){
