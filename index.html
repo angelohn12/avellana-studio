@@ -1703,14 +1703,30 @@ const claveGrupo = (p) => (p.marca || '').trim().toLowerCase() + '|' + (p.nombre
 // lista de encargos (el carrito igual solo lleva productos con stock).
 const tieneMayoreo = (p) => Number(p?.precioMayorista) > 0;
 
-function unidadesMayoreoEnCarrito(clave){
-  return Object.entries(CARRITO).reduce((a, [id, n]) => {
-    const x = PRODUCTOS.find(q => String(q.id) === String(id));
-    return a + (x && tieneMayoreo(x) && claveGrupo(x) === clave ? n : 0);
-  }, 0);
+// 23/11/2026: con 44 productos el carrito tardaba 8 s (y varios toques lo hacían caer): cada precio volvía a
+// recorrer todo el carrito y todo el catálogo. Ahora el resumen se calcula UNA vez por cambio del carrito
+// (se reconoce por su firma) y los productos se buscan en un mapa por id.
+let _mapaProd = null, _mapaProdFuente = null;
+function productoPorId(id){
+  if (_mapaProdFuente !== PRODUCTOS){ _mapaProd = new Map(PRODUCTOS.map(p => [String(p.id), p])); _mapaProdFuente = PRODUCTOS; }
+  return _mapaProd.get(String(id));
 }
+let _resCarrito = null;
+function resumenCarrito(){
+  const firma = Object.entries(CARRITO).map(([k, v]) => k + ':' + v).join(',') + '|' + CONFIG.MINIMO_MAYOREO + '|' + CONFIG.MINIMO_SURTIDO;
+  if (_resCarrito && _resCarrito.firma === firma && _resCarrito.fuente === PRODUCTOS) return _resCarrito;
+  const porFamilia = {}; let total = 0;
+  const lineas = Object.entries(CARRITO).map(([id, n]) => ({ x: productoPorId(id), n: Number(n) || 0 }));
+  lineas.forEach(({ x, n }) => { total += n; if (x && tieneMayoreo(x)) { const c = claveGrupo(x); porFamilia[c] = (porFamilia[c] || 0) + n; } });
+  const surtido = total >= CONFIG.MINIMO_SURTIDO;
+  let unidMay = 0;
+  lineas.forEach(({ x, n }) => { if (x && tieneMayoreo(x) && ((porFamilia[claveGrupo(x)] || 0) >= CONFIG.MINIMO_MAYOREO || surtido)) unidMay += n; });
+  _resCarrito = { firma, fuente: PRODUCTOS, porFamilia, total, unidMay };
+  return _resCarrito;
+}
+function unidadesMayoreoEnCarrito(clave){ return resumenCarrito().porFamilia[clave] || 0; }
 // Unidades en total en el carrito (cualquier producto)
-const unidadesTotalesCarrito = () => Object.values(CARRITO).reduce((a, n) => a + (Number(n) || 0), 0);
+const unidadesTotalesCarrito = () => resumenCarrito().total;
 // Mayorista si lleva el mínimo del mismo producto (tonos suman) O el mínimo
 // surtido en total (Anyelo, 19/11/2026). Igual que el servidor.
 const aplicaMayoreo = (p) => tieneMayoreo(p) &&
@@ -1718,7 +1734,7 @@ const aplicaMayoreo = (p) => tieneMayoreo(p) &&
 // Precio por unidad que se cobra en el carrito (mayorista si ya llegó al mínimo)
 // Escalera por cantidad (23/11/2026): con 50 / 100 / 150 piezas al por mayor el precio mayorista de cada
 // producto baja 5 / 8 / 10 %. El servidor manda el precio ya calculado de cada escalón (p.escMay).
-const unidadesMayoristasCarrito = () => lineasCarrito().reduce((a, { p, n }) => a + (aplicaMayoreo(p) ? n : 0), 0);
+const unidadesMayoristasCarrito = () => resumenCarrito().unidMay;
 function escalonDe(unidades){ let idx = -1; CONFIG.ESCALONES.forEach((e, i) => { if (unidades >= e.desde) idx = i; }); return idx; }
 function precioMayoristaCarrito(p){
   const idx = escalonDe(unidadesMayoristasCarrito());
@@ -2189,7 +2205,7 @@ function limpiarCarritoFantasma(){
   const quitados = [], ajustados = [];
   const nombre = p => p.nombre + (p.tono ? ' · ' + p.tono : '');
   Object.keys(CARRITO).forEach(id => {
-    const p = PRODUCTOS.find(x => String(x.id) === String(id));
+    const p = productoPorId(id);
     if (!p || (Number(p.stock) || 0) <= 0){ delete CARRITO[id]; cambio = true; quitados.push(p ? nombre(p) : null); return; }
     const tope = topeDe(p);
     if (CARRITO[id] > tope){ CARRITO[id] = tope; cambio = true; ajustados.push(nombre(p) + ' (quedan ' + tope + ')'); }
@@ -2572,7 +2588,7 @@ function elegirTono(grupoClave, id){
   pintarGrilla();
   const abierto = $('#hojaCuerpo [data-detalle-grupo]');
   if (abierto && abierto.dataset.detalleGrupo === grupoClave){
-    const p = PRODUCTOS.find(x => String(x.id) === String(id));
+    const p = productoPorId(id);
     if (p) $('#hojaCuerpo').innerHTML = htmlDetalleProducto(p);
   }
 }
@@ -2656,7 +2672,7 @@ function htmlDetalleProducto(p){
 function px(evento, datos){ try { if (window.fbq) fbq('track', evento, datos || {}); } catch(e){} }
 
 function verProducto(id){
-  const p = PRODUCTOS.find(x => String(x.id) === String(id));
+  const p = productoPorId(id);
   if (!p) return;
   px('ViewContent', { content_ids:[String(p.id)], content_name:p.nombre, content_type:'product', value:Number(p.precioVenta)||0, currency:'CRC' });
   abrirHoja(p.nombre, htmlDetalleProducto(p));
@@ -2668,7 +2684,7 @@ function verProducto(id){
 function refrescarDetalleAbierto(id){
   const abierto = $('#hojaCuerpo [data-detalle-id]');
   if (!abierto || abierto.dataset.detalleId !== String(id)) return;
-  const p = PRODUCTOS.find(x => String(x.id) === String(id));
+  const p = productoPorId(id);
   if (p) $('#hojaCuerpo').innerHTML = htmlDetalleProducto(p);
 }
 
@@ -2757,7 +2773,7 @@ function agregar(id, n = 1){
     actualizarProductosEnVivo().then(ok => { if (ok) agregar(id, n); else brindis('Todavía confirmando la disponibilidad. Probá en unos segundos.', 3500); });
     return;
   }
-  const p = PRODUCTOS.find(x => String(x.id) === String(id));
+  const p = productoPorId(id);
   if (!p) return;
   const tope = topeDe(p);
   const actual = CARRITO[id] || 0;
@@ -2806,7 +2822,7 @@ function totalUnidades(){
 }
 function subtotal(){
   return Object.entries(CARRITO).reduce((a, [id, n]) => {
-    const p = PRODUCTOS.find(x => String(x.id) === String(id));
+    const p = productoPorId(id);
     return a + (p ? precioCarrito(p) * n : 0);
   }, 0);
 }
@@ -2815,7 +2831,7 @@ function hayMayoreoEnCarrito(){
 }
 function lineasCarrito(){
   return Object.entries(CARRITO).map(([id, n]) => {
-    const p = PRODUCTOS.find(x => String(x.id) === String(id));
+    const p = productoPorId(id);
     return p ? { p, n } : null;
   }).filter(Boolean);
 }
@@ -2976,7 +2992,7 @@ let REVISION_STOCK = 0;
 
 function bannerAgotados(lista, alConfirmar){
   const filas = lista.map(a => {
-    const p = PRODUCTOS.find(x => String(x.id) === String(a.id));
+    const p = productoPorId(a.id);
     const nombre = (a.nombre || (p && p.nombre) || 'Producto') + (a.tono ? ' · ' + a.tono : '');
     const descripcion = [p && p.marca, a.nombre, a.tono && ('tono ' + a.tono)].filter(Boolean).join(' ');
     const texto = a.quedan > 0
@@ -3000,7 +3016,7 @@ function bannerAgotados(lista, alConfirmar){
 
 function aplicarAgotados(lista, alConfirmar){
   lista.forEach(a => {
-    const p = PRODUCTOS.find(x => String(x.id) === String(a.id));
+    const p = productoPorId(a.id);
     if (p) p.stock = a.quedan;
     if (a.quedan <= 0) delete CARRITO[a.id];
     else if ((CARRITO[a.id] || 0) > a.quedan) CARRITO[a.id] = a.quedan;
@@ -3036,7 +3052,7 @@ async function revisarStockCarrito(){
     const cambios = [];
     ids.forEach(id => {
       const libre = d.stock[String(id)];
-      const p = PRODUCTOS.find(x => String(x.id) === String(id));
+      const p = productoPorId(id);
       if (libre === undefined || !p) return;
       p.stock = libre;
       if ((CARRITO[id] || 0) > libre){
@@ -3234,7 +3250,7 @@ function pintarMasVendidos(){
   const bloque = $('#bloqueMasVendidos');
   if (!bloque) return;
   const lista = (MAS_VENDIDOS || [])
-    .map(id => PRODUCTOS.find(p => String(p.id) === String(id)))
+    .map(id => productoPorId(id))
     .filter(p => p && estadoStock(p).hay);
   if (MODO_DEMO || lista.length < 4){ bloque.classList.add('oculto'); return; }
   $('#masVendidos').innerHTML = lista.slice(0, 4).map((p, i) => `
@@ -3755,7 +3771,7 @@ async function copiarSinpe(numero, boton){
    cada vez. */
 function totalEncargos(){ return ENCARGOS.reduce((a, e) => a + e.cantidad, 0); }
 
-const productoDeEncargo = (e) => e.id == null ? null : PRODUCTOS.find(q => String(q.id) === String(e.id)) || null;
+const productoDeEncargo = (e) => e.id == null ? null : productoPorId(e.id) || null;
 
 // Mismo criterio que el carrito: unidades del mismo producto (sumando tonos)
 // dentro de la lista de encargos.
@@ -4099,7 +4115,7 @@ const topeTono = (p) => CAJA_SOLO_YA ? Math.min(CONFIG.MAX_POR_PRODUCTO_MAYOREO,
 
 function lineasCaja(){
   return Object.entries(CAJA).map(([id, n]) => {
-    const p = PRODUCTOS.find(x => String(x.id) === String(id));
+    const p = productoPorId(id);
     return p && tieneMayoreo(p) ? { p, n } : null;
   }).filter(Boolean);
 }
@@ -4133,7 +4149,7 @@ const cajaValida = () => lineasCaja().length > 0 && familiasIncompletas().length
 function limpiarCajaFantasma(){
   let cambio = false;
   Object.keys(CAJA).forEach(id => {
-    const p = PRODUCTOS.find(x => String(x.id) === String(id));
+    const p = productoPorId(id);
     if (!p || !tieneMayoreo(p)){ delete CAJA[id]; cambio = true; }
   });
   if (cambio) guardarCaja();
@@ -4350,7 +4366,7 @@ function alternarFamiliaCaja(clave){
 }
 
 function cambiarCaja(id, delta){
-  const p = PRODUCTOS.find(x => String(x.id) === String(id));
+  const p = productoPorId(id);
   if (!p || !tieneMayoreo(p)) return;
   const actual = CAJA[id] || 0;
   const tope = topeTono(p);
@@ -4387,7 +4403,7 @@ function vaciarCaja(){
 
 // Desde la ficha de un producto: abre el armador con ese producto ya puesto (con el mínimo)
 function cajaConProducto(id){
-  const p = PRODUCTOS.find(x => String(x.id) === String(id));
+  const p = productoPorId(id);
   if (!p || !tieneMayoreo(p)) return;
   if (unidadesCajaDe(claveGrupo(p)) === 0){
     if (stockLibre(p) < CONFIG.MINIMO_MAYOREO) CAJA_SOLO_YA = false;
